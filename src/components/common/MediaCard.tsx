@@ -1,0 +1,180 @@
+import React, { useState } from 'react';
+import { Play, Tv, Film, MoreVertical, RefreshCw, FileSearch, Info, Edit } from 'lucide-react';
+import { Media } from '../../types/media';
+import { api } from '../../services';
+import { IdentifyModal } from '../features/IdentifyModal';
+import { MediaInfoModal } from '../features/MediaInfoModal';
+
+interface MediaCardProps {
+    id?: number | string;
+    title: string;
+    posterUrl?: string;
+    onClick?: () => void;
+    subtitle?: string;
+    progress?: number;
+    type?: 'movie' | 'series' | 'episode' | 'folder';
+    aspectRatio?: 'poster' | 'video'; // poster = 2/3, video = 16/9
+    className?: string;
+}
+
+export const MediaCard: React.FC<MediaCardProps> = ({
+    id,
+    title,
+    posterUrl,
+    onClick,
+    subtitle,
+    progress,
+    type = 'movie',
+    aspectRatio = 'poster',
+    className = ''
+}) => {
+    const aspectClass = aspectRatio === 'video' ? 'aspect-video' : 'aspect-[2/3]';
+    const [showMenu, setShowMenu] = useState(false);
+    const [showIdentify, setShowIdentify] = useState(false);
+    const [showInfo, setShowInfo] = useState(false);
+    const [mediaDetails, setMediaDetails] = useState<Media | null>(null);
+
+    const handleAction = async (e: React.MouseEvent, action: string) => {
+        e.stopPropagation();
+        setShowMenu(false);
+        if (!id) return;
+        const mediaId = typeof id === 'string' ? parseInt(id) : id;
+
+        if (action === 'refresh') {
+            try {
+                // Determine if it's a series refresh (scan) or single item refresh
+                // For now, assume single item refresh metadata API
+                await api.post(`/media/${mediaId}/refresh`);
+                // Maybe trigger reload?
+            } catch (err) {
+                console.error("Failed to refresh", err);
+            }
+        } else if (action === 'identify') {
+            setShowIdentify(true);
+        } else if (action === 'info') {
+            try {
+                const data = await api.get<Media>(`/media/${mediaId}`);
+                setMediaDetails(data);
+                setShowInfo(true);
+            } catch (err) {
+                console.error("Failed to fetch details", err);
+            }
+        } else if (action === 'edit') {
+            // Placeholder
+            console.log("Edit requested for", mediaId);
+        }
+    };
+
+    const handleIdentify = async (providerId: string, mediaType: 'movie' | 'series') => {
+        if (!id) return;
+        try {
+            await api.post(`/media/${id}/identify`, { provider_id: providerId, media_type: mediaType });
+            window.location.reload(); // Simple refresh to show new data
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    return (
+        <>
+            <div
+                className={`group relative rounded-xl overflow-hidden bg-gray-900 shadow-lg border border-white/5 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:border-cyan-500/30 cursor-pointer ${className}`}
+                onClick={onClick}
+                onMouseLeave={() => setShowMenu(false)}
+            >
+                <div className={`${aspectClass} w-full relative`}>
+                    {posterUrl ? (
+                        <img
+                            src={posterUrl}
+                            alt={title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            loading="lazy"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-white/5 text-white/20">
+                            {type === 'series' || type === 'folder' ? <Tv size={40} /> : <Film size={40} />}
+                        </div>
+                    )}
+
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 text-center">
+                        {/* Play Icon */}
+                        <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 text-white transform scale-0 group-hover:scale-100 transition-transform duration-300 delay-75 shadow-lg border border-white/20 pointer-events-none">
+                            <Play size={24} className="ml-1 fill-white" />
+                        </div>
+
+                        {/* Title */}
+                        {!showMenu && (
+                            <>
+                                <h3 className="text-sm font-bold text-white leading-tight mt-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 absolute bottom-4 px-4 w-full select-none">
+                                    {title}
+                                </h3>
+                                {subtitle && (
+                                    <p className="text-xs text-gray-300 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75 absolute bottom-12 w-full px-4 truncate">
+                                        {subtitle}
+                                    </p>
+                                )}
+                            </>
+                        )}
+
+                        {/* 3-Dots Menu Button */}
+                        {id && type !== 'folder' && (
+                            <div className="absolute top-2 right-2 flex flex-col items-end z-20">
+                                <button
+                                    className="p-1.5 rounded-full bg-black/60 text-white hover:bg-cyan-500 hover:text-white transition-colors"
+                                    onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                                >
+                                    <MoreVertical size={16} />
+                                </button>
+
+                                {showMenu && (
+                                    <div className="mt-2 w-40 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl overflow-hidden animate-fade-in text-left">
+                                        <button onClick={(e) => handleAction(e, 'refresh')} className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/10 hover:text-white flex items-center gap-2">
+                                            <RefreshCw size={12} /> Refresh Metadata
+                                        </button>
+                                        <button onClick={(e) => handleAction(e, 'edit')} className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/10 hover:text-white flex items-center gap-2">
+                                            <Edit size={12} /> Edit Metadata
+                                        </button>
+                                        <button onClick={(e) => handleAction(e, 'identify')} className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/10 hover:text-white flex items-center gap-2">
+                                            <FileSearch size={12} /> Identity
+                                        </button>
+                                        <button onClick={(e) => handleAction(e, 'info')} className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/10 hover:text-white flex items-center gap-2 border-t border-white/5">
+                                            <Info size={12} /> Media Info
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Progress Bar */}
+                    {progress !== undefined && (
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-700 z-10">
+                            <div
+                                className="h-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Modals */}
+            <IdentifyModal
+                isOpen={showIdentify}
+                onClose={() => setShowIdentify(false)}
+                onIdentify={handleIdentify}
+                currentTitle={title}
+                isSeries={type === 'series'}
+            />
+
+            {mediaDetails && (
+                <MediaInfoModal
+                    isOpen={showInfo}
+                    onClose={() => setShowInfo(false)}
+                    media={mediaDetails}
+                />
+            )}
+        </>
+    );
+};

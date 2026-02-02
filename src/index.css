@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+    --color-glass-bg: rgba(255, 255, 255, 0.05);
+    --color-glass-border: rgba(255, 255, 255, 0.1);
+    --color-glass-highlight: rgba(255, 255, 255, 0.15);
+
+    --color-liquid-1: #0f2027;
+    --color-liquid-2: #203a43;
+    --color-liquid-3: #2c5364;
+
+    --backdrop-blur-glass: 10px;
+
+    --animate-gradient: gradientBG 15s ease infinite;
+
+    @keyframes gradientBG {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    --animate-fade-in: fadeIn 0.2s ease-out;
+}
+
+@utility glass-panel {
+    @apply bg-glass-bg backdrop-blur-glass border border-glass-border shadow-lg rounded-2xl;
+}
+
+/* Base styles */
+body {
+    @apply bg-gradient-to-br from-liquid-1 via-liquid-2 to-liquid-3 bg-[length:400%_400%] animate-gradient text-white h-screen overflow-hidden select-none font-['Outfit'];
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
