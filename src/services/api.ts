@@ -1,5 +1,14 @@
 // Base API wrapper with error handling and auth
-const API_BASE = '/api/v1';
+export const getApiBase = () => {
+    // Check if running in Tauri
+    const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+    if (isTauri) {
+        const savedUrl = localStorage.getItem('server_url') || 'http://localhost:3000';
+        // Ensure no trailing slash
+        return `${savedUrl.replace(/\/$/, '')}/api/v1`;
+    }
+    return '/api/v1';
+};
 
 export class ApiError extends Error {
     constructor(
@@ -27,32 +36,53 @@ async function handleResponse<T>(response: Response): Promise<T> {
     return response.json();
 }
 
+const getHeaders = (body?: unknown) => {
+    const headers: HeadersInit = {};
+    if (body) headers['Content-Type'] = 'application/json';
+
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    return headers;
+};
+
 export async function get<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_BASE}${endpoint}`);
+    const headers = getHeaders();
+    const response = await fetch(`${getApiBase()}${endpoint}`, {
+        headers,
+        credentials: 'include',
+    });
     return handleResponse<T>(response);
 }
 
 export async function post<T, B = unknown>(endpoint: string, body?: B): Promise<T> {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+    const headers = getHeaders(body);
+    const response = await fetch(`${getApiBase()}${endpoint}`, {
         method: 'POST',
-        headers: body ? { 'Content-Type': 'application/json' } : undefined,
+        headers,
         body: body ? JSON.stringify(body) : undefined,
+        credentials: 'include',
     });
     return handleResponse<T>(response);
 }
 
 export async function put<T, B = unknown>(endpoint: string, body: B): Promise<T> {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+    const headers = getHeaders(body);
+    const response = await fetch(`${getApiBase()}${endpoint}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(body),
+        credentials: 'include',
     });
     return handleResponse<T>(response);
 }
 
 export async function del<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+    const headers = getHeaders();
+    const response = await fetch(`${getApiBase()}${endpoint}`, {
         method: 'DELETE',
+        headers,
+        credentials: 'include',
     });
     return handleResponse<T>(response);
 }

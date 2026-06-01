@@ -1,5 +1,5 @@
 // API Services - Centralized API layer
-export { api, ApiError } from './api';
+export { api, ApiError, getApiBase } from './api';
 export { libraryService } from './libraries';
 export { settingsService } from './settings';
 export { systemService } from './system';

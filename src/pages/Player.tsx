@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, Pause, Maximize, Minimize, Volume2, VolumeX, SkipBack, SkipForward, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Maximize, Minimize, Volume2, VolumeX, SkipBack, SkipForward, Subtitles, Check, AudioLines } from 'lucide-react';
 import Hls from 'hls.js';
-import { SubtitleTrack, StreamInfo, DeviceProfile, detectCapabilities } from '../types';
-import { api } from '../services';
+import { SubtitleTrack, AudioTrack, StreamInfo, DeviceProfile, detectCapabilities } from '../types';
+import { api, getApiBase } from '../services';
+import { NativePlayerButton } from '../components/NativePlayerButton';
 
 export const Player: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -24,9 +25,14 @@ export const Player: React.FC = () => {
     const [showControls, setShowControls] = useState(true);
     const [subtitles, setSubtitles] = useState<SubtitleTrack[]>([]);
     const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
+    const [activeSubtitleId, setActiveSubtitleId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isTranscoding, setIsTranscoding] = useState(false);
     const [streamInfo, setStreamInfo] = useState<StreamInfo | null>(null);
+    const [title, setTitle] = useState('');
+    const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
+    const [showAudioMenu, setShowAudioMenu] = useState(false);
+    const [activeAudioIndex, setActiveAudioIndex] = useState<number | null>(null);
     void streamInfo; // Suppress unused warning
 
     const controlsTimeoutRef = useRef<number | null>(null);
@@ -46,6 +52,18 @@ export const Player: React.FC = () => {
                     }
                 } catch {
                     // No saved progress, start from beginning
+                }
+
+                // Fetch media details for title
+                try {
+                    const media = await api.get<{ title?: string; series_name?: string; season_number?: number; episode_number?: number }>(`/media/${id}`);
+                    if (media.series_name && media.season_number != null && media.episode_number != null) {
+                        setTitle(`${media.series_name} - S${media.season_number}E${media.episode_number}${media.title ? ` - ${media.title}` : ''}`);
+                    } else if (media.title) {
+                        setTitle(media.title);
+                    }
+                } catch {
+                    // Title is non-critical
                 }
 
                 // Get stream info
@@ -144,9 +162,15 @@ export const Player: React.FC = () => {
                     }
                 }
 
-                // Load subtitles
-                const subs = await api.get<SubtitleTrack[]>(`/stream/${id}/subtitles`);
+                // Load subtitles and audio tracks
+                const [subs, tracks] = await Promise.all([
+                    api.get<SubtitleTrack[]>(`/stream/${id}/subtitles`).catch(() => []),
+                    api.get<AudioTrack[]>(`/stream/${id}/audio_tracks`).catch(() => []),
+                ]);
                 setSubtitles(subs);
+                setAudioTracks(tracks);
+                const defaultTrack = tracks.find(t => t.is_default) || tracks[0];
+                if (defaultTrack) setActiveAudioIndex(defaultTrack.index);
 
             } catch (error) {
                 console.error("Setup error", error);
@@ -256,11 +280,16 @@ export const Player: React.FC = () => {
         }
     };
 
-    const handleTimeUpdate = () => {
+    const lastTimeUpdateRef = useRef(0);
+    const handleTimeUpdate = useCallback(() => {
         if (videoRef.current) {
-            setCurrentTime(videoRef.current.currentTime);
+            const now = performance.now();
+            if (now - lastTimeUpdateRef.current > 500) {
+                lastTimeUpdateRef.current = now;
+                setCurrentTime(videoRef.current.currentTime);
+            }
         }
-    };
+    }, []);
 
     const handleLoadedMetadata = () => {
         if (videoRef.current) {
@@ -325,6 +354,16 @@ export const Player: React.FC = () => {
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
+    // Refs for keyboard handler to avoid re-registering on every state change
+    const isPlayingRef = useRef(isPlaying);
+    isPlayingRef.current = isPlaying;
+    const isMutedRef = useRef(isMuted);
+    isMutedRef.current = isMuted;
+    const isFullscreenRef = useRef(isFullscreen);
+    isFullscreenRef.current = isFullscreen;
+    const durationRef = useRef(duration);
+    durationRef.current = duration;
+
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -332,26 +371,39 @@ export const Player: React.FC = () => {
                 case ' ':
                 case 'k':
                     e.preventDefault();
-                    handlePlayPause();
+                    if (videoRef.current) {
+                        if (isPlayingRef.current) videoRef.current.pause();
+                        else videoRef.current.play();
+                    }
                     break;
                 case 'ArrowLeft':
                     e.preventDefault();
-                    skip(-10);
+                    if (videoRef.current) {
+                        videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
+                    }
                     break;
                 case 'ArrowRight':
                     e.preventDefault();
-                    skip(10);
+                    if (videoRef.current) {
+                        videoRef.current.currentTime = Math.min(durationRef.current, videoRef.current.currentTime + 10);
+                    }
                     break;
                 case 'f':
                     e.preventDefault();
-                    toggleFullscreen();
+                    if (containerRef.current) {
+                        if (isFullscreenRef.current) document.exitFullscreen();
+                        else containerRef.current.requestFullscreen();
+                    }
                     break;
                 case 'm':
                     e.preventDefault();
-                    toggleMute();
+                    if (videoRef.current) {
+                        videoRef.current.muted = !isMutedRef.current;
+                        setIsMuted(!isMutedRef.current);
+                    }
                     break;
                 case 'Escape':
-                    if (!isFullscreen) {
+                    if (!isFullscreenRef.current) {
                         navigate(-1);
                     }
                     break;
@@ -361,31 +413,98 @@ export const Player: React.FC = () => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isPlaying, duration, isMuted, isFullscreen]);
+    }, [navigate]);
 
-    // Subtitle handling
-    const toggleSubtitle = (trackId: string | null) => {
+    const selectSubtitle = async (trackId: string | null) => {
         if (!videoRef.current) return;
 
-        console.log("Toggling subtitle to:", trackId);
-        const tracks = videoRef.current.textTracks;
+        const video = videoRef.current;
         const selectedSub = subtitles.find(s => s.id === trackId);
 
-        for (let i = 0; i < tracks.length; i++) {
-            const track = tracks[i];
-            console.log(`Track ${i}: label=${track.label}, kind=${track.kind}, mode=${track.mode}`);
-
-            // Only manage 'subtitles' kind to avoid messing with other HLS tracks
-            if (track.kind === 'subtitles') {
-                track.mode = 'disabled';
-
-                if (trackId && selectedSub && track.label === selectedSub.label) {
-                    track.mode = 'showing';
-                    console.log(`Enabled track: ${track.label}`);
-                }
+        // Disable all subtitle tracks first
+        for (let i = 0; i < video.textTracks.length; i++) {
+            if (video.textTracks[i].kind === 'subtitles') {
+                video.textTracks[i].mode = 'disabled';
             }
         }
+
+        if (!trackId || !selectedSub) {
+            setActiveSubtitleId(null);
+            setShowSubtitleMenu(false);
+            return;
+        }
+
+        // Check if a <track> element already exists for this subtitle
+        const existingTrack = Array.from(video.querySelectorAll('track')).find(
+            t => t.getAttribute('data-sub-id') === trackId
+        );
+
+        if (existingTrack) {
+            for (let i = 0; i < video.textTracks.length; i++) {
+                if (video.textTracks[i].label === selectedSub.label && video.textTracks[i].kind === 'subtitles') {
+                    video.textTracks[i].mode = 'showing';
+                    break;
+                }
+            }
+        } else {
+            // Fetch VTT with auth, then create blob URL
+            try {
+                const token = localStorage.getItem('auth_token');
+                const headers: HeadersInit = {};
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                const resp = await fetch(`${getApiBase()}${selectedSub.url.replace('/api/v1', '')}`, {
+                    headers,
+                    credentials: 'include',
+                });
+                if (!resp.ok) throw new Error(`${resp.status}`);
+
+                const vttText = await resp.text();
+                const blob = new Blob([vttText], { type: 'text/vtt' });
+                const blobUrl = URL.createObjectURL(blob);
+
+                const track = document.createElement('track');
+                track.kind = 'subtitles';
+                track.label = selectedSub.label;
+                track.srclang = selectedSub.language;
+                track.src = blobUrl;
+                track.setAttribute('data-sub-id', trackId);
+                video.appendChild(track);
+                track.track.mode = 'showing';
+            } catch (e) {
+                console.error('Failed to load subtitle:', e);
+            }
+        }
+
+        setActiveSubtitleId(trackId);
         setShowSubtitleMenu(false);
+    };
+
+    const selectAudioTrack = (audioIndex: number) => {
+        if (audioIndex === activeAudioIndex) {
+            setShowAudioMenu(false);
+            return;
+        }
+
+        setActiveAudioIndex(audioIndex);
+        setShowAudioMenu(false);
+
+        if (!hlsRef.current || !hlsBaseUrlRef.current) return;
+
+        // Reload HLS with the new audio_index param so FFmpeg restarts with the selected audio stream
+        const currentPos = videoRef.current?.currentTime || 0;
+        setIsLoading(true);
+
+        // Build new URL with audio_index
+        const baseUrl = hlsBaseUrlRef.current.replace(/[&?]audio_index=\d+/g, '');
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        const newUrl = `${baseUrl}${separator}audio_index=${audioIndex}&start=${Math.floor(currentPos)}`;
+
+        hlsRef.current.loadSource(newUrl);
+        hlsRef.current.once(Hls.Events.MANIFEST_PARSED, () => {
+            setIsLoading(false);
+            videoRef.current?.play().catch(() => {});
+        });
     };
 
     return (
@@ -408,19 +527,8 @@ export const Player: React.FC = () => {
                 onCanPlayThrough={() => setIsLoading(false)}
                 playsInline
                 preload="auto"
-                crossOrigin="anonymous" // Required for VTT tracks from same origin usually? Localhost is fine.
-            >
-                {subtitles.map((sub) => (
-                    <track
-                        key={sub.id}
-                        kind="subtitles"
-                        src={sub.url}
-                        srcLang={sub.language}
-                        label={sub.label}
-                        default={false}
-                    />
-                ))}
-            </video>
+                crossOrigin="anonymous"
+            />
 
             {/* Loading Spinner */}
             {isLoading && (
@@ -447,7 +555,7 @@ export const Player: React.FC = () => {
                         }}
                     >
                         <ArrowLeft size={24} />
-                        <span className="text-lg font-medium">Back</span>
+                        <span className="text-lg font-medium truncate max-w-[60vw]">{title || 'Back'}</span>
                     </button>
                 </div>
 
@@ -534,28 +642,59 @@ export const Player: React.FC = () => {
                             {subtitles.length > 0 && (
                                 <div className="relative">
                                     <button
-                                        className="text-white hover:text-cyan-400 transition-colors"
-                                        onClick={(e) => { e.stopPropagation(); setShowSubtitleMenu(!showSubtitleMenu); }}
+                                        className={`transition-colors ${activeSubtitleId ? 'text-cyan-400' : 'text-white hover:text-cyan-400'}`}
+                                        onClick={(e) => { e.stopPropagation(); setShowSubtitleMenu(!showSubtitleMenu); setShowAudioMenu(false); }}
                                     >
-                                        <MessageSquare size={20} />
+                                        <Subtitles size={20} />
                                     </button>
 
-                                    {/* Subtitle Menu */}
                                     {showSubtitleMenu && (
-                                        <div className="absolute bottom-10 right-0 bg-black/90 border border-white/10 rounded-lg p-2 min-w-[150px] shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+                                        <div className="absolute bottom-10 right-0 bg-black/95 border border-white/10 rounded-lg py-1 min-w-[200px] max-h-[300px] overflow-y-auto shadow-xl backdrop-blur-sm">
+                                            <div className="px-3 py-1.5 text-xs text-white/50 uppercase tracking-wide">Subtitles</div>
                                             <button
-                                                className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded transition-colors"
-                                                onClick={() => toggleSubtitle(null)}
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                                                onClick={() => selectSubtitle(null)}
                                             >
+                                                <span className="w-4">{!activeSubtitleId && <Check size={14} />}</span>
                                                 Off
                                             </button>
                                             {subtitles.map(sub => (
                                                 <button
                                                     key={sub.id}
-                                                    className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded transition-colors"
-                                                    onClick={() => toggleSubtitle(sub.id)}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                                                    onClick={() => selectSubtitle(sub.id)}
                                                 >
-                                                    {sub.label}
+                                                    <span className="w-4">{activeSubtitleId === sub.id && <Check size={14} className="text-cyan-400" />}</span>
+                                                    <span className="flex-1 text-left truncate">{sub.label}</span>
+                                                    <span className="text-[10px] text-white/40 uppercase">{sub.source === 'embedded' ? 'EMB' : 'EXT'}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Audio Tracks */}
+                            {audioTracks.length > 1 && (
+                                <div className="relative">
+                                    <button
+                                        className="text-white hover:text-cyan-400 transition-colors"
+                                        onClick={(e) => { e.stopPropagation(); setShowAudioMenu(!showAudioMenu); setShowSubtitleMenu(false); }}
+                                    >
+                                        <AudioLines size={20} />
+                                    </button>
+
+                                    {showAudioMenu && (
+                                        <div className="absolute bottom-10 right-0 bg-black/95 border border-white/10 rounded-lg py-1 min-w-[220px] max-h-[300px] overflow-y-auto shadow-xl backdrop-blur-sm">
+                                            <div className="px-3 py-1.5 text-xs text-white/50 uppercase tracking-wide">Audio</div>
+                                            {audioTracks.map(track => (
+                                                <button
+                                                    key={track.index}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                                                    onClick={() => selectAudioTrack(track.index)}
+                                                >
+                                                    <span className="w-4">{activeAudioIndex === track.index && <Check size={14} className="text-cyan-400" />}</span>
+                                                    <span className="flex-1 text-left truncate">{track.label}</span>
                                                 </button>
                                             ))}
                                         </div>
@@ -571,6 +710,13 @@ export const Player: React.FC = () => {
                                 {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
                             </button>
                         </div>
+                    </div>
+
+                    {/* Native Player Button */}
+                    <div className="absolute top-6 right-6 z-20">
+                        {streamInfo && (
+                            <NativePlayerButton url={streamInfo.direct_stream_url} />
+                        )}
                     </div>
                 </div>
             </div>

@@ -12,11 +12,13 @@ export const Library: React.FC = () => {
     const [media, setMedia] = useState<Media[]>([]);
     const [library, setLibrary] = useState<ILibrary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             if (!id) return;
             setIsLoading(true);
+            setError(null);
             try {
                 const libs = await libraryService.getAll();
                 const currentLib = libs.find(l => l.id === parseInt(id));
@@ -24,8 +26,9 @@ export const Library: React.FC = () => {
 
                 const data = await api.get<Media[]>(`/libraries/${id}/media`);
                 setMedia(data);
-            } catch (error) {
-                console.error("Failed to fetch library data", error);
+            } catch (err) {
+                console.error("Failed to fetch library data", err);
+                setError("Failed to connect to server. Please check your connection.");
             } finally {
                 setIsLoading(false);
             }
@@ -99,6 +102,11 @@ export const Library: React.FC = () => {
                         {[...Array(12)].map((_, i) => (
                             <div key={i} className="aspect-[2/3] bg-white/5 rounded-xl animate-pulse" />
                         ))}
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-20">
+                        <p className="text-xl text-red-400 mb-2">Connection Error</p>
+                        <p className="text-gray-400">{error}</p>
                     </div>
                 ) : displayedItems.length === 0 ? (
                     <div className="text-center py-20">

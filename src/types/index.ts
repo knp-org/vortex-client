@@ -26,6 +26,7 @@ export type {
 // Player Types
 export type {
     SubtitleTrack,
+    AudioTrack,
     StreamInfo,
     PlaybackProgress,
     DeviceProfile

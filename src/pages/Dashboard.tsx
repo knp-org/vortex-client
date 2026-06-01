@@ -11,17 +11,15 @@ interface ContinueWatchingMedia extends Media {
     library_type?: string;
 }
 
-const LibraryRow: React.FC<{ library: Library }> = ({ library }) => {
+const LibraryRow: React.FC<{ library: Library }> = React.memo(({ library }) => {
     const [media, setMedia] = useState<MediaItem[]>([]);
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchMedia = async () => {
             try {
-                // Fetch library media
-                const res = await fetch(`/api/v1/libraries/${library.id}/media`);
-                if (res.ok) {
-                    const data: Media[] = await res.json();
+                const data = await api.get<Media[]>(`/libraries/${library.id}/media`);
+                if (data) {
 
                     let processedData = data;
 
@@ -82,7 +80,7 @@ const LibraryRow: React.FC<{ library: Library }> = ({ library }) => {
             onItemClick={handleItemClick}
         />
     );
-};
+});
 
 export const Dashboard: React.FC = () => {
     const [libraries, setLibraries] = useState<Library[]>([]);

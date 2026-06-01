@@ -15,6 +15,8 @@ interface SearchResult {
     year: number | null;
 }
 
+import { Logo } from '../common/Logo';
+
 export const Header: React.FC = () => {
     const { isTauri } = usePlatform();
     const navigate = useNavigate();
@@ -77,10 +79,11 @@ export const Header: React.FC = () => {
     return (
         <header className="h-16 flex-shrink-0 px-4 pt-4 flex items-center justify-between z-50">
             {/* Left: Logo */}
-            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
-                <div className="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+            <div className="flex items-center space-x-2 cursor-pointer group" onClick={() => navigate('/')}>
+                <Logo size={28} className="group-hover:scale-105 transition-transform duration-300" />
+                <span className="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500">
                     Vortex
-                </div>
+                </span>
             </div>
 
             {/* Center: Search Bar */}

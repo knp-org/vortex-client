@@ -1,15 +1,7 @@
 import { useRef, useState, useEffect, useCallback, RefObject } from 'react';
 import Hls from 'hls.js';
-
-export interface StreamInfo {
-    needs_transcode: boolean;
-    video_codec: string | null;
-    audio_codec: string | null;
-    container: string | null;
-    direct_stream_url: string;
-    hls_url: string | null;
-    duration_seconds: number | null;
-}
+import type { StreamInfo } from '../types/player';
+import { api, getApiBase } from '../services/api';
 
 export interface VideoPlayerState {
     isPlaying: boolean;
@@ -59,6 +51,57 @@ export function useVideoPlayer({ mediaId, containerRef }: UseVideoPlayerOptions)
     const [isLoading, setIsLoading] = useState(true);
     const [isTranscoding, setIsTranscoding] = useState(false);
 
+    const startHls = useCallback((hlsUrl: string, startPosition?: number) => {
+        if (!videoRef.current) return;
+
+        if (hlsRef.current) {
+            hlsRef.current.destroy();
+            hlsRef.current = null;
+        }
+
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                debug: false,
+                enableWorker: true,
+                lowLatencyMode: true,
+                backBufferLength: 90,
+                maxBufferLength: 30,
+                maxMaxBufferLength: 60,
+                manifestLoadingTimeOut: 15000,
+                xhrSetup: (xhr, _url) => {
+                    const token = localStorage.getItem('auth_token');
+                    if (token) {
+                        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                    }
+                }
+            });
+
+            hls.loadSource(hlsUrl);
+            hls.attachMedia(videoRef.current);
+            hlsRef.current = hls;
+
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                setIsLoading(false);
+                if (startPosition && startPosition > 0 && videoRef.current) {
+                    videoRef.current.currentTime = startPosition;
+                }
+                videoRef.current?.play().catch(() => {});
+            });
+
+            hls.on(Hls.Events.ERROR, (_, data) => {
+                console.error('HLS error:', data);
+                if (data.fatal) {
+                    setIsLoading(false);
+                }
+            });
+        } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+            videoRef.current.src = hlsUrl;
+            if (startPosition && startPosition > 0) {
+                videoRef.current.currentTime = startPosition;
+            }
+        }
+    }, []);
+
     // Setup player on mount/id change
     useEffect(() => {
         const setupPlayer = async () => {
@@ -67,65 +110,32 @@ export function useVideoPlayer({ mediaId, containerRef }: UseVideoPlayerOptions)
             setIsLoading(true);
 
             try {
-                const infoRes = await fetch(`/api/v1/stream/${mediaId}/info`);
+                const streamInfo = await api.get<StreamInfo>(`/stream/${mediaId}/info`).catch(() => null);
 
-                if (infoRes.ok) {
-                    const streamInfo: StreamInfo = await infoRes.json();
+                if (streamInfo) {
 
                     if (streamInfo.duration_seconds) {
                         setDuration(streamInfo.duration_seconds);
                     }
 
+                    const progress = await api.get<{ position: number }>(`/media/${mediaId}/progress`).catch(() => null);
+                    const resumePosition = progress && progress.position > 0 ? progress.position : undefined;
+
                     if (streamInfo.needs_transcode && streamInfo.hls_url) {
                         setIsTranscoding(true);
-
-                        if (Hls.isSupported()) {
-                            const hls = new Hls({
-                                debug: false,
-                                enableWorker: true,
-                                lowLatencyMode: true,
-                                backBufferLength: 90,
-                                maxBufferLength: 30,
-                                maxMaxBufferLength: 60,
-                                manifestLoadingTimeOut: 10000,
-                            });
-
-                            hls.loadSource(streamInfo.hls_url);
-                            hls.attachMedia(videoRef.current);
-                            hlsRef.current = hls;
-
-                            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                                setIsLoading(false);
-                            });
-
-                            hls.on(Hls.Events.ERROR, (_, data) => {
-                                console.error('HLS error:', data);
-                                if (data.fatal) {
-                                    setIsLoading(false);
-                                }
-                            });
-                        } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-                            videoRef.current.src = streamInfo.hls_url;
-                        }
+                        startHls(streamInfo.hls_url, resumePosition);
                     } else {
-                        // Direct stream
                         videoRef.current.src = streamInfo.direct_stream_url;
                         setIsTranscoding(false);
-                    }
-
-                    // Resume position
-                    const progressRes = await fetch(`/api/v1/media/${mediaId}/progress`);
-                    if (progressRes.ok) {
-                        const data = await progressRes.json();
-                        if (data.position > 0 && videoRef.current) {
-                            videoRef.current.currentTime = data.position;
+                        if (resumePosition && videoRef.current) {
+                            videoRef.current.currentTime = resumePosition;
                         }
                     }
                 }
             } catch (e) {
                 console.error('Failed to setup player:', e);
                 if (videoRef.current) {
-                    videoRef.current.src = `/api/v1/stream/${mediaId}`;
+                    videoRef.current.src = `${getApiBase()}/stream/${mediaId}`;
                 }
             }
         };
@@ -138,7 +148,7 @@ export function useVideoPlayer({ mediaId, containerRef }: UseVideoPlayerOptions)
                 hlsRef.current = null;
             }
         };
-    }, [mediaId]);
+    }, [mediaId, startHls]);
 
     // Fullscreen change handler
     useEffect(() => {

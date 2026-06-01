@@ -3,7 +3,7 @@ export interface SubtitleTrack {
     id: string;
     label: string;
     language: string;
-    source: string;
+    source: 'external' | 'embedded';
     url: string;
 }
 
@@ -31,6 +31,15 @@ export function detectCapabilities(): DeviceProfile {
         { id: 'flac', type: 'audio/mp4; codecs="flac"' }
     ];
 
+    const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+    if (isTauri) {
+        return {
+            video_codecs: ['h264', 'hevc', 'vp9', 'av1'],
+            audio_codecs: ['aac', 'mp3', 'opus', 'vorbis', 'ac3', 'eac3', 'flac'],
+            containers: ['mp4', 'mkv', 'webm', 'mov', 'avi']
+        };
+    }
+
     return {
         video_codecs: videoCodecs
             .filter(c => MediaSource.isTypeSupported(c.type))
@@ -50,6 +59,15 @@ export interface StreamInfo {
     direct_stream_url: string;
     hls_url: string | null;
     duration_seconds: number | null;
+}
+
+export interface AudioTrack {
+    index: number;
+    label: string;
+    language: string | null;
+    codec: string;
+    channels: number | null;
+    is_default: boolean;
 }
 
 export interface PlaybackProgress {

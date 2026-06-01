@@ -7,24 +7,20 @@ interface UseProgressOptions {
     saveInterval?: number; // ms, default 10000
 }
 
-/**
- * Hook to save video playback progress periodically and on unmount.
- * Uses sendBeacon for reliable save on page leave.
- */
 export function useProgress({
     mediaId,
     videoRef,
     isPlaying,
     saveInterval = 10000,
 }: UseProgressOptions): void {
-    const progressIntervalRef = useRef<number | null>(null);
+    const isPlayingRef = useRef(isPlaying);
+    isPlayingRef.current = isPlaying;
 
-    // Save progress periodically while playing
     useEffect(() => {
         if (!mediaId) return;
 
-        progressIntervalRef.current = window.setInterval(() => {
-            if (videoRef.current && isPlaying) {
+        const intervalId = window.setInterval(() => {
+            if (videoRef.current && isPlayingRef.current) {
                 const position = Math.floor(videoRef.current.currentTime);
                 const total = Math.floor(videoRef.current.duration) || 0;
 
@@ -38,12 +34,8 @@ export function useProgress({
             }
         }, saveInterval);
 
-        return () => {
-            if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current);
-            }
-        };
-    }, [mediaId, isPlaying, saveInterval, videoRef]);
+        return () => clearInterval(intervalId);
+    }, [mediaId, saveInterval, videoRef]);
 
     // Save progress on unmount using sendBeacon
     useEffect(() => {

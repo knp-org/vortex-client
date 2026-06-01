@@ -53,62 +53,67 @@ export const HeroCarousel: React.FC = () => {
     const item = items[currentIndex];
 
     return (
-        <div className="relative w-full h-[60vh] rounded-3xl overflow-hidden mb-8 group">
+        <div className="relative w-full h-[50vh] sm:h-[55vh] md:h-[60vh] rounded-3xl overflow-hidden mb-8 group">
             {/* Background Image with Fade Transition */}
-            {items.map((data, index) => (
-                <div
-                    key={data.id}
-                    className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentIndex ? 'opacity-100' : 'opacity-0'
-                        }`}
-                >
-                    {data.backdrop_url ? (
-                        <img
-                            src={data.backdrop_url}
-                            alt={data.title}
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-900 to-black" />
-                    )}
+            {items.map((data, index) => {
+                const isVisible = index === currentIndex;
+                return (
+                    <div
+                        key={data.id}
+                        className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+                        aria-hidden={!isVisible}
+                    >
+                        {data.backdrop_url ? (
+                            <img
+                                src={data.backdrop_url}
+                                alt={data.title}
+                                className="w-full h-full object-cover"
+                                loading={index === 0 ? 'eager' : 'lazy'}
+                                decoding="async"
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-gray-900 to-black" />
+                        )}
 
-                    {/* Gradient Overlay for Text Readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-                </div>
-            ))}
+                        {/* Gradient Overlay for Text Readability */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+                    </div>
+                );
+            })}
 
             {/* Content Layer */}
-            <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 z-10 flex flex-col justify-end h-full">
-                <div className="max-w-2xl space-y-4 animate-fade-in">
+            <div className="absolute bottom-0 left-0 w-full p-6 sm:p-8 md:p-12 z-10 flex flex-col justify-end h-full overflow-hidden">
+                <div className="max-w-2xl space-y-2 sm:space-y-3 md:space-y-4 animate-fade-in">
                     {/* Meta Info */}
-                    <div className="flex items-center space-x-3 text-sm md:text-base text-gray-300 font-medium">
+                    <div className="flex items-center flex-wrap gap-2 text-xs sm:text-sm md:text-base text-gray-300 font-medium">
                         {item.media_type && (
-                            <span className="bg-white/10 px-2 py-1 rounded border border-white/10 uppercase text-xs tracking-wider">
+                            <span className="bg-white/10 px-2 py-0.5 sm:py-1 rounded border border-white/10 uppercase text-[10px] sm:text-xs tracking-wider">
                                 {item.media_type}
                             </span>
                         )}
                         {item.year && <span>{item.year}</span>}
                         {(item.year || item.media_type) && item.genre && <span>•</span>}
-                        {item.genre && <span>{item.genre}</span>}
+                        {item.genre && <span className="truncate max-w-[200px] sm:max-w-none">{item.genre}</span>}
                     </div>
 
                     {/* Title */}
-                    <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight drop-shadow-2xl">
+                    <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold text-white tracking-tight drop-shadow-2xl line-clamp-2">
                         {item.title}
                     </h1>
 
                     {/* Description */}
                     {item.plot && (
-                        <p className="text-gray-200 text-lg line-clamp-3 md:line-clamp-none drop-shadow-md max-w-xl">
+                        <p className="text-gray-200 text-sm sm:text-base md:text-lg line-clamp-2 sm:line-clamp-3 drop-shadow-md max-w-xl">
                             {item.plot}
                         </p>
                     )}
 
                     {/* Actions */}
-                    <div className="flex items-center space-x-4 pt-4">
+                    <div className="flex items-center space-x-3 sm:space-x-4 pt-2 sm:pt-4">
                         <Button
                             size="lg"
-                            className="px-8 shadow-cyan-500/20"
+                            className="px-6 sm:px-8 shadow-cyan-500/20"
                             onClick={() => navigate(item.series_name ? `/series/${item.series_name}` : `/media/${item.id}`)}
                         >
                             Play Now
