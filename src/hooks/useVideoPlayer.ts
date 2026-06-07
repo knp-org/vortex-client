@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useCallback, RefObject } from 'react';
 import Hls from 'hls.js';
 import type { StreamInfo } from '../types/player';
-import { api, getApiBase } from '../services/api';
+import { api, getApiBase, resolveUrl, withAuthToken } from '../services/api';
 
 export interface VideoPlayerState {
     isPlaying: boolean;
@@ -54,6 +54,9 @@ export function useVideoPlayer({ mediaId, containerRef }: UseVideoPlayerOptions)
     const startHls = useCallback((hlsUrl: string, startPosition?: number) => {
         if (!videoRef.current) return;
 
+        // Resolve to an absolute URL for the Tauri app (cross-origin to the server).
+        const resolvedHlsUrl = resolveUrl(hlsUrl);
+
         if (hlsRef.current) {
             hlsRef.current.destroy();
             hlsRef.current = null;
@@ -76,7 +79,8 @@ export function useVideoPlayer({ mediaId, containerRef }: UseVideoPlayerOptions)
                 }
             });
 
-            hls.loadSource(hlsUrl);
+            // hls.js authenticates via xhrSetup (Bearer header), so no query token needed here.
+            hls.loadSource(resolvedHlsUrl);
             hls.attachMedia(videoRef.current);
             hlsRef.current = hls;
 
@@ -95,7 +99,8 @@ export function useVideoPlayer({ mediaId, containerRef }: UseVideoPlayerOptions)
                 }
             });
         } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-            videoRef.current.src = hlsUrl;
+            // Native HLS can't set headers, so embed the token in the URL.
+            videoRef.current.src = withAuthToken(resolvedHlsUrl);
             if (startPosition && startPosition > 0) {
                 videoRef.current.currentTime = startPosition;
             }
@@ -125,7 +130,7 @@ export function useVideoPlayer({ mediaId, containerRef }: UseVideoPlayerOptions)
                         setIsTranscoding(true);
                         startHls(streamInfo.hls_url, resumePosition);
                     } else {
-                        videoRef.current.src = streamInfo.direct_stream_url;
+                        videoRef.current.src = withAuthToken(resolveUrl(streamInfo.direct_stream_url));
                         setIsTranscoding(false);
                         if (resumePosition && videoRef.current) {
                             videoRef.current.currentTime = resumePosition;
@@ -135,7 +140,7 @@ export function useVideoPlayer({ mediaId, containerRef }: UseVideoPlayerOptions)
             } catch (e) {
                 console.error('Failed to setup player:', e);
                 if (videoRef.current) {
-                    videoRef.current.src = `${getApiBase()}/stream/${mediaId}`;
+                    videoRef.current.src = withAuthToken(`${getApiBase()}/stream/${mediaId}`);
                 }
             }
         };

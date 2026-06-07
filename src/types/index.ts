@@ -2,7 +2,7 @@
 // Import from here instead of defining interfaces inline
 
 // Library Types
-export type { Library, LibraryType, CreateLibraryRequest, UpdateLibraryRequest } from './library';
+export type { Library, LibraryType, ReadingMode, CreateLibraryRequest, UpdateLibraryRequest } from './library';
 
 // Media Types
 export type {

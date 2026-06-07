@@ -3,29 +3,33 @@ import { createPortal } from 'react-dom';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
-import { DirectoryPicker } from '../common/DirectoryPicker';
+import { Select } from '../common/Select';
+import { MultiDirectoryPicker } from '../common/MultiDirectoryPicker';
+import { libraryService } from '../../services';
+import type { Library } from '../../types';
+import { READING_MODE_OPTIONS, DEFAULT_READING_MODE } from '../../constants/reading';
 
 interface EditLibraryModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    library: {
-        id: number;
-        name: string;
-        path: string;
-    } | null;
+    library: Pick<Library, 'id' | 'name' | 'paths' | 'library_type' | 'default_reading_mode'> | null;
 }
 
 export const EditLibraryModal: React.FC<EditLibraryModalProps> = ({ isOpen, onClose, onSuccess, library }) => {
     const [name, setName] = useState('');
-    const [path, setPath] = useState('');
+    const [paths, setPaths] = useState<string[]>([]);
+    const [readingMode, setReadingMode] = useState<string>(DEFAULT_READING_MODE);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const isBooks = library?.library_type === 'books';
 
     useEffect(() => {
         if (library) {
             setName(library.name);
-            setPath(library.path);
+            setPaths(library.paths ?? []);
+            setReadingMode(library.default_reading_mode ?? DEFAULT_READING_MODE);
         }
     }, [library]);
 
@@ -36,25 +40,23 @@ export const EditLibraryModal: React.FC<EditLibraryModalProps> = ({ isOpen, onCl
         setIsLoading(true);
         setError(null);
 
-        try {
-            const res = await fetch(`/api/v1/libraries/${library.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name,
-                    path
-                })
-            });
+        if (paths.length === 0) {
+            setError("Please add at least one folder.");
+            setIsLoading(false);
+            return;
+        }
 
-            if (res.ok) {
-                onSuccess();
-                onClose();
-            } else {
-                const text = await res.text();
-                setError(text || "Failed to update library.");
-            }
+        try {
+            await libraryService.update(library.id, {
+                name,
+                paths,
+                ...(isBooks ? { default_reading_mode: readingMode } : {}),
+            });
+            onSuccess();
+            onClose();
         } catch (error) {
-            setError("Network Error");
+            const message = error instanceof Error ? error.message : "Network Error";
+            setError(message || "Failed to update library.");
         } finally {
             setIsLoading(false);
         }
@@ -80,9 +82,18 @@ export const EditLibraryModal: React.FC<EditLibraryModalProps> = ({ isOpen, onCl
                             required
                         />
 
-                        <DirectoryPicker
-                            value={path}
-                            onChange={setPath}
+                        {isBooks && (
+                            <Select
+                                label="Default Reading Mode"
+                                value={readingMode}
+                                onChange={setReadingMode}
+                                options={READING_MODE_OPTIONS.map(o => ({ id: o.id, label: o.label }))}
+                            />
+                        )}
+
+                        <MultiDirectoryPicker
+                            values={paths}
+                            onChange={setPaths}
                         />
 
                         <div className="flex justify-end space-x-3 pt-4">

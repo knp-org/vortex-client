@@ -3,7 +3,7 @@ import { Button } from '../../components/common/Button';
 import { AddLibraryModal } from '../../components/features/AddLibraryModal';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { EditLibraryModal } from '../../components/features/EditLibraryModal';
-import { Film, Tv, Music, Trash2, MoreVertical, RefreshCw, Scan, Edit2 } from 'lucide-react';
+import { Film, Tv, Music, BookOpen, Trash2, MoreVertical, RefreshCw, Scan, Edit2 } from 'lucide-react';
 import { Library } from '../../types';
 import { libraryService } from '../../services';
 
@@ -131,11 +131,17 @@ export const LibrariesTab: React.FC = () => {
                             <div key={lib.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
                                 <div className="flex items-center space-x-4">
                                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center text-xl text-cyan-400">
-                                        {lib.library_type === 'movies' ? <Film size={20} /> : lib.library_type === 'tv_shows' ? <Tv size={20} /> : <Music size={20} />}
+                                        {lib.library_type === 'movies' ? <Film size={20} /> : lib.library_type === 'tv_shows' ? <Tv size={20} /> : lib.library_type === 'books' ? <BookOpen size={20} /> : <Music size={20} />}
                                     </div>
                                     <div>
                                         <div className="font-semibold text-gray-200">{lib.name}</div>
-                                        <div className="text-xs text-gray-500">{lib.path}</div>
+                                        <div className="text-xs text-gray-500">
+                                            {lib.paths && lib.paths.length > 0
+                                                ? lib.paths.length === 1
+                                                    ? lib.paths[0]
+                                                    : `${lib.paths[0]} +${lib.paths.length - 1} more`
+                                                : 'No folders'}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="relative" onClick={e => e.stopPropagation()}>

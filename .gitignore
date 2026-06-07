@@ -1,3 +1,10 @@
+# Dependency directories
+node_modules/
+
+# Production/build outputs
+dist/
+dist-ssr/
+
 # Logs
 logs
 *.log
@@ -7,18 +14,47 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.local
 
-# Editor directories and files
+# Editor/IDE directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# Android build/local files
+android_app/.gradle/
+android_app/build/
+android_app/app/build/
+android_app/local.properties
+android_app/.idea/
+android_app/*.iml
+android_app/*.ids
+android_app/*.hprof
+android_app/.cxx/
+android_app/captures/
+android_app/*.jks
+android_app/google-services.json
+
+# Agent & AI tool artifacts
+.gemini/
+.agent/
+.claude/
+

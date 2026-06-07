@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '../layouts/MainLayout';
-import { Film, Tv, Music, FileQuestion } from 'lucide-react';
+import { Film, Tv, Music, BookOpen, FileQuestion } from 'lucide-react';
 import { MediaCard } from '../components/common/MediaCard';
 import { Library as ILibrary, Media } from '../types';
 import { libraryService, api } from '../services';
@@ -42,6 +42,7 @@ export const Library: React.FC = () => {
             case 'movies': return <Film size={32} className="text-cyan-400" />;
             case 'tv_shows': return <Tv size={32} className="text-cyan-400" />;
             case 'music_videos': return <Music size={32} className="text-cyan-400" />;
+            case 'books': return <BookOpen size={32} className="text-cyan-400" />;
             default: return <FileQuestion size={32} className="text-cyan-400" />;
         }
     };

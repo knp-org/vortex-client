@@ -4,8 +4,10 @@ import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { Select } from '../common/Select';
-import { DirectoryPicker } from '../common/DirectoryPicker';
-import { Film, Tv, Music, FileQuestion } from 'lucide-react';
+import { MultiDirectoryPicker } from '../common/MultiDirectoryPicker';
+import { libraryService } from '../../services';
+import { Film, Tv, Music, FileQuestion, BookOpen } from 'lucide-react';
+import { READING_MODE_OPTIONS } from '../../constants/reading';
 
 interface AddLibraryModalProps {
     isOpen: boolean;
@@ -17,14 +19,16 @@ const LIBRARY_TYPES = [
     { id: 'movies', label: 'Movies', icon: Film },
     { id: 'tv_shows', label: 'TV Shows', icon: Tv },
     { id: 'music_videos', label: 'Music', icon: Music },
+    { id: 'books', label: 'Books', icon: BookOpen },
     { id: 'other', label: 'Other', icon: FileQuestion },
 ];
 
 export const AddLibraryModal: React.FC<AddLibraryModalProps> = ({ isOpen, onClose, onSuccess }) => {
     // Platform check removed as it's currently unused here
     const [name, setName] = useState('');
-    const [path, setPath] = useState('');
+    const [paths, setPaths] = useState<string[]>([]);
     const [type, setType] = useState('movies');
+    const [readingMode, setReadingMode] = useState('vertical');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -35,30 +39,26 @@ export const AddLibraryModal: React.FC<AddLibraryModalProps> = ({ isOpen, onClos
         setIsLoading(true);
         setError(null);
 
-        try {
-            const res = await fetch('/api/v1/libraries', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name,
-                    path,
-                    library_type: type
-                })
-            });
+        if (paths.length === 0) {
+            setError("Please add at least one folder.");
+            setIsLoading(false);
+            return;
+        }
 
-            if (res.ok) {
-                onSuccess();
-                onClose();
-                setName('');
-                setPath('');
-            } else {
-                const text = await res.text();
-                setError(text || "Failed to create library. Please check the logs.");
-                console.error("Failed to create library:", text);
-            }
+        try {
+            await libraryService.create({
+                name,
+                paths,
+                library_type: type,
+                default_reading_mode: type === 'books' ? readingMode : null,
+            });
+            onSuccess();
+            onClose();
+            setName('');
+            setPaths([]);
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unknown error occurred";
-            setError(`Network Error: ${message}`);
+            setError(message || "Failed to create library. Please check the logs.");
             console.error("Error creating library:", error);
         } finally {
             setIsLoading(false);
@@ -93,9 +93,18 @@ export const AddLibraryModal: React.FC<AddLibraryModalProps> = ({ isOpen, onClos
                             options={LIBRARY_TYPES}
                         />
 
-                        <DirectoryPicker
-                            value={path}
-                            onChange={setPath}
+                        {type === 'books' && (
+                            <Select
+                                label="Default Reading Mode"
+                                value={readingMode}
+                                onChange={setReadingMode}
+                                options={READING_MODE_OPTIONS.map(o => ({ id: o.id, label: o.label }))}
+                            />
+                        )}
+
+                        <MultiDirectoryPicker
+                            values={paths}
+                            onChange={setPaths}
                         />
 
                         <div className="flex justify-end space-x-3 pt-4">

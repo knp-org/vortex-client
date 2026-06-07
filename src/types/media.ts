@@ -21,6 +21,9 @@ export interface Media {
     episode_number?: number;
     season_count?: number;
     media_info?: string; // JSON string from backend
+    // Books
+    page_count?: number;
+    reading_mode?: string;
 }
 
 export interface MediaInfo {
@@ -62,7 +65,7 @@ export interface AudioStream {
     forced: boolean;
 }
 
-export type MediaType = 'movie' | 'episode' | 'series';
+export type MediaType = 'movie' | 'episode' | 'series' | 'book';
 
 export interface CastMember {
     name: string;

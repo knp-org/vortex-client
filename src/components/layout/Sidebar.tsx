@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Film, Tv, Music, Settings, FileQuestion, Shield, Sliders, User } from 'lucide-react';
+import { api } from '../../services';
 
 interface LibraryData {
     id: number;
     name: string;
-    path: string;
+    paths: string[];
     library_type: string;
 }
 
@@ -19,11 +20,8 @@ export const Sidebar: React.FC = () => {
     useEffect(() => {
         const fetchLibraries = async () => {
             try {
-                const res = await fetch('/api/v1/libraries');
-                if (res.ok) {
-                    const data = await res.json();
-                    setLibraries(data);
-                }
+                const data = await api.get<LibraryData[]>('/libraries');
+                setLibraries(data);
             } catch (error) {
                 console.error("Failed to fetch libraries", error);
             }

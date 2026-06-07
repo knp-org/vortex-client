@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Lock, Cpu, Server } from 'lucide-react';
+import { Cpu, Server, Eye, EyeOff } from 'lucide-react';
 import { usePlatform } from '../hooks/usePlatform';
 import { api, ApiError } from '../services';
 import { Logo } from '../components/common/Logo';
@@ -11,6 +11,7 @@ export const Login: React.FC = () => {
     const [isRegistering, setIsRegistering] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [serverUrl, setServerUrl] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -60,20 +61,20 @@ export const Login: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-900 relative overflow-hidden font-['Outfit']">
+        <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f] relative overflow-hidden font-['Outfit']">
             {/* Background Effects */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/20 via-gray-900 to-gray-900" />
-            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 via-[#0a0a0f] to-[#0a0a0f]" />
+            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
 
             <div className="relative z-10 w-full max-w-md p-8 bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl animate-fade-in">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 mb-4 shadow-lg shadow-cyan-500/10">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 mb-4 shadow-lg shadow-white/5">
                         <Logo size={40} />
                     </div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Vortex Secure</h1>
-                    <div className="flex items-center justify-center gap-2 text-cyan-400 text-xs font-semibold tracking-wider uppercase">
+                    <h1 className="text-3xl font-bold text-white mb-2">Vortex</h1>
+                    <div className="flex items-center justify-center gap-2 text-gray-400 text-xs font-semibold tracking-wider uppercase">
                         <Cpu size={14} />
-                        <span>Quantum Safe Encryption</span>
+                        <span>Secure Streaming</span>
                     </div>
                 </div>
 
@@ -85,7 +86,7 @@ export const Login: React.FC = () => {
                                 type="url"
                                 value={serverUrl}
                                 onChange={handleServerUrlChange}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all font-mono text-sm"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all font-mono text-sm"
                                 placeholder="http://192.168.1.50:3000"
                             />
                             <Server size={18} className="absolute right-4 top-3.5 text-gray-500" />
@@ -101,7 +102,7 @@ export const Login: React.FC = () => {
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all"
                             placeholder="Enter username"
                             required
                         />
@@ -111,14 +112,21 @@ export const Login: React.FC = () => {
                         <label className="block text-sm font-medium text-gray-400 mb-2">Password</label>
                         <div className="relative">
                             <input
-                                type="password"
+                                type={showPassword ? 'text' : 'password'}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all"
                                 placeholder="••••••••"
                                 required
                             />
-                            <Lock size={18} className="absolute right-4 top-3.5 text-gray-500" />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-3.5 text-gray-500 hover:text-white transition-colors focus:outline-none cursor-pointer"
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
                         </div>
                     </div>
 
@@ -131,7 +139,7 @@ export const Login: React.FC = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-cyan-500/20 transform transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-white hover:bg-gray-100 text-black font-bold py-3.5 rounded-xl shadow-lg shadow-white/10 transform transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? 'Processing...' : (isRegistering ? 'Create Account' : 'Sign In')}
                     </button>

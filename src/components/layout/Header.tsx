@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { WindowControls } from '../common/WindowControls';
-import { usePlatform } from '../../hooks/usePlatform';
+import { Logo } from '../common/Logo';
 import { useAuth } from '../../context/AuthContext';
 import { Search, Film, Tv, X, LogOut, Settings } from 'lucide-react';
+import { resolveImageUrl, api } from '../../services';
 
 interface SearchResult {
     id: number;
@@ -15,10 +15,7 @@ interface SearchResult {
     year: number | null;
 }
 
-import { Logo } from '../common/Logo';
-
 export const Header: React.FC = () => {
-    const { isTauri } = usePlatform();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
 
@@ -41,11 +38,8 @@ export const Header: React.FC = () => {
         const timer = setTimeout(async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(`/api/v1/library/search?query=${encodeURIComponent(searchQuery)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setSearchResults(data.slice(0, 8)); // Limit to 8 results
-                }
+                const data = await api.get<SearchResult[]>(`/library/search?query=${encodeURIComponent(searchQuery)}`);
+                setSearchResults(data.slice(0, 8)); // Limit to 8 results
             } catch (error) {
                 console.error('Search failed:', error);
             } finally {
@@ -79,9 +73,9 @@ export const Header: React.FC = () => {
     return (
         <header className="h-16 flex-shrink-0 px-4 pt-4 flex items-center justify-between z-50">
             {/* Left: Logo */}
-            <div className="flex items-center space-x-2 cursor-pointer group" onClick={() => navigate('/')}>
+            <div className="flex items-center space-x-2.5 cursor-pointer group" onClick={() => navigate('/')}>
                 <Logo size={28} className="group-hover:scale-105 transition-transform duration-300" />
-                <span className="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500">
+                <span className="text-xl font-semibold tracking-tight text-white">
                     Vortex
                 </span>
             </div>
@@ -92,7 +86,7 @@ export const Header: React.FC = () => {
                 className="absolute left-1/2 -translate-x-1/2 w-full max-w-[320px]"
             >
                 <div className="relative">
-                    <div className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-gray-400 rounded-full px-4 py-2 transition-all border border-white/10 focus-within:border-cyan-500/50 focus-within:bg-white/10">
+                    <div className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-gray-400 rounded-full px-4 py-2 transition-all border border-white/10 focus-within:border-white/25 focus-within:bg-white/10">
                         <Search size={18} className="text-gray-400 flex-shrink-0" />
                         <input
                             ref={inputRef}
@@ -118,7 +112,7 @@ export const Header: React.FC = () => {
                         <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 max-h-[400px] overflow-y-auto">
                             {isLoading ? (
                                 <div className="p-4 text-center text-gray-500 text-sm">
-                                    <div className="w-5 h-5 border-2 border-cyan-500 rounded-full animate-spin border-t-transparent mx-auto" />
+                                    <div className="w-5 h-5 border-2 border-white/50 rounded-full animate-spin border-t-transparent mx-auto" />
                                 </div>
                             ) : searchResults.length > 0 ? (
                                 searchResults.map((result) => (
@@ -130,7 +124,7 @@ export const Header: React.FC = () => {
                                         {/* Poster */}
                                         <div className="w-10 h-14 rounded bg-gray-800 overflow-hidden flex-shrink-0">
                                             {result.poster_url ? (
-                                                <img src={result.poster_url} alt="" className="w-full h-full object-cover" />
+                                                <img src={resolveImageUrl(result.poster_url)} alt="" className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-600">
                                                     {result.media_type === 'series' ? <Tv size={16} /> : <Film size={16} />}
@@ -201,12 +195,6 @@ export const Header: React.FC = () => {
                     )}
                 </div>
 
-                {/* Window Controls (Tauri only) */}
-                {isTauri && (
-                    <div className="pl-4 border-l border-white/10">
-                        <WindowControls />
-                    </div>
-                )}
             </div>
         </header>
     );

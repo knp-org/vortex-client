@@ -1,4 +1,5 @@
 import { useEffect, useRef, RefObject } from 'react';
+import { api, resolveUrl, withAuthToken } from '../services';
 
 interface UseProgressOptions {
     mediaId: string | undefined;
@@ -25,11 +26,8 @@ export function useProgress({
                 const total = Math.floor(videoRef.current.duration) || 0;
 
                 if (position > 0 && total > 0) {
-                    fetch(`/api/v1/media/${mediaId}/progress`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ position, total_duration: total }),
-                    }).catch(console.error);
+                    api.post(`/media/${mediaId}/progress`, { position, total_duration: total })
+                        .catch(console.error);
                 }
             }
         }, saveInterval);
@@ -45,10 +43,12 @@ export function useProgress({
                 const total = Math.floor(videoRef.current.duration) || 0;
 
                 if (position > 0 && total > 0) {
-                    navigator.sendBeacon(
-                        `/api/v1/media/${mediaId}/progress`,
-                        JSON.stringify({ position, total_duration: total })
+                    // sendBeacon can't set an Authorization header, so pass the token in the URL.
+                    const data = new Blob(
+                        [JSON.stringify({ position, total_duration: total })],
+                        { type: 'application/json' }
                     );
+                    navigator.sendBeacon(withAuthToken(resolveUrl(`/api/v1/media/${mediaId}/progress`)), data);
                 }
             }
         };

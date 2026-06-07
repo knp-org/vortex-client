@@ -89,3 +89,43 @@ export async function del<T>(endpoint: string): Promise<T> {
 
 // Re-export for convenience
 export const api = { get, post, put, del };
+
+/**
+ * Resolves a relative URL path (e.g. /api/v1/images/foo.jpg) to an absolute URL
+ * when running inside Tauri. In the browser, relative paths are returned as-is
+ * since the browser resolves them against the current page origin.
+ */
+export const resolveUrl = (url?: string | null): string => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+        return url;
+    }
+    const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+    if (isTauri) {
+        const savedUrl = localStorage.getItem('server_url') || 'http://localhost:3000';
+        const cleanServerUrl = savedUrl.replace(/\/$/, '');
+        const formattedPath = url.startsWith('/') ? url : `/${url}`;
+        return `${cleanServerUrl}${formattedPath}`;
+    }
+    return url;
+};
+
+// Alias for backward compatibility
+export const resolveImageUrl = resolveUrl;
+
+/**
+ * Appends the auth token as a `?token=` query param. Required for media that
+ * loads through elements which cannot send an Authorization header — e.g.
+ * `<video src>` direct playback — since in the Tauri app the auth cookie is not
+ * sent cross-origin to the server. The server's auth middleware accepts this
+ * query param as a fallback.
+ */
+export const withAuthToken = (url: string): string => {
+    if (!url) return url;
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (!token) return url;
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}token=${encodeURIComponent(token)}`;
+};
+
+

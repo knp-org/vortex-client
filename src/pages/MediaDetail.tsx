@@ -4,8 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '../layouts/MainLayout';
 import { Button } from '../components/common/Button';
 import { IdentifyModal } from '../components/features/IdentifyModal';
-import { ArrowLeft, Play, ChevronDown, Search, PlusCircle, Heart, MoreVertical, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Play, BookOpen, ChevronDown, Search, PlusCircle, Heart, MoreVertical, RefreshCw } from 'lucide-react';
 import { Media, SeriesDetail, CastMember, Episode } from '../types';
+import { resolveImageUrl, api } from '../services';
 
 export const MediaDetail: React.FC = () => {
     const { id, name } = useParams<{ id?: string; name?: string }>();
@@ -15,6 +16,7 @@ export const MediaDetail: React.FC = () => {
 
     const [media, setMedia] = useState<Media | null>(null);
     const [series, setSeries] = useState<SeriesDetail | null>(null);
+    const [bookInfo, setBookInfo] = useState<{ page_count?: number | null } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     // Series specific state
@@ -51,31 +53,28 @@ export const MediaDetail: React.FC = () => {
             try {
                 if (isSeries && name) {
                     const encodedName = encodeURIComponent(name);
-                    const url = `/api/v1/series/${encodedName}/detail`;
-                    console.log("Fetching Series URL:", url);
-
-                    const res = await fetch(url);
-                    console.log("Series Fetch Status:", res.status);
-
-                    if (res.ok) {
-                        const data: SeriesDetail = await res.json();
-                        console.log("Series Data:", data);
-                        setSeries(data);
-                        // Default to first season found if not already set
-                        if (data.seasons.length > 0) {
-                            // Actually better to just default to season 1 or first available
-                            if (!selectedSeason) setSelectedSeason(data.seasons[0].season_number);
-                        }
-                    } else {
-                        throw new Error(`Failed to fetch series: ${res.status}`);
+                    const data = await api.get<SeriesDetail>(`/series/${encodedName}/detail`);
+                    console.log("Series Data:", data);
+                    setSeries(data);
+                    // Default to first season found if not already set
+                    if (data.seasons.length > 0) {
+                        // Actually better to just default to season 1 or first available
+                        if (!selectedSeason) setSelectedSeason(data.seasons[0].season_number);
                     }
                 } else if (id) {
-                    const res = await fetch(`/api/v1/media/${id}`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        setMedia(data);
+                    const data = await api.get<Media>(`/media/${id}`);
+                    setMedia(data);
+                    // Book-specific fields (page count) aren't on the generic media
+                    // record; pull them from the dedicated book endpoint.
+                    if (data.media_type === 'book') {
+                        try {
+                            setBookInfo(await api.get(`/books/${id}/info`));
+                        } catch (e) {
+                            console.error("Failed to fetch book info", e);
+                            setBookInfo(null);
+                        }
                     } else {
-                        throw new Error(`Failed to fetch media: ${res.status}`);
+                        setBookInfo(null);
                     }
                 } else {
                     setError("Invalid URL parameters");
@@ -98,12 +97,9 @@ export const MediaDetail: React.FC = () => {
             console.log(`Fetching episodes for ${name} Season ${selectedSeason}`);
             try {
                 const encodedName = encodeURIComponent(name);
-                const res = await fetch(`/api/v1/series/${encodedName}/season/${selectedSeason}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    console.log("Episodes Data:", data);
-                    setEpisodes(data);
-                }
+                const data = await api.get<Episode[]>(`/series/${encodedName}/season/${selectedSeason}`);
+                console.log("Episodes Data:", data);
+                setEpisodes(data);
             } catch (error) {
                 console.error("Failed to fetch episodes", error);
             } finally {
@@ -117,45 +113,27 @@ export const MediaDetail: React.FC = () => {
         // Re-fetch current data
         if (isSeries && name) {
             const encodedName = encodeURIComponent(name);
-            const res = await fetch(`/api/v1/series/${encodedName}/detail`);
-            if (res.ok) setSeries(await res.json());
+            setSeries(await api.get<SeriesDetail>(`/series/${encodedName}/detail`));
         } else if (id) {
-            const res = await fetch(`/api/v1/media/${id}`);
-            if (res.ok) setMedia(await res.json());
+            setMedia(await api.get<Media>(`/media/${id}`));
         }
     };
 
     const handleIdentify = async (providerId: string, mediaType: 'movie' | 'series') => {
         console.log("MediaDetail: handleIdentify called. Params:", { providerId, mediaType, isSeries, name, id });
         try {
-            let res;
+            const body = { provider_id: providerId, media_type: mediaType };
             if (isSeries && name) {
                 const encodedName = encodeURIComponent(name);
-                const url = `/api/v1/series/${encodedName}/identify`;
-                console.log("MediaDetail: Calling Series Identify API:", url);
-
-                res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ provider_id: providerId, media_type: mediaType })
-                });
+                await api.post(`/series/${encodedName}/identify`, body);
             } else if (id) {
-                const url = `/api/v1/media/${id}/identify`;
-                console.log("MediaDetail: Calling Media Identify API:", url);
-
-                res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ provider_id: providerId, media_type: mediaType })
-                });
-            }
-
-            if (res && res.ok) {
-                await refreshData();
-                setIsIdentifyOpen(false);
+                await api.post(`/media/${id}/identify`, body);
             } else {
-                console.error("Identify failed");
+                return;
             }
+
+            await refreshData();
+            setIsIdentifyOpen(false);
         } catch (error) {
             console.error("Identify error", error);
         }
@@ -165,25 +143,28 @@ export const MediaDetail: React.FC = () => {
         setIsMenuOpen(false);
         setIsLoading(true);
         try {
-            let res;
             if (isSeries && name) {
                 const encodedName = encodeURIComponent(name);
-                res = await fetch(`/api/v1/series/${encodedName}/refresh`, { method: 'POST' });
+                await api.post(`/series/${encodedName}/refresh`);
             } else if (id) {
-                res = await fetch(`/api/v1/media/${id}/refresh`, { method: 'POST' });
+                await api.post(`/media/${id}/refresh`);
             }
 
-            if (res && res.ok) {
-                // Reload to force image cache clear and new data fetch
-                window.location.reload();
-            }
+            // Reload to force image cache clear and new data fetch
+            window.location.reload();
         } catch (error) {
             console.error("Refresh failed", error);
             setIsLoading(false);
         }
     };
 
+    const isBook = media?.media_type === 'book';
+
     const handlePlay = (mediaId?: number) => {
+        if (isBook && (mediaId || media?.id)) {
+            navigate(`/reader/${mediaId ?? media!.id}`);
+            return;
+        }
         if (mediaId) {
             navigate(`/player/${mediaId}`);
         } else if (media?.id) {
@@ -244,6 +225,12 @@ export const MediaDetail: React.FC = () => {
     const rawDirector = isSeries ? series?.director : media?.director;
     const director = parseGenres(rawDirector); // Reuse parseGenres logic as it handles JSON/Strings/Arrays similarly
 
+    // Book-specific display values.
+    const bookFormat = isBook
+        ? media?.file_path?.split('.').pop()?.toUpperCase() || undefined
+        : undefined;
+    const pageCount = bookInfo?.page_count ?? media?.page_count;
+
 
 
     return (
@@ -280,16 +267,18 @@ export const MediaDetail: React.FC = () => {
                                         <RefreshCw size={16} />
                                         <span>Refresh Metadata</span>
                                     </button>
-                                    <button
-                                        className="w-full text-left px-4 py-3 hover:bg-white/5 transition-colors text-sm text-gray-300 flex items-center gap-2"
-                                        onClick={() => {
-                                            setIsIdentifyOpen(true);
-                                            setIsMenuOpen(false);
-                                        }}
-                                    >
-                                        <Search size={16} />
-                                        <span>Identify</span>
-                                    </button>
+                                    {!isBook && (
+                                        <button
+                                            className="w-full text-left px-4 py-3 hover:bg-white/5 transition-colors text-sm text-gray-300 flex items-center gap-2"
+                                            onClick={() => {
+                                                setIsIdentifyOpen(true);
+                                                setIsMenuOpen(false);
+                                            }}
+                                        >
+                                            <Search size={16} />
+                                            <span>Identify</span>
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -298,7 +287,7 @@ export const MediaDetail: React.FC = () => {
                     <div className="absolute inset-0 rounded-t-[3rem] overflow-hidden">
                         {backdropUrl ? (
                             <img
-                                src={backdropUrl}
+                                src={resolveImageUrl(backdropUrl)}
                                 alt="Backdrop"
                                 className="w-full h-full object-cover"
                             />
@@ -316,7 +305,7 @@ export const MediaDetail: React.FC = () => {
                         {/* Poster - Distinct and overlapping */}
                         <div className="w-48 md:w-72 shrink-0 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-gray-800/50 backdrop-blur-sm">
                             {posterUrl ? (
-                                <img src={posterUrl} alt={title} className="w-full h-auto object-cover aspect-[2/3]" />
+                                <img src={resolveImageUrl(posterUrl)} alt={title} className="w-full h-auto object-cover aspect-[2/3]" />
                             ) : (
                                 <div className="w-full aspect-[2/3] bg-white/5 flex items-center justify-center text-white/20">No Poster</div>
                             )}
@@ -332,19 +321,36 @@ export const MediaDetail: React.FC = () => {
                             {/* Metadata Row */}
                             <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-gray-400 mb-6">
                                 {year && <span>{year}</span>}
-                                {media?.runtime && (
+                                {!isBook && media?.runtime && (
                                     <span>{Math.floor(media.runtime / 60)}h {media.runtime % 60}m</span>
                                 )}
-                                <span className="border border-white/20 px-1 rounded text-xs uppercase">HD</span>
+                                {isBook ? (
+                                    <>
+                                        {bookFormat && (
+                                            <span className="border border-white/20 px-1 rounded text-xs uppercase">{bookFormat}</span>
+                                        )}
+                                        {pageCount ? <span>{pageCount} pages</span> : null}
+                                    </>
+                                ) : (
+                                    <span className="border border-white/20 px-1 rounded text-xs uppercase">HD</span>
+                                )}
                             </div>
 
                             {/* Actions Row */}
                             <div className="flex flex-wrap items-center gap-3 mb-8">
                                 <button
-                                    className="h-10 w-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform"
+                                    className={`${isBook ? 'h-10 px-5 gap-2' : 'h-10 w-10'} rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform font-medium`}
                                     onClick={() => handlePlay()}
+                                    title={isBook ? 'Read' : 'Play'}
                                 >
-                                    <Play size={18} className="fill-current ml-0.5" />
+                                    {isBook ? (
+                                        <>
+                                            <BookOpen size={18} />
+                                            <span>Read</span>
+                                        </>
+                                    ) : (
+                                        <Play size={18} className="fill-current ml-0.5" />
+                                    )}
                                 </button>
 
                                 {isSeries && series && (
@@ -365,14 +371,31 @@ export const MediaDetail: React.FC = () => {
 
                             {/* Details Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-[120px_1fr] gap-y-2 text-sm mb-6">
-                                <div className="text-gray-500">Genres</div>
-                                <div className="text-white">
-                                    {genres.join(', ') || 'N/A'}
-                                </div>
-                                <div className="text-gray-500">Director</div>
-                                <div className="text-white">{director.join(', ') || 'Unknown'}</div>
-                                <div className="text-gray-500">Audio</div>
-                                <div className="text-white">English - AAC - Stereo</div>
+                                {isBook ? (
+                                    <>
+                                        <div className="text-gray-500">Format</div>
+                                        <div className="text-white">{bookFormat || 'Unknown'}</div>
+                                        <div className="text-gray-500">Pages</div>
+                                        <div className="text-white">{pageCount ?? 'N/A'}</div>
+                                        {genres.length > 0 && (
+                                            <>
+                                                <div className="text-gray-500">Genres</div>
+                                                <div className="text-white">{genres.join(', ')}</div>
+                                            </>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="text-gray-500">Genres</div>
+                                        <div className="text-white">
+                                            {genres.join(', ') || 'N/A'}
+                                        </div>
+                                        <div className="text-gray-500">Director</div>
+                                        <div className="text-white">{director.join(', ') || 'Unknown'}</div>
+                                        <div className="text-gray-500">Audio</div>
+                                        <div className="text-white">English - AAC - Stereo</div>
+                                    </>
+                                )}
                             </div>
 
                             {/* Plot */}
@@ -397,7 +420,7 @@ export const MediaDetail: React.FC = () => {
                                         <div className="w-24 h-24 rounded-full overflow-hidden mb-3 ring-2 ring-white/5 group-hover:ring-cyan-400/50 transition-all shadow-lg bg-gray-800 relative">
                                             {actor.profile_url ? (
                                                 <img
-                                                    src={actor.profile_url}
+                                                    src={resolveImageUrl(actor.profile_url)}
                                                     alt={actor.name}
                                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                                     loading="lazy"
@@ -472,7 +495,7 @@ export const MediaDetail: React.FC = () => {
                                             >
                                                 <div className="relative aspect-video rounded-lg overflow-hidden mb-3">
                                                     {episode.poster_url ? (
-                                                        <img src={episode.poster_url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                                        <img src={resolveImageUrl(episode.poster_url)} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                                     ) : (
                                                         <div className="w-full h-full bg-gray-800 flex items-center justify-center text-gray-600">No Image</div>
                                                     )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Film, Tv } from 'lucide-react';
 import { Button } from '../common/Button';
+import { resolveImageUrl, api } from '../../services';
 
 interface IdentifyModalProps {
     isOpen: boolean;
@@ -48,11 +49,8 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
         setIsLoading(true);
         try {
             const typeParam = isSeries ? '&media_type=series' : '&media_type=movie';
-            const res = await fetch(`/api/v1/metadata/search?query=${encodeURIComponent(searchQuery)}${typeParam}`);
-            if (res.ok) {
-                const data = await res.json();
-                setResults(data);
-            }
+            const data = await api.get<SearchResult[]>(`/metadata/search?query=${encodeURIComponent(searchQuery)}${typeParam}`);
+            setResults(data);
         } catch (error) {
             console.error("Search failed", error);
         } finally {
@@ -135,7 +133,7 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
                         >
                             <div className="w-12 h-16 bg-gray-800 rounded-md overflow-hidden flex-shrink-0">
                                 {result.poster_url ? (
-                                    <img src={result.poster_url} alt={result.title} className="w-full h-full object-cover" />
+                                    <img src={resolveImageUrl(result.poster_url)} alt={result.title} className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-white/20">
                                         {result.media_type === 'series' ? <Tv size={16} /> : <Film size={16} />}

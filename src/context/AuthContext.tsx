@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../services';
 
 interface User {
     id: number;
@@ -26,15 +27,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const response = await fetch('/api/v1/auth/me');
-                if (response.ok) {
-                    const userData = await response.json();
-                    setUser(userData);
-                } else {
-                    setUser(null);
-                }
+                const userData = await api.get<User>('/auth/me');
+                setUser(userData);
             } catch (error) {
-                console.error("Auth check failed:", error);
+                // 401 / network error => treat as logged out
                 setUser(null);
             } finally {
                 setIsLoading(false);
@@ -51,11 +47,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = async () => {
         try {
-            await fetch('/api/v1/auth/logout', { method: 'POST' });
-            setUser(null);
-            navigate('/login');
+            await api.post('/auth/logout');
         } catch (error) {
             console.error("Logout failed:", error);
+        } finally {
+            // The Tauri app authenticates via the Bearer token, so clearing it
+            // is what actually logs the user out.
+            localStorage.removeItem('auth_token');
+            setUser(null);
+            navigate('/login');
         }
     };
 

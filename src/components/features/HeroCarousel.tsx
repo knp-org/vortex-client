@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../common/Button';
 import { useNavigate } from 'react-router-dom';
+import { resolveImageUrl, api } from '../../services';
 
 interface HeroItem {
     id: number;
@@ -21,11 +22,8 @@ export const HeroCarousel: React.FC = () => {
     useEffect(() => {
         const fetchRecent = async () => {
             try {
-                const res = await fetch('/api/v1/recent');
-                if (res.ok) {
-                    const data = await res.json();
-                    setItems(data.slice(0, 5)); // Top 5
-                }
+                const data = await api.get<HeroItem[]>('/recent');
+                setItems(data.slice(0, 5)); // Top 5
             } catch (error) {
                 console.error("Failed to fetch carousel items", error);
             }
@@ -65,7 +63,7 @@ export const HeroCarousel: React.FC = () => {
                     >
                         {data.backdrop_url ? (
                             <img
-                                src={data.backdrop_url}
+                                src={resolveImageUrl(data.backdrop_url)}
                                 alt={data.title}
                                 className="w-full h-full object-cover"
                                 loading={index === 0 ? 'eager' : 'lazy'}

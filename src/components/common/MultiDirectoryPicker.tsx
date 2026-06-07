@@ -1,36 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './Button';
 import { Card } from './Card';
+import { api } from '../../services';
+import { Folder, Plus, X } from 'lucide-react';
 
 interface DirectoryEntry {
     name: string;
     path: string;
 }
 
-interface DirectoryPickerProps {
-    value: string;
-    onChange: (path: string) => void;
+interface MultiDirectoryPickerProps {
+    values: string[];
+    onChange: (paths: string[]) => void;
 }
 
-export const DirectoryPicker: React.FC<DirectoryPickerProps> = ({ value, onChange }) => {
+export const MultiDirectoryPicker: React.FC<MultiDirectoryPickerProps> = ({ values, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [currentPath, setCurrentPath] = useState(value || (navigator.userAgent.includes("Windows") ? 'C:\\' : '/'));
+    const defaultRoot = navigator.userAgent.includes("Windows") ? 'C:\\' : '/';
+    const [currentPath, setCurrentPath] = useState(defaultRoot);
     const [entries, setEntries] = useState<DirectoryEntry[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const fetchDirectories = async (path: string) => {
         setIsLoading(true);
         try {
-            const res = await fetch('/api/v1/directories', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: path })
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setEntries(data);
-                setCurrentPath(path);
-            }
+            const data = await api.post<DirectoryEntry[]>('/directories', { path });
+            setEntries(data);
+            setCurrentPath(path);
         } catch (error) {
             console.error("Failed to fetch directories", error);
         } finally {
@@ -49,32 +45,58 @@ export const DirectoryPicker: React.FC<DirectoryPickerProps> = ({ value, onChang
     };
 
     const handleUpClick = () => {
-        // Simple parent resolution
         const separator = currentPath.includes('\\') ? '\\' : '/';
         const parts = currentPath.split(separator).filter(p => p);
         parts.pop();
         const parent = parts.length === 0 ? separator : (separator === '/' ? '/' : '') + parts.join(separator);
-
-        // Handle Windows root edge case better if needed, but basic string manip works for many cases
-        // ideally use a more robust path joiner but for now:
         fetchDirectories(parent || separator);
+    };
+
+    const addPath = (path: string) => {
+        if (path && !values.includes(path)) {
+            onChange([...values, path]);
+        }
+        setIsOpen(false);
+    };
+
+    const removePath = (path: string) => {
+        onChange(values.filter(p => p !== path));
     };
 
     return (
         <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300 ml-1">Library Path</label>
-            <div className="flex space-x-2">
-                <input
-                    type="text"
-                    value={value}
-                    readOnly
-                    className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-300 cursor-not-allowed focus:outline-none"
-                    placeholder="Select a folder..."
-                />
-                <Button type="button" variant="secondary" onClick={() => setIsOpen(true)}>
-                    Browse
-                </Button>
-            </div>
+            <label className="text-sm font-medium text-gray-300 ml-1">Library Folders</label>
+
+            {values.length > 0 && (
+                <div className="space-y-2">
+                    {values.map((path) => (
+                        <div
+                            key={path}
+                            className="flex items-center justify-between px-3 py-2 bg-white/5 border border-white/10 rounded-xl"
+                        >
+                            <div className="flex items-center space-x-2 min-w-0">
+                                <Folder size={16} className="text-cyan-400 shrink-0" />
+                                <span className="text-sm text-gray-300 font-mono truncate">{path}</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => removePath(path)}
+                                className="p-1 text-gray-400 hover:text-red-400 rounded-lg hover:bg-white/10 transition-colors shrink-0"
+                                aria-label="Remove folder"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <Button type="button" variant="secondary" onClick={() => setIsOpen(true)} className="w-full">
+                <span className="flex items-center justify-center space-x-2">
+                    <Plus size={16} />
+                    <span>Add Folder</span>
+                </span>
+            </Button>
 
             {isOpen && (
                 <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -120,11 +142,8 @@ export const DirectoryPicker: React.FC<DirectoryPickerProps> = ({ value, onChang
                             <Button variant="secondary" onClick={() => setIsOpen(false)} className="rounded-2xl">
                                 Cancel
                             </Button>
-                            <Button onClick={() => {
-                                onChange(currentPath);
-                                setIsOpen(false);
-                            }} className="rounded-2xl">
-                                Select Current Folder
+                            <Button onClick={() => addPath(currentPath)} className="rounded-2xl">
+                                Add This Folder
                             </Button>
                         </div>
                     </Card>

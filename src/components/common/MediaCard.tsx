@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Play, Tv, Film, MoreVertical, RefreshCw, FileSearch, Info, Edit } from 'lucide-react';
 import { Media } from '../../types/media';
-import { api } from '../../services';
+import { api, resolveImageUrl } from '../../services';
 import { IdentifyModal } from '../features/IdentifyModal';
 import { MediaInfoModal } from '../features/MediaInfoModal';
 
@@ -85,7 +85,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
                 <div className={`${aspectClass} w-full relative`}>
                     {posterUrl ? (
                         <img
-                            src={posterUrl}
+                            src={resolveImageUrl(posterUrl)}
                             alt={title}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             loading="lazy"

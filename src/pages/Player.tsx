@@ -1,10 +1,17 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, Pause, Maximize, Minimize, Volume2, VolumeX, SkipBack, SkipForward, Subtitles, Check, AudioLines } from 'lucide-react';
 import Hls from 'hls.js';
 import { SubtitleTrack, AudioTrack, StreamInfo, DeviceProfile, detectCapabilities } from '../types';
-import { api, getApiBase } from '../services';
-import { NativePlayerButton } from '../components/NativePlayerButton';
+import { api, getApiBase, resolveUrl, withAuthToken } from '../services';
+import { invoke } from '@tauri-apps/api/core';
+import {
+    PlayerControls,
+    useMediaTitle,
+    useAutoHideControls,
+    usePlayerKeyboard,
+    openMpvOverlayWindow,
+    closeMpvOverlayWindow,
+} from '../player';
 
 export const Player: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -16,29 +23,50 @@ export const Player: React.FC = () => {
     const hlsBaseUrlRef = useRef<string>('');  // Base HLS URL for seeking
     const lastSeekTimeRef = useRef<number>(0);  // Track last seek position
 
+    // Embedded mpv (Linux desktop) state. mpv renders in this (main) window;
+    // a separate transparent overlay window hosts the controls.
+    const mpvActiveRef = useRef(false);
+    const mpvCleanupRef = useRef<null | (() => void)>(null);
+    const [mpvActive, setMpvActive] = useState(false);
+
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [volume, setVolume] = useState(1);
     const [isMuted, setIsMuted] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [showControls, setShowControls] = useState(true);
     const [subtitles, setSubtitles] = useState<SubtitleTrack[]>([]);
-    const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
     const [activeSubtitleId, setActiveSubtitleId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isTranscoding, setIsTranscoding] = useState(false);
     const [streamInfo, setStreamInfo] = useState<StreamInfo | null>(null);
-    const [title, setTitle] = useState('');
+    const title = useMediaTitle(id);
     const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
-    const [showAudioMenu, setShowAudioMenu] = useState(false);
     const [activeAudioIndex, setActiveAudioIndex] = useState<number | null>(null);
     void streamInfo; // Suppress unused warning
 
-    const controlsTimeoutRef = useRef<number | null>(null);
+    const { showControls, resetControlsTimeout } = useAutoHideControls(isPlaying);
 
     // Fetch stream info and setup video source
     useEffect(() => {
+        // Tear down the embedded mpv + its overlay window and stop geometry sync.
+        const teardownMpv = () => {
+            if (mpvCleanupRef.current) { mpvCleanupRef.current(); mpvCleanupRef.current = null; }
+            if (mpvActiveRef.current) {
+                mpvActiveRef.current = false;
+                setMpvActive(false);
+                invoke('mpv_stop').catch(() => {});
+                closeMpvOverlayWindow();
+            }
+        };
+
+        const openMpvOverlay = async (mediaId: string) => {
+            mpvCleanupRef.current = await openMpvOverlayWindow(mediaId, () => {
+                teardownMpv();
+                navigate(-1);
+            });
+        };
+
         const setupPlayer = async () => {
             if (!id || !videoRef.current) return;
 
@@ -54,17 +82,6 @@ export const Player: React.FC = () => {
                     // No saved progress, start from beginning
                 }
 
-                // Fetch media details for title
-                try {
-                    const media = await api.get<{ title?: string; series_name?: string; season_number?: number; episode_number?: number }>(`/media/${id}`);
-                    if (media.series_name && media.season_number != null && media.episode_number != null) {
-                        setTitle(`${media.series_name} - S${media.season_number}E${media.episode_number}${media.title ? ` - ${media.title}` : ''}`);
-                    } else if (media.title) {
-                        setTitle(media.title);
-                    }
-                } catch {
-                    // Title is non-critical
-                }
 
                 // Get stream info
                 const profile = detectCapabilities();
@@ -76,9 +93,42 @@ export const Player: React.FC = () => {
                     setDuration(streamInfo.duration_seconds);
                 }
 
+                // Linux desktop: play everything through embedded mpv (broad codec
+                // support + performance). mpv renders in this window; a transparent
+                // overlay window hosts the controls. The web app and other OSes keep
+                // using hls.js/<video> below.
+                const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+                if (isTauri) {
+                    let os = '';
+                    try { os = await invoke<string>('get_os'); } catch { /* not tauri */ }
+                    if (os === 'linux' && id) {
+                        try {
+                            await invoke('mpv_play', {
+                                url: withAuthToken(resolveUrl(streamInfo.direct_stream_url)),
+                                startSeconds: savedPosition,
+                            });
+                            mpvActiveRef.current = true;
+                            setMpvActive(true);
+                            setIsTranscoding(false);
+                            setIsLoading(false);
+                            await openMpvOverlay(id);
+                            return; // mpv handles playback; skip <video>/HLS setup
+                        } catch (e) {
+                            console.error('Embedded mpv failed, falling back to <video>:', e);
+                            mpvActiveRef.current = false;
+                            setMpvActive(false);
+                            teardownMpv();
+                        }
+                    }
+                }
+
                 // Initialize HLS
                 let hls: Hls | null = null;
-                if (streamInfo.hls_url) {
+                const resolvedHlsUrl = streamInfo.hls_url ? resolveUrl(streamInfo.hls_url) : null;
+                // <video src> can't send an auth header, so embed the token in the URL.
+                const resolvedDirectUrl = withAuthToken(resolveUrl(streamInfo.direct_stream_url));
+
+                if (resolvedHlsUrl) {
                     setIsTranscoding(true);
 
                     if (Hls.isSupported()) {
@@ -90,14 +140,14 @@ export const Player: React.FC = () => {
                         hlsRef.current = hls;
 
                         // Store base URL for seek reloading
-                        hlsBaseUrlRef.current = streamInfo.hls_url.includes('?')
-                            ? streamInfo.hls_url
-                            : streamInfo.hls_url + '?';
+                        hlsBaseUrlRef.current = resolvedHlsUrl.includes('?')
+                            ? resolvedHlsUrl
+                            : resolvedHlsUrl + '?';
 
                         // Include start time in HLS URL for resume playback
                         const hlsUrlWithStart = savedPosition > 0
                             ? `${hlsBaseUrlRef.current}&start=${Math.floor(savedPosition)}`
-                            : streamInfo.hls_url;
+                            : resolvedHlsUrl;
 
                         lastSeekTimeRef.current = savedPosition;
                         hls.loadSource(hlsUrlWithStart);
@@ -140,9 +190,9 @@ export const Player: React.FC = () => {
                     } else if (videoRef.current?.canPlayType('application/vnd.apple.mpegurl')) {
                         // Native HLS support (Safari) - include start time
                         const hlsUrlWithStart = savedPosition > 0
-                            ? `${streamInfo.hls_url}${streamInfo.hls_url.includes('?') ? '&' : '?'}start=${Math.floor(savedPosition)}`
-                            : streamInfo.hls_url;
-                        videoRef.current.src = hlsUrlWithStart;
+                            ? `${resolvedHlsUrl}${resolvedHlsUrl.includes('?') ? '&' : '?'}start=${Math.floor(savedPosition)}`
+                            : resolvedHlsUrl;
+                        videoRef.current.src = withAuthToken(hlsUrlWithStart);
                         videoRef.current.addEventListener('loadeddata', () => {
                             videoRef.current?.play().catch(() => setIsPlaying(false));
                         }, { once: true });
@@ -151,7 +201,7 @@ export const Player: React.FC = () => {
                     // Direct Play
                     setIsTranscoding(false);
                     if (videoRef.current) {
-                        videoRef.current.src = streamInfo.direct_stream_url;
+                        videoRef.current.src = resolvedDirectUrl;
                         videoRef.current.addEventListener('loadeddata', () => {
                             // Set saved progress for direct play after video is ready
                             if (savedPosition > 0 && videoRef.current) {
@@ -176,7 +226,7 @@ export const Player: React.FC = () => {
                 console.error("Setup error", error);
                 // Fallback to direct stream if info endpoint fails
                 if (videoRef.current) {
-                    videoRef.current.src = `/api/v1/stream/${id}`;
+                    videoRef.current.src = withAuthToken(resolveUrl(`/api/v1/stream/${id}`));
                 }
             } finally {
                 setIsLoading(false);
@@ -185,12 +235,13 @@ export const Player: React.FC = () => {
 
         setupPlayer();
 
-        // Cleanup HLS on unmount
+        // Cleanup HLS / mpv on unmount
         return () => {
             if (hlsRef.current) {
                 hlsRef.current.destroy();
                 hlsRef.current = null;
             }
+            teardownMpv();
         };
     }, [id]);
 
@@ -204,11 +255,8 @@ export const Player: React.FC = () => {
                 const total = Math.floor(videoRef.current.duration) || 0;
 
                 if (position > 5 && total > 0) {
-                    fetch(`/api/v1/media/${id}/progress`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ position, total_duration: total }),
-                    }).catch(err => console.error('Failed to save progress:', err));
+                    api.post(`/media/${id}/progress`, { position, total_duration: total })
+                        .catch(err => console.error('Failed to save progress:', err));
                 }
             }
         };
@@ -236,7 +284,8 @@ export const Player: React.FC = () => {
                         [JSON.stringify({ position, total_duration: total })],
                         { type: 'application/json' }
                     );
-                    navigator.sendBeacon(`/api/v1/media/${id}/progress`, data);
+                    // sendBeacon can't set an Authorization header, so pass the token in the URL.
+                    navigator.sendBeacon(withAuthToken(resolveUrl(`/api/v1/media/${id}/progress`)), data);
                 }
             }
         };
@@ -252,33 +301,69 @@ export const Player: React.FC = () => {
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
 
-    // Auto-hide controls
-    const resetControlsTimeout = () => {
-        setShowControls(true);
-        if (controlsTimeoutRef.current) {
-            clearTimeout(controlsTimeoutRef.current);
-        }
-        if (isPlaying) {
-            controlsTimeoutRef.current = window.setTimeout(() => {
-                setShowControls(false);
-            }, 3000);
-        }
-    };
-
-    useEffect(() => {
-        resetControlsTimeout();
+    // Event handlers
+    const handlePlayPause = useCallback(() => {
+        if (!videoRef.current) return;
+        if (isPlaying) videoRef.current.pause();
+        else videoRef.current.play();
     }, [isPlaying]);
 
-    // Event handlers
-    const handlePlayPause = () => {
+    const handleSeek = useCallback((time: number) => {
+        lastSeekTimeRef.current = time;
         if (videoRef.current) {
-            if (isPlaying) {
-                videoRef.current.pause();
-            } else {
-                videoRef.current.play();
-            }
+            videoRef.current.currentTime = time;
+            setCurrentTime(time);
         }
-    };
+    }, []);
+
+    const handleVolumeChange = useCallback((vol: number) => {
+        setVolume(vol);
+        if (videoRef.current) {
+            videoRef.current.volume = vol;
+            setIsMuted(vol === 0);
+        }
+    }, []);
+
+    const toggleMute = useCallback(() => {
+        if (!videoRef.current) return;
+        videoRef.current.muted = !isMuted;
+        setIsMuted(!isMuted);
+    }, [isMuted]);
+
+    const toggleFullscreen = useCallback(async () => {
+        if (!containerRef.current) return;
+        if (isFullscreen) await document.exitFullscreen();
+        else await containerRef.current.requestFullscreen();
+    }, [isFullscreen]);
+
+    const skip = useCallback((seconds: number) => {
+        if (!videoRef.current) return;
+        videoRef.current.currentTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds));
+    }, [duration]);
+
+    const handleBack = useCallback(() => navigate(-1), [navigate]);
+
+    const keyboardActions = useMemo(
+        () => ({
+            onPlayPause: handlePlayPause,
+            onSkip: skip,
+            onVolumeChange: handleVolumeChange,
+            onToggleMute: toggleMute,
+            onToggleFullscreen: toggleFullscreen,
+            onBack: handleBack,
+            onInteraction: resetControlsTimeout,
+        }),
+        [handlePlayPause, skip, handleVolumeChange, toggleMute, toggleFullscreen, handleBack, resetControlsTimeout],
+    );
+
+    usePlayerKeyboard({
+        playing: isPlaying,
+        muted: isMuted,
+        isFullscreen,
+        duration,
+        volume,
+        actions: keyboardActions,
+    });
 
     const lastTimeUpdateRef = useRef(0);
     const handleTimeUpdate = useCallback(() => {
@@ -302,119 +387,6 @@ export const Player: React.FC = () => {
         }
     };
 
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const time = parseFloat(e.target.value);
-        lastSeekTimeRef.current = time;  // Track for stall recovery
-        if (videoRef.current) {
-            videoRef.current.currentTime = time;
-            setCurrentTime(time);
-        }
-    };
-
-    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const vol = parseFloat(e.target.value);
-        setVolume(vol);
-        if (videoRef.current) {
-            videoRef.current.volume = vol;
-            setIsMuted(vol === 0);
-        }
-    };
-
-    const toggleMute = () => {
-        if (videoRef.current) {
-            videoRef.current.muted = !isMuted;
-            setIsMuted(!isMuted);
-        }
-    };
-
-    const toggleFullscreen = async () => {
-        if (!containerRef.current) return;
-
-        if (isFullscreen) {
-            await document.exitFullscreen();
-        } else {
-            await containerRef.current.requestFullscreen();
-        }
-    };
-
-    const skip = (seconds: number) => {
-        if (videoRef.current) {
-            videoRef.current.currentTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds));
-        }
-    };
-
-    const formatTime = (time: number): string => {
-        const hours = Math.floor(time / 3600);
-        const minutes = Math.floor((time % 3600) / 60);
-        const seconds = Math.floor(time % 60);
-
-        if (hours > 0) {
-            return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    };
-
-    // Refs for keyboard handler to avoid re-registering on every state change
-    const isPlayingRef = useRef(isPlaying);
-    isPlayingRef.current = isPlaying;
-    const isMutedRef = useRef(isMuted);
-    isMutedRef.current = isMuted;
-    const isFullscreenRef = useRef(isFullscreen);
-    isFullscreenRef.current = isFullscreen;
-    const durationRef = useRef(duration);
-    durationRef.current = duration;
-
-    // Keyboard shortcuts
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            switch (e.key) {
-                case ' ':
-                case 'k':
-                    e.preventDefault();
-                    if (videoRef.current) {
-                        if (isPlayingRef.current) videoRef.current.pause();
-                        else videoRef.current.play();
-                    }
-                    break;
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    if (videoRef.current) {
-                        videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
-                    }
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    if (videoRef.current) {
-                        videoRef.current.currentTime = Math.min(durationRef.current, videoRef.current.currentTime + 10);
-                    }
-                    break;
-                case 'f':
-                    e.preventDefault();
-                    if (containerRef.current) {
-                        if (isFullscreenRef.current) document.exitFullscreen();
-                        else containerRef.current.requestFullscreen();
-                    }
-                    break;
-                case 'm':
-                    e.preventDefault();
-                    if (videoRef.current) {
-                        videoRef.current.muted = !isMutedRef.current;
-                        setIsMuted(!isMutedRef.current);
-                    }
-                    break;
-                case 'Escape':
-                    if (!isFullscreenRef.current) {
-                        navigate(-1);
-                    }
-                    break;
-            }
-            resetControlsTimeout();
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [navigate]);
-
     const selectSubtitle = async (trackId: string | null) => {
         if (!videoRef.current) return;
 
@@ -430,7 +402,6 @@ export const Player: React.FC = () => {
 
         if (!trackId || !selectedSub) {
             setActiveSubtitleId(null);
-            setShowSubtitleMenu(false);
             return;
         }
 
@@ -440,12 +411,10 @@ export const Player: React.FC = () => {
         );
 
         if (existingTrack) {
-            for (let i = 0; i < video.textTracks.length; i++) {
-                if (video.textTracks[i].label === selectedSub.label && video.textTracks[i].kind === 'subtitles') {
-                    video.textTracks[i].mode = 'showing';
-                    break;
-                }
-            }
+            // Enable the exact track we matched by id. Matching by label here
+            // would re-show the wrong cue track when two subtitles share a label
+            // (common with embedded streams, e.g. multiple "und" / "[Forced]").
+            existingTrack.track.mode = 'showing';
         } else {
             // Fetch VTT with auth, then create blob URL
             try {
@@ -477,17 +446,12 @@ export const Player: React.FC = () => {
         }
 
         setActiveSubtitleId(trackId);
-        setShowSubtitleMenu(false);
     };
 
     const selectAudioTrack = (audioIndex: number) => {
-        if (audioIndex === activeAudioIndex) {
-            setShowAudioMenu(false);
-            return;
-        }
+        if (audioIndex === activeAudioIndex) return;
 
         setActiveAudioIndex(audioIndex);
-        setShowAudioMenu(false);
 
         if (!hlsRef.current || !hlsBaseUrlRef.current) return;
 
@@ -506,6 +470,18 @@ export const Player: React.FC = () => {
             videoRef.current?.play().catch(() => {});
         });
     };
+
+    const trackSelection = useMemo(
+        () => ({
+            subtitles,
+            activeSubtitleId,
+            onSelectSubtitle: (trackId: string | null) => { void selectSubtitle(trackId); },
+            audioTracks,
+            activeAudioIndex,
+            onSelectAudio: selectAudioTrack,
+        }),
+        [subtitles, activeSubtitleId, audioTracks, activeAudioIndex],
+    );
 
     return (
         <div
@@ -530,6 +506,15 @@ export const Player: React.FC = () => {
                 crossOrigin="anonymous"
             />
 
+            {/* Embedded mpv playback (Linux): mpv renders over the window; this
+                sits behind it and shows during launch / if mpv detaches. */}
+            {mpvActive && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/70">
+                    <div className="w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                    <p className="text-sm">Playing in mpv — press <kbd className="px-1.5 py-0.5 rounded bg-white/10">q</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-white/10">Esc</kbd> to return</p>
+                </div>
+            )}
+
             {/* Loading Spinner */}
             {isLoading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 gap-4">
@@ -540,186 +525,27 @@ export const Player: React.FC = () => {
                 </div>
             )}
 
-            {/* Controls Overlay */}
-            <div
-                className={`absolute inset-0 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-            >
-                {/* Top Bar - Back button and title */}
-                <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/80 to-transparent z-10">
-                    <button
-                        type="button"
-                        className="flex items-center gap-3 text-white hover:text-cyan-400 transition-colors"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(-1);
-                        }}
-                    >
-                        <ArrowLeft size={24} />
-                        <span className="text-lg font-medium truncate max-w-[60vw]">{title || 'Back'}</span>
-                    </button>
-                </div>
-
-                {/* Center Play/Pause */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <button
-                        className="w-20 h-20 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-all hover:scale-110"
-                        onClick={handlePlayPause}
-                    >
-                        {isPlaying ? <Pause size={36} /> : <Play size={36} className="ml-1" />}
-                    </button>
-                </div>
-
-                {/* Bottom Controls */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
-                    {/* Progress Bar */}
-                    <div className="mb-4">
-                        <input
-                            type="range"
-                            min={0}
-                            max={duration || 100}
-                            value={currentTime}
-                            onChange={handleSeek}
-                            className="w-full h-1 bg-white/30 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-500 [&::-webkit-slider-thumb]:shadow-lg"
-                            style={{
-                                background: `linear-gradient(to right, rgb(6, 182, 212) 0%, rgb(6, 182, 212) ${(currentTime / duration) * 100}%, rgba(255, 255, 255, 0.3) ${(currentTime / duration) * 100}%, rgba(255, 255, 255, 0.3) 100%)`
-                            }}
-                        />
-                    </div>
-
-                    {/* Controls Row */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            {/* Play/Pause */}
-                            <button
-                                className="text-white hover:text-cyan-400 transition-colors"
-                                onClick={handlePlayPause}
-                            >
-                                {isPlaying ? <Pause size={24} /> : <Play size={24} />}
-                            </button>
-
-                            {/* Skip buttons */}
-                            <button
-                                className="text-white hover:text-cyan-400 transition-colors"
-                                onClick={() => skip(-10)}
-                            >
-                                <SkipBack size={20} />
-                            </button>
-                            <button
-                                className="text-white hover:text-cyan-400 transition-colors"
-                                onClick={() => skip(10)}
-                            >
-                                <SkipForward size={20} />
-                            </button>
-
-                            {/* Volume */}
-                            <div className="flex items-center gap-2">
-                                <button
-                                    className="text-white hover:text-cyan-400 transition-colors"
-                                    onClick={toggleMute}
-                                >
-                                    {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                                </button>
-                                <input
-                                    type="range"
-                                    min={0}
-                                    max={1}
-                                    step={0.1}
-                                    value={isMuted ? 0 : volume}
-                                    onChange={handleVolumeChange}
-                                    className="w-20 h-1 bg-white/30 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-                                />
-                            </div>
-
-                            {/* Time Display */}
-                            <span className="text-white/80 text-sm font-mono">
-                                {formatTime(currentTime)} / {formatTime(duration)}
-                            </span>
-                        </div>
-
-                        {/* Right Controls */}
-                        <div className="flex items-center gap-4">
-                            {/* Subtitles */}
-                            {subtitles.length > 0 && (
-                                <div className="relative">
-                                    <button
-                                        className={`transition-colors ${activeSubtitleId ? 'text-cyan-400' : 'text-white hover:text-cyan-400'}`}
-                                        onClick={(e) => { e.stopPropagation(); setShowSubtitleMenu(!showSubtitleMenu); setShowAudioMenu(false); }}
-                                    >
-                                        <Subtitles size={20} />
-                                    </button>
-
-                                    {showSubtitleMenu && (
-                                        <div className="absolute bottom-10 right-0 bg-black/95 border border-white/10 rounded-lg py-1 min-w-[200px] max-h-[300px] overflow-y-auto shadow-xl backdrop-blur-sm">
-                                            <div className="px-3 py-1.5 text-xs text-white/50 uppercase tracking-wide">Subtitles</div>
-                                            <button
-                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-                                                onClick={() => selectSubtitle(null)}
-                                            >
-                                                <span className="w-4">{!activeSubtitleId && <Check size={14} />}</span>
-                                                Off
-                                            </button>
-                                            {subtitles.map(sub => (
-                                                <button
-                                                    key={sub.id}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-                                                    onClick={() => selectSubtitle(sub.id)}
-                                                >
-                                                    <span className="w-4">{activeSubtitleId === sub.id && <Check size={14} className="text-cyan-400" />}</span>
-                                                    <span className="flex-1 text-left truncate">{sub.label}</span>
-                                                    <span className="text-[10px] text-white/40 uppercase">{sub.source === 'embedded' ? 'EMB' : 'EXT'}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Audio Tracks */}
-                            {audioTracks.length > 1 && (
-                                <div className="relative">
-                                    <button
-                                        className="text-white hover:text-cyan-400 transition-colors"
-                                        onClick={(e) => { e.stopPropagation(); setShowAudioMenu(!showAudioMenu); setShowSubtitleMenu(false); }}
-                                    >
-                                        <AudioLines size={20} />
-                                    </button>
-
-                                    {showAudioMenu && (
-                                        <div className="absolute bottom-10 right-0 bg-black/95 border border-white/10 rounded-lg py-1 min-w-[220px] max-h-[300px] overflow-y-auto shadow-xl backdrop-blur-sm">
-                                            <div className="px-3 py-1.5 text-xs text-white/50 uppercase tracking-wide">Audio</div>
-                                            {audioTracks.map(track => (
-                                                <button
-                                                    key={track.index}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-                                                    onClick={() => selectAudioTrack(track.index)}
-                                                >
-                                                    <span className="w-4">{activeAudioIndex === track.index && <Check size={14} className="text-cyan-400" />}</span>
-                                                    <span className="flex-1 text-left truncate">{track.label}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Fullscreen */}
-                            <button
-                                className="text-white hover:text-cyan-400 transition-colors"
-                                onClick={toggleFullscreen}
-                            >
-                                {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Native Player Button */}
-                    <div className="absolute top-6 right-6 z-20">
-                        {streamInfo && (
-                            <NativePlayerButton url={streamInfo.direct_stream_url} />
-                        )}
-                    </div>
-                </div>
-            </div>
+            {!mpvActive && (
+                <PlayerControls
+                    playing={isPlaying}
+                    currentTime={currentTime}
+                    duration={duration}
+                    volume={volume}
+                    muted={isMuted}
+                    isFullscreen={isFullscreen}
+                    title={title}
+                    showControls={showControls}
+                    onPlayPause={handlePlayPause}
+                    onSeek={handleSeek}
+                    onSkip={skip}
+                    onVolumeChange={handleVolumeChange}
+                    onToggleMute={toggleMute}
+                    onToggleFullscreen={toggleFullscreen}
+                    onBack={handleBack}
+                    onInteraction={resetControlsTimeout}
+                    tracks={trackSelection}
+                />
+            )}
         </div>
     );
 };
