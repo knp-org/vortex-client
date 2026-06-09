@@ -38,12 +38,22 @@ class LoginViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, isRegistrationSuccess = false)
             try {
                 if (isRegistering) {
-                    authApi.register(AuthRequest(username, password))
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "Registration successful! Please login.",
-                        isRegistrationSuccess = true
-                    )
+                    val response = authApi.register(AuthRequest(username, password))
+                    if (response.isSuccessful) {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = "Registration successful! Please login.",
+                            isRegistrationSuccess = true
+                        )
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        val errorMessage = try {
+                            org.json.JSONObject(errorBody ?: "").getString("message")
+                        } catch (e: Exception) {
+                            "Registration failed: ${response.code()}"
+                        }
+                        _uiState.value = _uiState.value.copy(isLoading = false, error = errorMessage)
+                    }
                 } else {
                     val response = authApi.login(AuthRequest(username, password))
                     if (response.token != null) {
@@ -53,6 +63,14 @@ class LoginViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(isLoading = false, error = "Login failed: No token received.")
                     }
                 }
+            } catch (e: retrofit2.HttpException) {
+                val errorBody = e.response()?.errorBody()?.string()
+                val errorMessage = try {
+                    org.json.JSONObject(errorBody ?: "").getString("message")
+                } catch (jsonException: Exception) {
+                    e.message ?: "Server error"
+                }
+                _uiState.value = _uiState.value.copy(isLoading = false, error = errorMessage)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Connection error")
             }

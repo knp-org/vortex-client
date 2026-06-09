@@ -18,5 +18,5 @@ interface AuthApi {
     suspend fun login(@Body request: AuthRequest): AuthResponse
 
     @POST("/api/v1/auth/register")
-    suspend fun register(@Body request: AuthRequest): AuthResponse
+    suspend fun register(@Body request: AuthRequest): retrofit2.Response<Unit>
 }
