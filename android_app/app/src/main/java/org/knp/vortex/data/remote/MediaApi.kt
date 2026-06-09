@@ -245,7 +245,8 @@ data class ConfigFieldDto(
     val key: String,
     val label: String,
     val field_type: String,
-    val required: Boolean
+    val required: Boolean,
+    val options: List<List<String>>? = null
 )
 
 data class ProviderInfoDto(

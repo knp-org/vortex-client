@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ fun MetadataProvidersScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showResetDialog by remember { mutableStateOf(false) }
+    var selectedProvider by remember { mutableStateOf<org.knp.vortex.data.remote.ProviderInfoDto?>(null) }
 
     GlassyBackground {
         Scaffold(
@@ -44,8 +46,96 @@ fun MetadataProvidersScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                selectedProvider?.let { provider ->
+                    var currentConfig by remember { mutableStateOf<Map<String, Any>?>(null) }
+                    var editedConfig by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+                    var isLoading by remember { mutableStateOf(true) }
 
+                    LaunchedEffect(provider.id) {
+                        currentConfig = viewModel.getProviderConfig(provider.id)
+                        val initialEdit = mutableMapOf<String, String>()
+                        provider.config_schema.forEach { field ->
+                            initialEdit[field.key] = currentConfig?.get(field.key)?.toString() ?: ""
+                        }
+                        editedConfig = initialEdit
+                        isLoading = false
+                    }
 
+                    if (!isLoading) {
+                        org.knp.vortex.ui.components.GlassyDialog(
+                            onDismissRequest = { selectedProvider = null },
+                            title = "${provider.name} Settings",
+                            content = {
+                                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    provider.config_schema.forEach { field ->
+                                        if (field.field_type == "select" && field.options != null) {
+                                            var expanded by remember { mutableStateOf(false) }
+                                            val selectedValue = editedConfig[field.key] ?: ""
+                                            val selectedLabel = field.options.find { it.getOrNull(0) == selectedValue }?.getOrNull(1) ?: selectedValue
+                                            
+                                            @OptIn(ExperimentalMaterial3Api::class)
+                                            ExposedDropdownMenuBox(
+                                                expanded = expanded,
+                                                onExpandedChange = { expanded = it }
+                                            ) {
+                                                org.knp.vortex.ui.components.GlassyTextField(
+                                                    value = selectedLabel,
+                                                    onValueChange = {},
+                                                    readOnly = true,
+                                                    label = field.label,
+                                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                                                )
+                                                ExposedDropdownMenu(
+                                                    expanded = expanded,
+                                                    onDismissRequest = { expanded = false }
+                                                ) {
+                                                    field.options.forEach { option ->
+                                                        val optValue = option.getOrNull(0) ?: ""
+                                                        val optLabel = option.getOrNull(1) ?: optValue
+                                                        DropdownMenuItem(
+                                                            text = { Text(optLabel) },
+                                                            onClick = {
+                                                                editedConfig = editedConfig.toMutableMap().apply { put(field.key, optValue) }
+                                                                expanded = false
+                                                            }
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            org.knp.vortex.ui.components.GlassyTextField(
+                                                value = editedConfig[field.key] ?: "",
+                                                onValueChange = { newValue -> 
+                                                    editedConfig = editedConfig.toMutableMap().apply { put(field.key, newValue) }
+                                                },
+                                                label = field.label,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = { 
+                                        viewModel.updateProviderConfig(provider.id, editedConfig)
+                                        selectedProvider = null
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = org.knp.vortex.ui.theme.PrimaryBlue)
+                                ) {
+                                    Text("Save", color = Color.White)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { selectedProvider = null }) {
+                                    Text("Cancel", color = Color.Gray)
+                                }
+                            }
+                        )
+                    }
+                }
+                
                 if (showResetDialog) {
                     org.knp.vortex.ui.components.GlassyDialog(
                         onDismissRequest = { showResetDialog = false },
@@ -169,6 +259,20 @@ fun MetadataProvidersScreen(
                             }
                             
                             Spacer(modifier = Modifier.width(16.dp))
+
+                            if (provider.config_schema.isNotEmpty()) {
+                                IconButton(
+                                    onClick = { selectedProvider = provider },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Settings,
+                                        contentDescription = "Settings",
+                                        tint = if (provider.configured) Color.White else ErrorRed
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
 
                             Switch(
                                 checked = provider.enabled,
