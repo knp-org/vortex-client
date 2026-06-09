@@ -119,10 +119,10 @@ export const MediaDetail: React.FC = () => {
         }
     };
 
-    const handleIdentify = async (providerId: string, mediaType: 'movie' | 'series') => {
-        console.log("MediaDetail: handleIdentify called. Params:", { providerId, mediaType, isSeries, name, id });
+    const handleIdentify = async (providerId: string, mediaType: 'movie' | 'series', providerName?: string) => {
+        console.log("MediaDetail: handleIdentify called. Params:", { providerId, mediaType, providerName, isSeries, name, id });
         try {
-            const body = { provider_id: providerId, media_type: mediaType };
+            const body = { provider_id: providerId, media_type: mediaType, provider_name: providerName };
             if (isSeries && name) {
                 const encodedName = encodeURIComponent(name);
                 await api.post(`/series/${encodedName}/identify`, body);

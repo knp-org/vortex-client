@@ -13,14 +13,20 @@ class MainViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    private val _isAuthenticated = MutableStateFlow(false)
-    val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
+    private val _isBiometricUnlocked = MutableStateFlow(false)
+    val isBiometricUnlocked: StateFlow<Boolean> = _isBiometricUnlocked.asStateFlow()
+
+    val authToken = settingsRepository.authToken
 
     fun isBiometricEnabled(): Boolean {
         return settingsRepository.isBiometricEnabled()
     }
 
-    fun setAuthenticated(auth: Boolean) {
-        _isAuthenticated.value = auth
+    fun setBiometricUnlocked(unlocked: Boolean) {
+        _isBiometricUnlocked.value = unlocked
+    }
+
+    fun hasServerToken(): Boolean {
+        return settingsRepository.getAuthToken() != null
     }
 }

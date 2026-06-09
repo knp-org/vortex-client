@@ -38,6 +38,9 @@ interface MediaApi {
     @POST("$API_VERSION/libraries")
     suspend fun createLibrary(@Body request: CreateLibraryRequest)
 
+    @retrofit2.http.PUT("$API_VERSION/libraries/{id}")
+    suspend fun updateLibrary(@Path("id") id: Long, @Body request: UpdateLibraryRequest)
+
     @POST("$API_VERSION/directories")
     suspend fun listDirectories(@Body request: ListDirectoriesRequest): List<DirectoryEntryDto>
 
@@ -73,8 +76,23 @@ interface MediaApi {
     @POST("$API_VERSION/settings")
     suspend fun updateSetting(@Body request: UpdateSettingRequest)
 
-    @POST("$API_VERSION/reset")
+    @POST("$API_VERSION/system/clear")
     suspend fun resetDatabase()
+
+    @GET("$API_VERSION/providers")
+    suspend fun getProviders(): List<ProviderInfoDto>
+
+    @POST("$API_VERSION/providers/{id}/toggle")
+    suspend fun toggleProvider(@Path("id") id: String, @Body request: ToggleProviderRequest)
+
+    @retrofit2.http.PUT("$API_VERSION/providers/order")
+    suspend fun reorderProviders(@Body request: ReorderProvidersRequest)
+    
+    @GET("$API_VERSION/providers/{id}/config")
+    suspend fun getProviderConfig(@Path("id") id: String): ProviderConfigResponse
+    
+    @retrofit2.http.PUT("$API_VERSION/providers/{id}/config")
+    suspend fun updateProviderConfig(@Path("id") id: String, @Body request: UpdateConfigRequest)
 
     @GET("$API_VERSION/metadata/search")
     suspend fun searchMetadata(@Query("query") query: String, @Query("media_type") mediaType: String?): List<MetadataSearchResultDto>
@@ -130,7 +148,13 @@ data class FileSystemEntryDto(
 
 data class CreateLibraryRequest(
     val name: String,
-    val path: String,
+    val paths: List<String>,
+    val library_type: String
+)
+
+data class UpdateLibraryRequest(
+    val name: String,
+    val paths: List<String>,
     val library_type: String
 )
 
@@ -157,14 +181,21 @@ data class MediaItemDto(
     val runtime: Int?,
     val genres: String?,
     val backdrop_url: String?,
-    val library_type: String?
+    val library_type: String?,
+    val season_number: Int?,
+    val episode_number: Int?,
+    val still_url: String?,
+    val rating: Float?,
+    val cast: String?,
+    val director: String?
 )
 
 data class LibraryDto(
     val id: Long,
     val name: String,
-    val path: String,
-    val library_type: String
+    val paths: List<String>,
+    val library_type: String,
+    val default_reading_mode: String? = null
 )
 
 data class ProgressDto(
@@ -191,7 +222,11 @@ data class EpisodeDto(
     val episode_number: Int,
     val poster_url: String?,
     val file_path: String,
-    val plot: String?
+    val plot: String?,
+    val runtime: Int?,
+    val rating: Float?,
+    val cast: String?,
+    val director: String?
 )
 
 data class SeriesDetailDto(
@@ -201,5 +236,44 @@ data class SeriesDetailDto(
     val plot: String?,
     val year: Long?,
     val genres: String?,
+    val cast: String?,
+    val director: String?,
     val seasons: List<SeasonDto>
+)
+
+data class ConfigFieldDto(
+    val key: String,
+    val label: String,
+    val field_type: String,
+    val required: Boolean
+)
+
+data class ProviderInfoDto(
+    val id: String,
+    val name: String,
+    val description: String,
+    val media_types: List<String>,
+    val config_schema: List<ConfigFieldDto>,
+    val enabled: Boolean,
+    val priority: Int,
+    val configured: Boolean
+)
+
+data class ProviderConfigResponse(
+    val provider_id: String,
+    val enabled: Boolean,
+    val priority: Int,
+    val config: Map<String, Any>
+)
+
+data class UpdateConfigRequest(
+    val config: Map<String, Any>
+)
+
+data class ToggleProviderRequest(
+    val enabled: Boolean
+)
+
+data class ReorderProvidersRequest(
+    val order: List<String>
 )

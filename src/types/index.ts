@@ -36,3 +36,13 @@ export { detectCapabilities } from './player';
 
 // System Types
 export type { SystemAction } from './system';
+
+// Provider Types
+export type {
+    FieldType,
+    ConfigField,
+    ProviderManifest,
+    ProviderInfo,
+    ProviderConfigResponse,
+    TestResult
+} from './providers';

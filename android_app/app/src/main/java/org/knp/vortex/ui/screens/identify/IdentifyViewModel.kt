@@ -17,15 +17,17 @@ data class IdentifyUiState(
     val isLoading: Boolean = false,
     val isIdentifying: Boolean = false,
     val identifySuccess: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val serverUrl: String = ""
 )
 
 @HiltViewModel
 class IdentifyViewModel @Inject constructor(
-    private val repository: MediaRepository
+    private val repository: MediaRepository,
+    private val settingsRepository: org.knp.vortex.data.repository.SettingsRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(IdentifyUiState())
+    private val _uiState = MutableStateFlow(IdentifyUiState(serverUrl = settingsRepository.getServerUrl()))
     val uiState: StateFlow<IdentifyUiState> = _uiState.asStateFlow()
 
     fun updateQuery(query: String) {

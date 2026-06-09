@@ -1,6 +1,7 @@
-package org.knp.vortex.ui.screens.details
+package org.knp.vortex.ui.screens.movie
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -10,7 +11,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -78,7 +82,7 @@ fun MovieDetailScreen(
                         ) {
                             // Backdrop
                             AsyncImage(
-                                model = media.backdrop_url ?: media.poster_url,
+                                model = org.knp.vortex.utils.formatImageUrl(media.backdrop_url, uiState.serverUrl) ?: org.knp.vortex.utils.formatImageUrl(media.poster_url, uiState.serverUrl),
                                 contentDescription = "Background",
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -121,24 +125,27 @@ fun MovieDetailScreen(
                             ) {
                                 // Poster Card
                                 Card(
-                                    shape = RoundedCornerShape(12.dp),
-                                    elevation = CardDefaults.cardElevation(12.dp),
-                                    modifier = Modifier.width(140.dp).aspectRatio(0.67f)
+                                    shape = RoundedCornerShape(16.dp),
+                                    elevation = CardDefaults.cardElevation(24.dp),
+                                    modifier = Modifier
+                                        .width(140.dp)
+                                        .aspectRatio(0.67f)
+                                        .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
                                 ) {
                                     AsyncImage(
-                                        model = media.poster_url,
+                                        model = org.knp.vortex.utils.formatImageUrl(media.poster_url, uiState.serverUrl),
                                         contentDescription = media.title,
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop
                                     )
                                 }
                                 
-                                Spacer(modifier = Modifier.width(16.dp))
+                                Spacer(modifier = Modifier.width(20.dp))
                                 
                                 Column(
                                     modifier = Modifier
                                         .padding(bottom = 8.dp)
-                                        .weight(1f) // Fix: Take remaining space
+                                        .weight(1f)
                                 ) {
                                     Text(
                                         text = media.title ?: "Unknown",
@@ -164,7 +171,18 @@ fun MovieDetailScreen(
                                             )
                                         }
                                         if (media.runtime != null && media.runtime > 0) {
-                                            MetadataChip(text = formatRuntime(media.runtime))
+                                            Text(
+                                                text = "${media.runtime / 60}h ${media.runtime % 60}m",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = GrayText
+                                            )
+                                        }
+                                        Surface(
+                                            color = Color.Transparent,
+                                            shape = RoundedCornerShape(4.dp),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
+                                        ) {
+                                            Text("HD", color = Color.White, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
                                         }
                                     }
 
@@ -188,12 +206,13 @@ fun MovieDetailScreen(
                                     // Play Button
                                     Button(
                                         onClick = { onPlay(mediaId) },
-                                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                                        shape = RoundedCornerShape(12.dp)
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                                        shape = RoundedCornerShape(24.dp),
+                                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                                     ) {
-                                        Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Play Now")
+                                        Text("Play", fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -203,36 +222,42 @@ fun MovieDetailScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 24.dp),
-                            verticalArrangement = Arrangement.spacedBy(24.dp)
+                                .padding(vertical = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(32.dp)
                         ) {
-                            // Synopsis
-                            if (!media.plot.isNullOrEmpty()) {
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        text = "Synopsis",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                    Text(
-                                        text = media.plot,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = GrayText,
-                                        lineHeight = 24.sp
-                                    )
+                            // Details Grid
+                            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                                Row {
+                                    Text("Genres", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                    Text(media.genres ?: "N/A", color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row {
+                                    Text("Director", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                    Text(media.director ?: "Unknown", color = Color.White, style = MaterialTheme.typography.bodyMedium)
                                 }
                             }
                             
+                            // Synopsis
+                            if (!media.plot.isNullOrEmpty()) {
+                                Text(
+                                    text = media.plot,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = GrayText,
+                                    lineHeight = 24.sp,
+                                    modifier = Modifier.padding(horizontal = 24.dp)
+                                )
+                            }
+                            
+                            CastList(media.cast, uiState.serverUrl)
+                            
                             // File Info Card (Glassy)
                             org.knp.vortex.ui.components.GlassyCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                                shape = RoundedCornerShape(16.dp)
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(16.dp),
+                                    modifier = Modifier.padding(20.dp),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
@@ -330,8 +355,116 @@ private fun MetadataChip(text: String, backgroundColor: Color = SurfaceColor.cop
     }
 }
 
-private fun formatRuntime(minutes: Int): String {
-    val h = minutes / 60
-    val m = minutes % 60
-    return if (h > 0) "${h}h ${if (m < 10) "0$m" else m}m" else "${m}m"
+data class CastMember(
+    val name: String,
+    val character: String,
+    val profile_url: String?
+)
+
+@Composable
+fun CastList(castJson: String?, serverUrl: String) {
+    if (castJson.isNullOrBlank()) return
+    
+    val castMembers = remember(castJson) {
+        try {
+            val array = org.json.JSONArray(castJson)
+            val list = mutableListOf<CastMember>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val profileUrl = if (obj.has("profile_url") && !obj.isNull("profile_url")) {
+                    obj.optString("profile_url").takeIf { it.isNotBlank() && it != "null" }
+                } else {
+                    null
+                }
+                list.add(
+                    CastMember(
+                        name = obj.optString("name", ""),
+                        character = obj.optString("character", ""),
+                        profile_url = profileUrl
+                    )
+                )
+            }
+            list
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    if (castMembers.isNotEmpty()) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 16.dp)) {
+                Text(
+                    text = "Cast",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Surface(
+                    color = Color.White.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Text(
+                        text = "${castMembers.size}",
+                        color = GrayText,
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                }
+            }
+            
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(horizontal = 24.dp)
+            ) {
+                items(castMembers) { actor ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.width(100.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .clip(CircleShape)
+                                .background(SurfaceColor)
+                                .border(2.dp, Color.White.copy(alpha = 0.05f), CircleShape)
+                        ) {
+                            if (actor.profile_url != null) {
+                                AsyncImage(
+                                    model = org.knp.vortex.utils.formatImageUrl(actor.profile_url, serverUrl),
+                                    contentDescription = actor.name,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = GrayText,
+                                    modifier = Modifier.align(Alignment.Center).size(32.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = actor.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = actor.character,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = GrayText,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+    }
 }

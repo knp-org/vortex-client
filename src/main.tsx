@@ -1,6 +1,21 @@
 import ReactDOM from "react-dom/client";
 import App from "./App";
 
+// pdf.js v6 calls Promise.withResolvers (Chromium 119+). Older Android System
+// WebViews lack it, so the lazily-loaded PDF reader chunk throws on evaluation
+// and the screen goes blank. Polyfill it before any chunk runs.
+if (typeof (Promise as { withResolvers?: unknown }).withResolvers !== 'function') {
+  (Promise as unknown as { withResolvers: () => unknown }).withResolvers = function <T>() {
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    let reject!: (reason?: unknown) => void;
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
 // Patch window.fetch in Tauri to resolve relative API routes and inject auth
 if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
   const originalFetch = window.fetch;

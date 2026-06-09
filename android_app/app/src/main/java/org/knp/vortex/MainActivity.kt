@@ -23,8 +23,14 @@ import org.knp.vortex.ui.screens.library.ManageLibrariesScreen
 import org.knp.vortex.ui.screens.library.CreateLibraryScreen
 import org.knp.vortex.ui.screens.library.LibraryScreen
 import org.knp.vortex.ui.screens.settings.SettingsScreen
+import org.knp.vortex.ui.screens.settings.ServerConfigScreen
+import org.knp.vortex.ui.screens.settings.LibrarySettingsScreen
+import org.knp.vortex.ui.screens.settings.MetadataProvidersScreen
+import org.knp.vortex.ui.screens.settings.SecuritySettingsScreen
+import org.knp.vortex.ui.screens.settings.AccountSettingsScreen
+import org.knp.vortex.ui.screens.reader.ReaderScreen
 import org.knp.vortex.ui.screens.player.PlayerScreen
-import org.knp.vortex.ui.screens.details.MovieDetailScreen
+import org.knp.vortex.ui.screens.movie.MovieDetailScreen
 import org.knp.vortex.ui.screens.identify.IdentifyScreen
 import org.knp.vortex.ui.screens.series.SeriesDetailScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -60,10 +66,10 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         
         // Initial Check if enabled
-        if (viewModel.isBiometricEnabled() && !viewModel.isAuthenticated.value) {
+        if (viewModel.isBiometricEnabled() && !viewModel.isBiometricUnlocked.value) {
              authenticate()
         } else {
-             viewModel.setAuthenticated(true)
+             viewModel.setBiometricUnlocked(true)
         }
 
         setContent {
@@ -72,11 +78,10 @@ class MainActivity : FragmentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
+                    val isBiometricUnlocked by viewModel.isBiometricUnlocked.collectAsState()
+                    val authToken by viewModel.authToken.collectAsState()
                     
-                    if (isAuthenticated || !viewModel.isBiometricEnabled()) {
-                        AppNavigation()
-                    } else {
+                    if (!isBiometricUnlocked && viewModel.isBiometricEnabled()) {
                          // Show Auth Screen or Placeholder while prompt is active
                          Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                               Text("Unlock with Biometrics to continue", color = androidx.compose.ui.graphics.Color.White)
@@ -84,6 +89,14 @@ class MainActivity : FragmentActivity() {
                                   Text("Touch to Unlock")
                               }
                          }
+                    } else if (authToken == null) {
+                        org.knp.vortex.ui.screens.login.LoginScreen(
+                            onLoginSuccess = {
+                                // Handled by collectAsState re-render
+                            }
+                        )
+                    } else {
+                        AppNavigation()
                     }
                 }
             }
@@ -92,7 +105,7 @@ class MainActivity : FragmentActivity() {
     
     override fun onResume() {
         super.onResume()
-        if (viewModel.isBiometricEnabled() && !viewModel.isAuthenticated.value) {
+        if (viewModel.isBiometricEnabled() && !viewModel.isBiometricUnlocked.value) {
             authenticate()
         }
     }
@@ -103,7 +116,7 @@ class MainActivity : FragmentActivity() {
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                      super.onAuthenticationSucceeded(result)
-                     viewModel.setAuthenticated(true)
+                     viewModel.setBiometricUnlocked(true)
                 }
                 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
@@ -186,6 +199,8 @@ fun AppNavigation() {
                     val t = type?.lowercase() ?: ""
                     if (t == "other" || t == "music_videos") {
                         navController.navigate("player/$id")
+                    } else if (t == "books") {
+                        navController.navigate("reader/$id")
                     } else {
                         navController.navigate("movie/$id")
                     }
@@ -198,7 +213,7 @@ fun AppNavigation() {
                     val encodedName = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
                     navController.navigate("library/$id/$encodedName/$type")
                 },
-                onOpenSettings = { navController.navigate("settings") },
+
                 onQuickPlay = { id -> 
                     // Direct Playback
                     navController.navigate("player/$id") 
@@ -212,6 +227,8 @@ fun AppNavigation() {
                     val t = type?.lowercase() ?: ""
                     if (t == "other" || t == "music_videos") {
                         navController.navigate("player/$id")
+                    } else if (t == "books") {
+                        navController.navigate("reader/$id")
                     } else {
                         navController.navigate("movie/$id")
                     }
@@ -225,18 +242,47 @@ fun AppNavigation() {
         composable("settings") {
             SettingsScreen(
                 onBack = { navController.popBackStack() },
-                onManageLibraries = { navController.navigate("manage_libraries") }
+                onNavigateToServerConfig = { navController.navigate("settings/server") },
+                onNavigateToLibrarySettings = { navController.navigate("manage_libraries") },
+                onNavigateToMetadataProviders = { navController.navigate("settings/metadata") },
+                onNavigateToSecurity = { navController.navigate("settings/security") },
+                onNavigateToAccount = { navController.navigate("settings/account") }
             )
+        }
+        
+        composable("settings/server") {
+            ServerConfigScreen(onBack = { navController.popBackStack() })
+        }
+        
+
+        
+        composable("settings/metadata") {
+            MetadataProvidersScreen(onBack = { navController.popBackStack() })
+        }
+        
+        composable("settings/security") {
+            SecuritySettingsScreen(onBack = { navController.popBackStack() })
+        }
+        
+        composable("settings/account") {
+            AccountSettingsScreen(onBack = { navController.popBackStack() })
         }
 
         composable("manage_libraries") {
             ManageLibrariesScreen(
                 onBack = { navController.popBackStack() },
-                onAddLibrary = { navController.navigate("create_library") }
+                onAddLibrary = { navController.navigate("create_library") },
+                onEditLibrary = { id -> navController.navigate("create_library?libraryId=$id") }
             )
         }
 
-        composable("create_library") {
+        composable(
+            route = "create_library?libraryId={libraryId}",
+            arguments = listOf(navArgument("libraryId") {
+                type = NavType.LongType
+                defaultValue = -1L
+            })
+        ) {
             CreateLibraryScreen(
                 onBack = { navController.popBackStack() },
                 onSuccess = { navController.popBackStack() }
@@ -254,6 +300,13 @@ fun AppNavigation() {
             )
         }
 
+        composable(
+            "reader/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.LongType })
+        ) {
+            val id = it.arguments?.getLong("id") ?: return@composable
+            ReaderScreen(mediaId = id, onBack = { navController.popBackStack() })
+        }
 
 
         composable(
@@ -275,6 +328,8 @@ fun AppNavigation() {
                     val t = libType.lowercase()
                     if (t == "other" || t == "music_videos") {
                         navController.navigate("player/$id")
+                    } else if (t == "books") {
+                        navController.navigate("reader/$id")
                     } else {
                         navController.navigate("movie/$id")
                     }

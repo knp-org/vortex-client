@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { MainLayout } from '../../layouts/MainLayout';
-import { SettingsTab } from '../../types';
+import { SettingsTab } from '../../types/settings';
 import { LibrariesTab } from './LibrariesTab';
+import { AccountTab } from './AccountTab';
 import { MetadataTab } from './MetadataTab';
-import { ApiKeysTab } from './ApiKeysTab';
 import { TranscodingTab } from './TranscodingTab';
 import { SystemTab } from './SystemTab';
 
@@ -30,8 +30,8 @@ export const Settings: React.FC = () => {
                     <div className="glass-panel h-full p-4 flex flex-col space-y-2">
                         <h2 className="text-xl font-bold text-gray-200 mb-4 px-2">Settings</h2>
                         {renderTabButton('libraries', 'Library Management')}
+                        {renderTabButton('account', 'Account Settings')}
                         {renderTabButton('metadata', 'Metadata')}
-                        {renderTabButton('api-keys', 'API Keys')}
                         {renderTabButton('transcoding', 'Transcoding')}
                         {renderTabButton('system', 'System')}
                     </div>
@@ -41,8 +41,8 @@ export const Settings: React.FC = () => {
                 <div className="flex-1 min-w-0">
                     <div className="glass-panel min-h-full py-6 px-8">
                         {activeTab === 'libraries' && <LibrariesTab />}
+                        {activeTab === 'account' && <AccountTab />}
                         {activeTab === 'metadata' && <MetadataTab />}
-                        {activeTab === 'api-keys' && <ApiKeysTab />}
                         {activeTab === 'transcoding' && <TranscodingTab />}
                         {activeTab === 'system' && <SystemTab />}
                     </div>

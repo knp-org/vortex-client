@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Film, Tv, Music, Settings, FileQuestion, Shield, Sliders, User } from 'lucide-react';
+import { Home, Film, Tv, Music, Settings, FileQuestion, Shield, Sliders, User, BookOpen } from 'lucide-react';
 import { api } from '../../services';
 
 interface LibraryData {
@@ -39,6 +39,7 @@ export const Sidebar: React.FC = () => {
             case 'movies': return Film;
             case 'tv_shows': return Tv;
             case 'music_videos': return Music;
+            case 'books': return BookOpen;
             default: return FileQuestion;
         }
     };

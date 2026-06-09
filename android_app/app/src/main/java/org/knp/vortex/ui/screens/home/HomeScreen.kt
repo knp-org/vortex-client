@@ -11,7 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Settings
+
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Lock
@@ -55,7 +55,6 @@ fun HomeScreen(
     onPlayMedia: (Long, String?) -> Unit,
     onOpenSeries: (String) -> Unit,
     onOpenLibrary: (Long, String, String) -> Unit,  // id, name, type
-    onOpenSettings: () -> Unit,
     onQuickPlay: (Long) -> Unit, // New callback for direct playback
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -170,16 +169,7 @@ fun HomeScreen(
             containerColor = Color.Transparent,
             topBar = {
                 org.knp.vortex.ui.components.AppHeader(
-                    onLogoLongClick = { showPinDialog = true },
-                    actions = {
-                        IconButton(onClick = onOpenSettings) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "Settings",
-                                tint = Color.White
-                            )
-                        }
-                    }
+                    onLogoLongClick = { showPinDialog = true }
                 )
             }
         ) { padding ->
@@ -229,6 +219,7 @@ fun HomeScreen(
                             if (featuredItems.isNotEmpty()) {
                                 FeaturedCarousel(
                                     items = featuredItems,
+                                    serverUrl = uiState.serverUrl,
                                     onItemClick = { item ->
                                         when (item) {
                                             is SeriesDto -> onOpenSeries(item.name)
@@ -255,14 +246,14 @@ fun HomeScreen(
                                     items(uiState.continueWatching) { item ->
                                         ModernMediaCard(
                                             title = item.title,
-                                            posterUrl = item.poster_url,
+                                            posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl),
                                             year = item.year,
                                             onClick = {
                                                 // Quick Play for Continue Watching
                                                 onQuickPlay(item.id)
                                             },
                                             modifier = Modifier.width(160.dp),
-                                            videoUrl = if (item.poster_url == null) "${uiState.serverUrl}/api/v1/stream/${item.id}" else null
+                                            videoUrl = if (item.poster_url == null) "${uiState.serverUrl.trimEnd('/')}/api/v1/stream/${item.id}" else null
                                         )
                                     }
                                 }
@@ -285,7 +276,7 @@ fun HomeScreen(
                                             items(seriesContent) { series ->
                                                 ModernMediaCard(
                                                     title = series.name,
-                                                    posterUrl = series.poster_url,
+                                                    posterUrl = org.knp.vortex.utils.formatImageUrl(series.poster_url, uiState.serverUrl),
                                                     onClick = { onOpenSeries(series.name) },
                                                     modifier = Modifier.width(140.dp)
                                                 )
@@ -310,7 +301,7 @@ fun HomeScreen(
                                             items(content) { item ->
                                                 ModernMediaCard(
                                                     title = item.title,
-                                                    posterUrl = item.poster_url ?: "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail",
+                                                    posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl) ?: "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail",
                                                     year = item.year,
                                                     onClick = { onPlayMedia(item.id, library.library_type) },
                                                     modifier = Modifier.width(140.dp)
@@ -331,7 +322,7 @@ fun HomeScreen(
                                     items(uiState.recentlyAdded) { item ->
                                         ModernMediaCard(
                                             title = item.title,
-                                            posterUrl = item.poster_url,
+                                            posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl),
                                             year = item.year,
                                             onClick = {
                                                 if (item.media_type == "series") {
@@ -362,6 +353,7 @@ fun HomeScreen(
 @Composable
 fun FeaturedCarousel(
     items: List<Any>,
+    serverUrl: String,
     onItemClick: (Any) -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { items.size })
@@ -376,11 +368,12 @@ fun FeaturedCarousel(
             pageSpacing = 16.dp
         ) { page ->
             val item = items[page]
-            val (title, imageUrl) = when (item) {
+            val (title, rawImageUrl) = when (item) {
                 is SeriesDto -> item.name to item.poster_url
                 is MediaItemDto -> (item.title ?: "Unknown") to item.poster_url
                 else -> "Unknown" to null
             }
+            val imageUrl = org.knp.vortex.utils.formatImageUrl(rawImageUrl, serverUrl)
             
             org.knp.vortex.ui.components.GlassyCard(
                 modifier = Modifier

@@ -51,7 +51,10 @@ android_app/*.hprof
 android_app/.cxx/
 android_app/captures/
 android_app/*.jks
+android_app/*.keystore
 android_app/google-services.json
+*.apk
+*.aab
 
 # Agent & AI tool artifacts
 .gemini/

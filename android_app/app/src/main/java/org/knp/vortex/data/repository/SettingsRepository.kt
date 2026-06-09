@@ -17,6 +17,7 @@ class SettingsRepository @Inject constructor(
         private const val PREFS_NAME = "media_server_settings"
         private const val KEY_SERVER_URL = "server_url"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
+        private const val KEY_AUTH_TOKEN = "auth_token"
         private const val DEFAULT_URL = "http://127.0.0.1:3000"
     }
 
@@ -24,6 +25,9 @@ class SettingsRepository @Inject constructor(
     
     private val _serverUrl = MutableStateFlow(getServerUrl())
     val serverUrl: StateFlow<String> = _serverUrl.asStateFlow()
+
+    private val _authToken = MutableStateFlow(getAuthToken())
+    val authToken: StateFlow<String?> = _authToken.asStateFlow()
 
     private val _isBiometricEnabled = MutableStateFlow(isBiometricEnabled())
     val biometricEnabled: StateFlow<Boolean> = _isBiometricEnabled.asStateFlow()
@@ -45,6 +49,15 @@ class SettingsRepository @Inject constructor(
     fun setBiometricEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply()
         _isBiometricEnabled.value = enabled
+    }
+
+    fun getAuthToken(): String? {
+        return prefs.getString(KEY_AUTH_TOKEN, null)
+    }
+
+    fun setAuthToken(token: String?) {
+        prefs.edit().putString(KEY_AUTH_TOKEN, token).apply()
+        _authToken.value = token
     }
 
     fun getDefaultUrl(): String = DEFAULT_URL

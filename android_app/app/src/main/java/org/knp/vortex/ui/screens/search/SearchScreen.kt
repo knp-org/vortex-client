@@ -78,7 +78,7 @@ fun SearchScreen(
                                 items(uiState.series) { series ->
                                     ModernMediaCard(
                                         title = series.name,
-                                        posterUrl = series.poster_url,
+                                        posterUrl = org.knp.vortex.utils.formatImageUrl(series.poster_url, uiState.serverUrl),
                                         onClick = { onOpenSeries(series.name) },
                                         modifier = Modifier.width(140.dp)
                                     )
@@ -98,7 +98,7 @@ fun SearchScreen(
                                 items(uiState.movies) { movie ->
                                     ModernMediaCard(
                                         title = movie.title,
-                                        posterUrl = movie.poster_url,
+                                        posterUrl = org.knp.vortex.utils.formatImageUrl(movie.poster_url, uiState.serverUrl),
                                         year = movie.year,
                                         onClick = { onPlayMedia(movie.id, movie.library_type) },
                                         modifier = Modifier.width(140.dp)

@@ -11,6 +11,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import org.knp.vortex.data.remote.EpisodeDto
 import org.knp.vortex.ui.components.GlassyTopBar
+import org.knp.vortex.ui.screens.movie.CastList
 import org.knp.vortex.ui.theme.*
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.launch
@@ -58,7 +63,7 @@ fun SeriesDetailScreen(
                         item {
                             Box(modifier = Modifier.fillMaxWidth().height(450.dp)) {
                                 AsyncImage(
-                                    model = detail.backdrop_url ?: detail.poster_url,
+                                    model = org.knp.vortex.utils.formatImageUrl(detail.backdrop_url, uiState.serverUrl) ?: org.knp.vortex.utils.formatImageUrl(detail.poster_url, uiState.serverUrl),
                                     contentDescription = "Background",
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -96,21 +101,24 @@ fun SeriesDetailScreen(
                                     verticalAlignment = Alignment.Bottom
                                 ) {
                                     Card(
-                                        shape = RoundedCornerShape(12.dp),
-                                        elevation = CardDefaults.cardElevation(12.dp),
-                                        modifier = Modifier.width(140.dp).aspectRatio(0.67f)
+                                        shape = RoundedCornerShape(16.dp),
+                                        elevation = CardDefaults.cardElevation(24.dp),
+                                        modifier = Modifier
+                                            .width(140.dp)
+                                            .aspectRatio(0.67f)
+                                            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
                                     ) {
                                         AsyncImage(
-                                            model = detail.poster_url,
+                                            model = org.knp.vortex.utils.formatImageUrl(detail.poster_url, uiState.serverUrl),
                                             contentDescription = detail.name,
                                             modifier = Modifier.fillMaxSize(),
                                             contentScale = ContentScale.Crop
                                         )
                                     }
                                     
-                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Spacer(modifier = Modifier.width(20.dp))
                                     
-                                    Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                                    Column(modifier = Modifier.padding(bottom = 8.dp).weight(1f)) {
                                         Text(
                                             text = detail.name,
                                             style = MaterialTheme.typography.headlineMedium,
@@ -128,43 +136,51 @@ fun SeriesDetailScreen(
                                             )
                                         }
                                         
-                                        if (!detail.genres.isNullOrEmpty()) {
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                            ) {
-                                                detail.genres.split(", ").take(3).forEach { genre ->
-                                                    MetadataChip(text = genre, backgroundColor = PrimaryBlue.copy(alpha = 0.2f))
-                                                }
-                                            }
-                                        }
-                                        
                                         Spacer(modifier = Modifier.height(12.dp))
                                         Button(
                                             onClick = { /* TODO */ },
-                                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                                            shape = RoundedCornerShape(12.dp)
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                                            shape = RoundedCornerShape(24.dp),
+                                            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                                         ) {
-                                            Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                                            Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            Text("Play Now")
+                                            Text("Play", fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
                             }
                         }
 
-                        if (!detail.plot.isNullOrEmpty()) {
-                            item {
-                                Text(
-                                    text = detail.plot,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = GrayText,
-                                    modifier = Modifier.padding(horizontal = 24.dp),
-                                    lineHeight = 24.sp
-                                )
-                                Spacer(modifier = Modifier.height(24.dp))
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                                verticalArrangement = Arrangement.spacedBy(32.dp)
+                            ) {
+                                // Details Grid
+                                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                                    Row {
+                                        Text("Genres", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                        Text(detail.genres ?: "N/A", color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row {
+                                        Text("Director", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                        Text(detail.director ?: "Unknown", color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                }
+                                
+                                if (!detail.plot.isNullOrEmpty()) {
+                                    Text(
+                                        text = detail.plot,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = GrayText,
+                                        lineHeight = 24.sp,
+                                        modifier = Modifier.padding(horizontal = 24.dp)
+                                    )
+                                }
+                                
+                                CastList(detail.cast, uiState.serverUrl)
                             }
                         }
 
@@ -201,9 +217,13 @@ fun SeriesDetailScreen(
 
                         item {
                             if (uiState.episodes.isNotEmpty()) {
-                                uiState.episodes.forEach { episode ->
-                                    SleekEpisodeItem(episode, uiState.serverUrl, onClick = { onPlayEpisode(episode.id) })
-                                    Spacer(modifier = Modifier.height(16.dp))
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    contentPadding = PaddingValues(horizontal = 24.dp)
+                                ) {
+                                    items(uiState.episodes) { episode ->
+                                        SleekEpisodeItem(episode, uiState.serverUrl, onClick = { onPlayEpisode(episode.id) })
+                                    }
                                 }
                             } else {
                                 Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
@@ -261,24 +281,22 @@ fun SeriesDetailScreen(
 
 @Composable
 fun SleekEpisodeItem(episode: EpisodeDto, serverUrl: String, onClick: () -> Unit) {
-    Row(
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
+            .width(280.dp)
             .clickable(onClick = onClick)
-            .padding(horizontal = 24.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .width(140.dp)
-                .height(80.dp)
+                .fillMaxWidth()
+                .aspectRatio(16f/9f)
                 .clip(RoundedCornerShape(12.dp))
                 .background(SurfaceColor)
         ) {
             val context = androidx.compose.ui.platform.LocalContext.current
             val request = androidx.compose.runtime.remember(episode.poster_url, serverUrl) {
                 coil.request.ImageRequest.Builder(context)
-                    .data(episode.poster_url ?: "${serverUrl.trimEnd('/')}/api/v1/media/${episode.id}/thumbnail")
+                    .data(org.knp.vortex.utils.formatImageUrl(episode.poster_url, serverUrl) ?: "${serverUrl.trimEnd('/')}/api/v1/media/${episode.id}/thumbnail")
                     .crossfade(true)
                     .allowHardware(false)
                     .size(512)
@@ -305,32 +323,35 @@ fun SleekEpisodeItem(episode: EpisodeDto, serverUrl: String, onClick: () -> Unit
                     .background(Color.Black.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                Surface(
+                    color = Color.White.copy(alpha = 0.2f),
+                    shape = CircleShape,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.padding(8.dp).align(Alignment.Center))
+                }
             }
         }
         
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "${episode.episode_number}. ${episode.title ?: "Episode ${episode.episode_number}"}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            if (!episode.plot.isNullOrEmpty()) {
-                Text(
-                    text = episode.plot,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GrayText,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
+        Text(
+            text = "${episode.episode_number}. ${episode.title ?: "Episode ${episode.episode_number}"}",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = episode.plot ?: "No description available.",
+            style = MaterialTheme.typography.bodySmall,
+            color = GrayText,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            lineHeight = 16.sp
+        )
     }
 }
 

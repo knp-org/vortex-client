@@ -16,15 +16,17 @@ data class SearchUiState(
     val isLoading: Boolean = false,
     val movies: List<MediaItemDto> = emptyList(),
     val series: List<SeriesDto> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    val serverUrl: String = ""
 )
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val repository: MediaRepository
+    private val repository: MediaRepository,
+    private val settingsRepository: org.knp.vortex.data.repository.SettingsRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SearchUiState())
+    private val _uiState = MutableStateFlow(SearchUiState(serverUrl = settingsRepository.getServerUrl()))
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
     // Cache of all media to avoid hitting API on every keystroke

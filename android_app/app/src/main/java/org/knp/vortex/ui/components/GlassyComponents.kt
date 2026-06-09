@@ -122,13 +122,15 @@ fun AppHeader(
         )
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title ?: "VORTEX", 
-                color = if (title == null) PrimaryBlue else Color.White, 
-                fontWeight = FontWeight.ExtraBold, 
-                style = MaterialTheme.typography.titleLarge,
-                letterSpacing = if (title == null) 2.sp else 0.sp
-            )
+            if (title != null) {
+                Text(
+                    text = title, 
+                    color = Color.White, 
+                    fontWeight = FontWeight.ExtraBold, 
+                    style = MaterialTheme.typography.titleLarge,
+                    letterSpacing = 0.sp
+                )
+            }
             if (subtitle != null) {
                 Text(
                     text = subtitle,
@@ -327,41 +329,12 @@ fun GlassyBackground(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(DeepBackground)
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(Liquid1, Liquid2, Liquid3)
+                )
+            )
     ) {
-        // Gradient Blobs
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val w = size.width
-            val h = size.height
-            
-            // Top Left Blob (Blue/Purple)
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(PrimaryBlue.copy(alpha = 0.15f), Color.Transparent),
-                    center = androidx.compose.ui.geometry.Offset(0f, 0f),
-                    radius = w * 0.8f
-                )
-            )
-            
-            // Center Right Blob (Cyan)
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(CyanAccent.copy(alpha = 0.1f), Color.Transparent),
-                    center = androidx.compose.ui.geometry.Offset(w, h * 0.4f),
-                    radius = w * 0.6f
-                )
-            )
-            
-            // Bottom Left Blob (Darker Blue)
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(PrimaryBlue.copy(alpha = 0.1f), Color.Transparent),
-                    center = androidx.compose.ui.geometry.Offset(0f, h),
-                    radius = w * 0.9f
-                )
-            )
-        }
-        
         // Content
         content()
     }
@@ -507,15 +480,12 @@ fun GlassyBottomNavigation(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(80.dp)
             .background(Color.Transparent)
     ) {
         // Glassy Background
         Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(80.dp)
+                .matchParentSize()
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
@@ -543,7 +513,10 @@ fun GlassyBottomNavigation(
         )
 
         Row(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .height(80.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically,
             content = content

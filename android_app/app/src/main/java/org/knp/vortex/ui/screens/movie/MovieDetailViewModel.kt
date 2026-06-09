@@ -1,4 +1,4 @@
-package org.knp.vortex.ui.screens.details
+package org.knp.vortex.ui.screens.movie
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,15 +14,17 @@ import javax.inject.Inject
 data class MovieDetailUiState(
     val media: MediaItemDto? = null,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val serverUrl: String = ""
 )
 
 @HiltViewModel
 class MovieDetailViewModel @Inject constructor(
-    private val repository: MediaRepository
+    private val repository: MediaRepository,
+    private val settingsRepository: org.knp.vortex.data.repository.SettingsRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(MovieDetailUiState())
+    private val _uiState = MutableStateFlow(MovieDetailUiState(serverUrl = settingsRepository.getServerUrl()))
     val uiState: StateFlow<MovieDetailUiState> = _uiState.asStateFlow()
 
     fun loadMedia(id: Long) {
@@ -30,10 +32,10 @@ class MovieDetailViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true)
             repository.getMediaDetails(id)
                 .onSuccess { media ->
-                    _uiState.value = MovieDetailUiState(media = media, isLoading = false)
+                    _uiState.value = _uiState.value.copy(media = media, isLoading = false)
                 }
                 .onFailure {
-                    _uiState.value = MovieDetailUiState(isLoading = false, error = it.message)
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
                 }
         }
     }
@@ -43,10 +45,10 @@ class MovieDetailViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true)
             repository.refreshMetadata(id)
                 .onSuccess { media ->
-                     _uiState.value = MovieDetailUiState(media = media, isLoading = false)
+                     _uiState.value = _uiState.value.copy(media = media, isLoading = false)
                 }
                 .onFailure {
-                    _uiState.value = MovieDetailUiState(isLoading = false, error = it.message)
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
                 }
         }
     }

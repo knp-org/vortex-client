@@ -8,6 +8,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,6 +30,7 @@ import org.knp.vortex.ui.components.GlassySurface
 fun ManageLibrariesScreen(
     onBack: () -> Unit,
     onAddLibrary: () -> Unit,
+    onEditLibrary: (Long) -> Unit,
     viewModel: ManageLibrariesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -124,8 +126,9 @@ fun ManageLibrariesScreen(
                     uiState.libraries.forEach { lib ->
                         LibraryItem(
                             name = lib.name,
-                            path = lib.path,
+                            path = lib.paths.joinToString(", "),
                             type = lib.library_type,
+                            onEdit = { onEditLibrary(lib.id) },
                             onDelete = { viewModel.deleteLibrary(lib.id) }
                         )
                     }
@@ -150,6 +153,7 @@ fun LibraryItem(
     name: String,
     path: String,
     type: String,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     GlassyCard(
@@ -184,11 +188,19 @@ fun LibraryItem(
                 )
             }
             
-            IconButton(
-                onClick = onDelete,
-                colors = IconButtonDefaults.iconButtonColors(contentColor = Color.Red.copy(alpha = 0.7f))
-            ) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconButton(
+                    onClick = onEdit,
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = PrimaryBlue)
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit")
+                }
+                IconButton(
+                    onClick = onDelete,
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = Color.Red.copy(alpha = 0.7f))
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete")
+                }
             }
         }
     }

@@ -10,10 +10,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.lifecycle.SavedStateHandle
 
 data class CreateLibraryUiState(
     val name: String = "",
-    val path: String = "",
+    val paths: List<String> = emptyList(),
+    val currentPathInput: String = "",
     val type: String = "movies",
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
@@ -26,18 +28,53 @@ data class CreateLibraryUiState(
 
 @HiltViewModel
 class CreateLibraryViewModel @Inject constructor(
-    private val repository: MediaRepository
+    private val repository: MediaRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    val libraryId: Long = savedStateHandle.get<Long>("libraryId") ?: -1L
 
     private val _uiState = MutableStateFlow(CreateLibraryUiState())
     val uiState: StateFlow<CreateLibraryUiState> = _uiState.asStateFlow()
+
+    init {
+        if (libraryId != -1L) {
+            viewModelScope.launch {
+                repository.getLibraries().onSuccess { libs ->
+                    libs.find { it.id == libraryId }?.let { lib ->
+                        _uiState.value = _uiState.value.copy(
+                            name = lib.name,
+                            paths = lib.paths,
+                            type = lib.library_type
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     fun updateName(name: String) {
         _uiState.value = _uiState.value.copy(name = name)
     }
 
-    fun updatePath(path: String) {
-        _uiState.value = _uiState.value.copy(path = path)
+    fun updateCurrentPathInput(path: String) {
+        _uiState.value = _uiState.value.copy(currentPathInput = path)
+    }
+
+    fun addPath(path: String) {
+        val trimmed = path.trim()
+        if (trimmed.isNotBlank() && !_uiState.value.paths.contains(trimmed)) {
+            _uiState.value = _uiState.value.copy(
+                paths = _uiState.value.paths + trimmed,
+                currentPathInput = ""
+            )
+        }
+    }
+
+    fun removePath(path: String) {
+        _uiState.value = _uiState.value.copy(
+            paths = _uiState.value.paths - path
+        )
     }
 
     fun updateType(type: String) {
@@ -45,7 +82,7 @@ class CreateLibraryViewModel @Inject constructor(
     }
 
     fun openDirectoryPicker() {
-        val currentPath = _uiState.value.path.ifBlank { "" }
+        val currentPath = _uiState.value.currentPathInput.ifBlank { "" }
         _uiState.value = _uiState.value.copy(
             showDirectoryPicker = true,
             directoryPath = currentPath
@@ -59,9 +96,9 @@ class CreateLibraryViewModel @Inject constructor(
 
     fun selectDirectory(path: String) {
         _uiState.value = _uiState.value.copy(
-            path = path,
             showDirectoryPicker = false
         )
+        addPath(path)
     }
 
     fun navigateDirectory(path: String) {
@@ -119,18 +156,32 @@ class CreateLibraryViewModel @Inject constructor(
 
     fun createLibrary() {
         val currentState = _uiState.value
-        if (currentState.name.isBlank() || currentState.path.isBlank()) {
-            _uiState.value = currentState.copy(error = "Name and Path are required")
+        val finalPaths = currentState.paths.toMutableList()
+        if (currentState.currentPathInput.isNotBlank() && !finalPaths.contains(currentState.currentPathInput.trim())) {
+            finalPaths.add(currentState.currentPathInput.trim())
+        }
+
+        if (currentState.name.isBlank() || finalPaths.isEmpty()) {
+            _uiState.value = currentState.copy(error = "Name and at least one Path are required")
             return
         }
 
         viewModelScope.launch {
             _uiState.value = currentState.copy(isLoading = true, error = null)
-            val result = repository.createLibrary(
-                currentState.name, 
-                currentState.path, 
-                currentState.type
-            )
+            val result = if (libraryId != -1L) {
+                repository.updateLibrary(
+                    libraryId,
+                    currentState.name, 
+                    finalPaths, 
+                    currentState.type
+                )
+            } else {
+                repository.createLibrary(
+                    currentState.name, 
+                    finalPaths, 
+                    currentState.type
+                )
+            }
             result.onSuccess {
                 _uiState.value = currentState.copy(isLoading = false, isSuccess = true)
             }.onFailure {

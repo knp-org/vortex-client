@@ -11,14 +11,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import org.knp.vortex.data.remote.ProviderInfoDto
 
 data class SettingsUiState(
     val serverUrl: String = "",
-    val tmdbApiKey: String = "",
     val isBiometricEnabled: Boolean = false,
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val providers: List<ProviderInfoDto> = emptyList()
 )
 
 @HiltViewModel
@@ -33,6 +34,7 @@ class SettingsViewModel @Inject constructor(
     init {
         loadSettings()
         loadRemoteSettings()
+        loadProviders()
     }
 
     private fun loadSettings() {
@@ -48,18 +50,13 @@ class SettingsViewModel @Inject constructor(
     private fun loadRemoteSettings() {
         viewModelScope.launch {
             mediaRepository.getSettings().onSuccess { settingsList ->
-                val key = settingsList.find { it.key == "tmdb_api_key" }?.value ?: ""
-                _uiState.value = _uiState.value.copy(tmdbApiKey = key)
+                // Legacy setting loading removed
             }
         }
     }
     
     fun updateServerUrl(url: String) {
         _uiState.value = _uiState.value.copy(serverUrl = url, isSaved = false)
-    }
-
-    fun updateTmdbApiKey(key: String) {
-        _uiState.value = _uiState.value.copy(tmdbApiKey = key, isSaved = false)
     }
     
     fun toggleBiometric(enabled: Boolean) {
@@ -70,7 +67,6 @@ class SettingsViewModel @Inject constructor(
     fun saveSettings() {
         viewModelScope.launch {
             settingsRepository.setServerUrl(_uiState.value.serverUrl)
-            mediaRepository.updateRemoteSetting("tmdb_api_key", _uiState.value.tmdbApiKey)
             _uiState.value = _uiState.value.copy(isSaved = true)
         }
     }
@@ -83,6 +79,62 @@ class SettingsViewModel @Inject constructor(
     fun resetDatabase() {
         viewModelScope.launch {
             mediaRepository.resetDatabase()
+        }
+    }
+
+    fun scanLibraries() {
+        viewModelScope.launch {
+            mediaRepository.scanLibraries()
+        }
+    }
+
+    fun logout() {
+        settingsRepository.setAuthToken(null)
+    }
+
+    private fun loadProviders() {
+        viewModelScope.launch {
+            mediaRepository.getProviders().onSuccess { providers ->
+                _uiState.value = _uiState.value.copy(providers = providers)
+            }
+        }
+    }
+
+    fun toggleProvider(id: String, enabled: Boolean) {
+        viewModelScope.launch {
+            mediaRepository.toggleProvider(id, enabled).onSuccess {
+                loadProviders() // Refresh the list
+            }
+        }
+    }
+
+    fun moveProviderUp(id: String) {
+        val currentOrder = _uiState.value.providers.map { it.id }.toMutableList()
+        val index = currentOrder.indexOf(id)
+        if (index > 0) {
+            val temp = currentOrder[index - 1]
+            currentOrder[index - 1] = currentOrder[index]
+            currentOrder[index] = temp
+            saveProviderOrder(currentOrder)
+        }
+    }
+
+    fun moveProviderDown(id: String) {
+        val currentOrder = _uiState.value.providers.map { it.id }.toMutableList()
+        val index = currentOrder.indexOf(id)
+        if (index >= 0 && index < currentOrder.size - 1) {
+            val temp = currentOrder[index + 1]
+            currentOrder[index + 1] = currentOrder[index]
+            currentOrder[index] = temp
+            saveProviderOrder(currentOrder)
+        }
+    }
+
+    private fun saveProviderOrder(order: List<String>) {
+        viewModelScope.launch {
+            mediaRepository.reorderProviders(order).onSuccess {
+                loadProviders()
+            }
         }
     }
 }

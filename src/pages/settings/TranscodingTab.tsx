@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from '../../components/common/Input';
+import { Select } from '../../components/common/Select';
 import { Server, Monitor, Cpu, Activity } from 'lucide-react';
 import { TranscodeSettings } from '../../types';
 import { settingsService } from '../../services';
@@ -153,21 +154,21 @@ export const TranscodingTab: React.FC = () => {
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-400">Encoding Preset</label>
                             <div className="flex gap-2 text-sm text-gray-500 mb-2">Balances speed vs quality</div>
-                            <select
+                            <Select
                                 value={transcodeSettings.preset || ''}
-                                onChange={e => handleSaveAdvanced({ preset: e.target.value })}
-                                className="w-full bg-gray-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                            >
-                                <option value="">Default (Auto)</option>
-                                <option value="ultrafast">Ultrafast (Lowest Quality / Low CPU)</option>
-                                <option value="superfast">Superfast</option>
-                                <option value="veryfast">Veryfast (Good Balance)</option>
-                                <option value="fast">Fast</option>
-                                <option value="medium">Medium</option>
-                                <option value="slow">Slow</option>
-                                <option value="slower">Slower</option>
-                                <option value="veryslow">Veryslow (Best Quality / High CPU)</option>
-                            </select>
+                                onChange={val => handleSaveAdvanced({ preset: val })}
+                                options={[
+                                    { id: "", label: "Default (Auto)" },
+                                    { id: "ultrafast", label: "Ultrafast (Lowest Quality / Low CPU)" },
+                                    { id: "superfast", label: "Superfast" },
+                                    { id: "veryfast", label: "Veryfast (Good Balance)" },
+                                    { id: "fast", label: "Fast" },
+                                    { id: "medium", label: "Medium" },
+                                    { id: "slow", label: "Slow" },
+                                    { id: "slower", label: "Slower" },
+                                    { id: "veryslow", label: "Veryslow (Best Quality / High CPU)" }
+                                ]}
+                            />
                         </div>
 
                         {/* Throttling */}

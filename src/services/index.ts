@@ -5,6 +5,7 @@ export { bookService } from './books';
 export type { BookInfo, BookFormat } from './books';
 export { settingsService } from './settings';
 export { systemService } from './system';
+export { providerService } from './providers';
 
 // Re-export types from centralized types module
 export type {

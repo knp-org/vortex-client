@@ -65,10 +65,10 @@ export const MediaCard: React.FC<MediaCardProps> = ({
         }
     };
 
-    const handleIdentify = async (providerId: string, mediaType: 'movie' | 'series') => {
+    const handleIdentify = async (providerId: string, mediaType: 'movie' | 'series', providerName?: string) => {
         if (!id) return;
         try {
-            await api.post(`/media/${id}/identify`, { provider_id: providerId, media_type: mediaType });
+            await api.post(`/media/${id}/identify`, { provider_id: providerId, media_type: mediaType, provider_name: providerName });
             window.location.reload(); // Simple refresh to show new data
         } catch (error) {
             console.error(error);

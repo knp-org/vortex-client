@@ -106,9 +106,10 @@ fun IdentifyScreen(
                                     }
                                     
                                     if (providerId != null) {
-                                        viewModel.identify(mediaId, providerId, mediaType, seriesName)
+                                viewModel.identify(mediaId, providerId, mediaType, seriesName)
                                     }
-                                }
+                                },
+                                serverUrl = uiState.serverUrl
                             )
                         }
                     }
@@ -119,7 +120,7 @@ fun IdentifyScreen(
 }
 
 @Composable
-fun SearchResultCard(result: MetadataSearchResultDto, onClick: () -> Unit) {
+fun SearchResultCard(result: MetadataSearchResultDto, serverUrl: String, onClick: () -> Unit) {
     org.knp.vortex.ui.components.GlassyCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
@@ -127,7 +128,7 @@ fun SearchResultCard(result: MetadataSearchResultDto, onClick: () -> Unit) {
     ) {
         Row(modifier = Modifier.padding(12.dp)) {
             AsyncImage(
-                model = result.poster_url,
+                model = org.knp.vortex.utils.formatImageUrl(result.poster_url, serverUrl),
                 contentDescription = result.title,
                 modifier = Modifier
                     .width(80.dp)

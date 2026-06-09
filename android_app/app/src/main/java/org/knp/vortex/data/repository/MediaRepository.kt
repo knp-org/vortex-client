@@ -4,6 +4,7 @@ import org.knp.vortex.data.remote.MediaApi
 import org.knp.vortex.data.remote.MediaItemDto
 import org.knp.vortex.data.remote.ProgressDto
 import org.knp.vortex.data.remote.CreateLibraryRequest
+import org.knp.vortex.data.remote.UpdateLibraryRequest
 import org.knp.vortex.data.remote.ListDirectoriesRequest
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,8 +19,12 @@ class MediaRepository @Inject constructor(
 
     suspend fun getLibraries() = runCatching { api.getLibraries() }
 
-    suspend fun createLibrary(name: String, path: String, type: String) = runCatching {
-        api.createLibrary(CreateLibraryRequest(name, path, type))
+    suspend fun createLibrary(name: String, paths: List<String>, type: String) = runCatching {
+        api.createLibrary(CreateLibraryRequest(name, paths, type))
+    }
+
+    suspend fun updateLibrary(id: Long, name: String, paths: List<String>, type: String) = runCatching {
+        api.updateLibrary(id, UpdateLibraryRequest(name, paths, type))
     }
 
     suspend fun listDirectories(path: String?) = runCatching { 
@@ -83,4 +88,24 @@ class MediaRepository @Inject constructor(
     suspend fun resetDatabase() = runCatching { api.resetDatabase() }
 
     suspend fun getSubtitles(id: Long) = runCatching { api.getSubtitles(id) }
+
+    suspend fun getProviders() = runCatching {
+        api.getProviders()
+    }
+
+    suspend fun toggleProvider(id: String, enabled: Boolean) = runCatching {
+        api.toggleProvider(id, org.knp.vortex.data.remote.ToggleProviderRequest(enabled))
+    }
+
+    suspend fun reorderProviders(order: List<String>) = runCatching {
+        api.reorderProviders(org.knp.vortex.data.remote.ReorderProvidersRequest(order))
+    }
+
+    suspend fun getProviderConfig(id: String) = runCatching {
+        api.getProviderConfig(id)
+    }
+
+    suspend fun updateProviderConfig(id: String, config: Map<String, Any>) = runCatching {
+        api.updateProviderConfig(id, org.knp.vortex.data.remote.UpdateConfigRequest(config))
+    }
 }

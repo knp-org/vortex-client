@@ -1,6 +1,6 @@
 // Settings Types
 
-export type SettingsTab = 'libraries' | 'metadata' | 'api-keys' | 'transcoding' | 'system';
+export type SettingsTab = 'libraries' | 'account' | 'metadata' | 'transcoding' | 'system';
 
 export interface Setting {
     key: string;

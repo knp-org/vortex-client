@@ -8,6 +8,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.background
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,7 +55,8 @@ fun CreateLibraryScreen(
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
-                GlassyTopBar(title = "Create Library", onBack = onBack)
+                val title = if (viewModel.libraryId != -1L) "Edit Library" else "Create Library"
+                GlassyTopBar(title = title, onBack = onBack)
             }
         ) { padding ->
             Column(
@@ -76,21 +80,55 @@ fun CreateLibraryScreen(
                     )
 
                     // Path Selection
-                    Text("Folder Path", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Folder Paths", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     
-                    org.knp.vortex.ui.components.GlassyTextField(
-                        value = uiState.path,
-                        onValueChange = { viewModel.updatePath(it) },
-                        label = "Server Path",
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        trailingIcon = {
-                            IconButton(onClick = { viewModel.openDirectoryPicker() }) {
-                                Icon(Icons.Default.Folder, contentDescription = "Browse", tint = PrimaryBlue)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        uiState.paths.forEach { path ->
+                            org.knp.vortex.ui.components.GlassyCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(text = path, color = Color.White, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                    IconButton(onClick = { viewModel.removePath(path) }, modifier = Modifier.size(32.dp)) {
+                                        Icon(Icons.Default.Close, contentDescription = "Remove Path", tint = Color.Red.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
+                                    }
+                                }
                             }
                         }
-                    )
-                    Text("Click folder icon to browse server paths", color = GrayText, style = MaterialTheme.typography.bodySmall)
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            org.knp.vortex.ui.components.GlassyTextField(
+                                value = uiState.currentPathInput,
+                                onValueChange = { viewModel.updateCurrentPathInput(it) },
+                                label = "Server Path",
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                trailingIcon = {
+                                    IconButton(onClick = { viewModel.openDirectoryPicker() }) {
+                                        Icon(Icons.Default.Folder, contentDescription = "Browse", tint = PrimaryBlue)
+                                    }
+                                }
+                            )
+                            IconButton(
+                                onClick = { viewModel.addPath(uiState.currentPathInput) },
+                                modifier = Modifier
+                                    .size(56.dp) // Match height of GlassyTextField roughly
+                                    .background(PrimaryBlue, shape = RoundedCornerShape(12.dp))
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "Add Path", tint = Color.White)
+                            }
+                        }
+                    }
+                    Text("Click folder icon to browse server paths, or + to add manual path", color = GrayText, style = MaterialTheme.typography.bodySmall)
 
                     // Type Dropdown
                     Text("Library Type", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -140,7 +178,8 @@ fun CreateLibraryScreen(
                         if (uiState.isLoading) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                         } else {
-                            Text("Finish and Create", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            val btnText = if (viewModel.libraryId != -1L) "Save Changes" else "Finish and Create"
+                            Text(btnText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                     }
                 }

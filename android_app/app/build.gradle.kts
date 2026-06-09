@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "org.knp.vortex"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "org.knp.vortex"
+        applicationId = "org.knp.vortex.beta"
         minSdk = 33
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Search, Film, Tv } from 'lucide-react';
 import { Button } from '../common/Button';
 import { resolveImageUrl, api } from '../../services';
@@ -6,7 +7,7 @@ import { resolveImageUrl, api } from '../../services';
 interface IdentifyModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onIdentify: (providerId: string, mediaType: 'movie' | 'series') => Promise<void>;
+    onIdentify: (providerId: string, mediaType: 'movie' | 'series', providerName?: string) => Promise<void>;
     currentTitle: string;
     isSeries: boolean;
 }
@@ -18,7 +19,6 @@ interface SearchResult {
     media_type: 'movie' | 'series';
     overview?: string;
     provider_ids?: {
-        tmdb?: number | string;
         [key: string]: any;
     };
 }
@@ -48,8 +48,18 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
 
         setIsLoading(true);
         try {
+            // Extract year from query, e.g., "Matrix (1999)" -> "Matrix", "1999"
+            let name = searchQuery;
+            let year = '';
+            const match = searchQuery.match(/^(.*?)\s*\(?(\d{4})\)?\s*$/);
+            if (match && match[2]) {
+                name = match[1].trim();
+                year = match[2];
+            }
+
             const typeParam = isSeries ? '&media_type=series' : '&media_type=movie';
-            const data = await api.get<SearchResult[]>(`/metadata/search?query=${encodeURIComponent(searchQuery)}${typeParam}`);
+            const yearParam = year ? `&year=${year}` : '';
+            const data = await api.get<SearchResult[]>(`/metadata/search?query=${encodeURIComponent(name)}${typeParam}${yearParam}`);
             setResults(data);
         } catch (error) {
             console.error("Search failed", error);
@@ -61,9 +71,17 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
     const handleSelect = async (result: SearchResult) => {
         console.log("IdentifyModal: handleSelect called with:", result);
 
+        // Find the first available provider ID from the result
         let providerId = "";
-        if (result.provider_ids && result.provider_ids.tmdb) {
-            providerId = result.provider_ids.tmdb.toString();
+        let providerName = "";
+        if (result.provider_ids) {
+            for (const [name, value] of Object.entries(result.provider_ids)) {
+                if (value != null && value !== '') {
+                    providerName = name;
+                    providerId = value.toString();
+                    break;
+                }
+            }
         }
 
         if (!providerId) {
@@ -73,8 +91,8 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
 
         setIsIdentifying(true);
         try {
-            console.log("IdentifyModal: Calling onIdentify callback...", { provider_id: providerId, media_type: result.media_type });
-            await onIdentify(providerId, result.media_type);
+            console.log("IdentifyModal: Calling onIdentify callback...", { provider_id: providerId, media_type: result.media_type, provider_name: providerName });
+            await onIdentify(providerId, result.media_type, providerName);
             console.log("IdentifyModal: onIdentify successful");
             onClose();
         } catch (error) {
@@ -84,9 +102,19 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
         }
     };
 
+    /** Get a stable React key from whichever provider ID is present */
+    const resultKey = (result: SearchResult, index: number): string => {
+        if (result.provider_ids) {
+            for (const v of Object.values(result.provider_ids)) {
+                if (v != null) return v.toString();
+            }
+        }
+        return String(index);
+    };
+
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
             <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
                 {/* Header */}
@@ -127,7 +155,7 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
 
                     {results.map((result, index) => (
                         <div
-                            key={result.provider_ids?.tmdb || index}
+                            key={resultKey(result, index)}
                             className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 cursor-pointer transition-all group"
                             onClick={() => handleSelect(result)}
                         >
@@ -150,6 +178,12 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
                                     <span className="capitalize px-1.5 py-0.5 rounded bg-white/5 text-xs border border-white/5">
                                         {result.media_type}
                                     </span>
+                                    {/* Show which provider this result came from */}
+                                    {result.provider_ids && Object.keys(result.provider_ids).map(name => (
+                                        <span key={name} className="px-1.5 py-0.5 rounded bg-cyan-500/10 text-[10px] text-cyan-400 border border-cyan-500/10 uppercase">
+                                            {name}
+                                        </span>
+                                    ))}
                                 </div>
                                 {result.overview && (
                                     <p className="text-xs text-gray-500 line-clamp-1 mt-1">{result.overview}</p>
@@ -177,6 +211,7 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
                     </div>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

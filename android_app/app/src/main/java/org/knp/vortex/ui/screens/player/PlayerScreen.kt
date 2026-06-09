@@ -52,6 +52,7 @@ class PlayerViewModel @Inject constructor(
     val callFactory: Call.Factory get() = okHttpClient
     
     fun getServerUrl(): String = settingsRepository.getServerUrl()
+    fun getToken(): String? = settingsRepository.getAuthToken()
     fun getProgress(id: Long, onResult: (Long) -> Unit) {
         viewModelScope.launch {
             repository.getProgress(id).onSuccess { 
@@ -125,14 +126,16 @@ fun PlayerScreen(
             .apply {
                 // Dynamic Media URL from Settings
                 val baseUrl = viewModel.getServerUrl().trimEnd('/')
-                val mediaUrl = "$baseUrl/api/v1/stream/$mediaId"
+                val token = viewModel.getToken()
+                val tokenQuery = if (token != null) "?token=$token" else ""
+                val mediaUrl = "$baseUrl/api/v1/stream/$mediaId$tokenQuery"
                 
                 val mediaItemBuilder = MediaItem.Builder()
                     .setUri(mediaUrl)
                 
                 val subtitleConfigs = subtitles.map { sub ->
                     val mimeType = if (sub.url.endsWith(".vtt")) androidx.media3.common.MimeTypes.TEXT_VTT else androidx.media3.common.MimeTypes.APPLICATION_SUBRIP
-                    val subUrl = "$baseUrl${sub.url}"
+                    val subUrl = "$baseUrl${sub.url}$tokenQuery"
                     MediaItem.SubtitleConfiguration.Builder(android.net.Uri.parse(subUrl))
                         .setMimeType(mimeType)
                         .setLanguage(sub.language)

@@ -21,6 +21,11 @@ class DynamicBaseUrlInterceptor @Inject constructor(
         val originalRequest = chain.request()
         val originalUrl = originalRequest.url
 
+        // Only intercept if the original host is placeholder.local (the placeholder used in Retrofit)
+        if (originalUrl.host != "placeholder.local") {
+            return chain.proceed(originalRequest)
+        }
+
         // Get the current server URL from settings
         val newBaseUrl = settingsRepository.getServerUrl().toHttpUrlOrNull()
             ?: return chain.proceed(originalRequest) // Fallback to original if URL is invalid

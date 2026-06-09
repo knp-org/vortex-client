@@ -165,9 +165,11 @@ fun LibraryScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Library Name Header
-            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                SectionHeader(title = if (uiState.currentPath.isEmpty()) displayTitle else "$displayTitle / ...")
+            // Directory Path Header (Only shown when browsing subdirectories)
+            if (uiState.currentPath.isNotEmpty()) {
+                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    SectionHeader(title = "... / ${uiState.currentPath.substringAfterLast('/')}")
+                }
             }
             
             when {
@@ -193,7 +195,7 @@ fun LibraryScreen(
                             items(uiState.seriesList) { series ->
                                 ModernMediaCard(
                                     title = series.name,
-                                    posterUrl = series.poster_url,
+                                    posterUrl = org.knp.vortex.utils.formatImageUrl(series.poster_url, uiState.serverUrl),
                                     year = null,
                                     onClick = { onOpenSeries(series.name) },
                                     modifier = Modifier.width(140.dp)
@@ -226,7 +228,7 @@ fun LibraryScreen(
                                             if (entry.poster_url == null && entry.media_id == null) return@remember null
                                             
                                             // Use poster_url if available, otherwise use server thumbnail endpoint
-                                            val imageUrl = entry.poster_url 
+                                            val imageUrl = org.knp.vortex.utils.formatImageUrl(entry.poster_url, uiState.serverUrl)
                                                 ?: "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${entry.media_id}/thumbnail"
                                             
                                             coil.request.ImageRequest.Builder(context)
@@ -295,7 +297,7 @@ fun LibraryScreen(
                             items(uiState.mediaItems) { item ->
                                 ModernMediaCard(
                                     title = item.title,
-                                    posterUrl = item.poster_url,
+                                    posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl) ?: "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail",
                                     year = item.year,
                                     onClick = { onPlayMedia(item.id, libraryType) },
                                     modifier = Modifier.width(140.dp)
