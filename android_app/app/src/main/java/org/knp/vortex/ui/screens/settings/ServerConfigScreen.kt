@@ -8,6 +8,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -22,6 +24,7 @@ fun ServerConfigScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showResetDialog by androidx.compose.runtime.remember { mutableStateOf(false) }
 
     GlassyBackground {
         Scaffold(
@@ -85,7 +88,7 @@ fun ServerConfigScreen(
                         color = Color(0xFF4CAF50)
                     )
                 }
-
+                
                 uiState.error?.let {
                     Text(
                         text = "⚠ $it",
@@ -93,6 +96,44 @@ fun ServerConfigScreen(
                         color = Color.Red
                     )
                 }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                OutlinedButton(
+                    onClick = { showResetDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFFF5252)
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF5252))
+                ) {
+                    Text("Reset Server Database")
+                }
+            }
+
+            if (showResetDialog) {
+                AlertDialog(
+                    onDismissRequest = { showResetDialog = false },
+                    title = { Text("Reset Database") },
+                    text = { Text("Are you sure you want to clear the server database? This will delete all media and library data. This action cannot be undone.") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                viewModel.resetDatabase()
+                                showResetDialog = false
+                            },
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFF5252))
+                        ) {
+                            Text("Reset")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showResetDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
             }
         }
     }
