@@ -94,19 +94,22 @@ fun IdentifyScreen(
                             SearchResultCard(
                                 result = result,
                                 onClick = { 
-                                    // Extract the best provider ID safely
+                                    var providerName = "tmdb"
+                                    var providerId = ""
+                                    
                                     val tmdb = result.provider_ids?.get("tmdb")
-                                    val providerId = when (tmdb) {
-                                        is Number -> tmdb.toLong().toString() // handle 1234.0 case
-                                        is String -> tmdb
-                                        else -> result.provider_ids?.entries?.firstOrNull()?.let { entry ->
-                                            val value = entry.value
-                                            if (value is Number) value.toLong().toString() else value.toString()
+                                    if (tmdb != null) {
+                                        providerId = if (tmdb is Number) tmdb.toLong().toString() else tmdb.toString()
+                                    } else {
+                                        val first = result.provider_ids?.entries?.firstOrNull()
+                                        if (first != null) {
+                                            providerName = first.key
+                                            providerId = if (first.value is Number) (first.value as Number).toLong().toString() else first.value.toString()
                                         }
                                     }
                                     
-                                    if (providerId != null) {
-                                viewModel.identify(mediaId, providerId, mediaType, seriesName)
+                                    if (providerId.isNotEmpty()) {
+                                        viewModel.identify(mediaId, providerId, mediaType, seriesName, providerName)
                                     }
                                 },
                                 serverUrl = uiState.serverUrl

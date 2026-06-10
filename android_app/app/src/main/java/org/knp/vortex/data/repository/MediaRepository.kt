@@ -58,8 +58,8 @@ class MediaRepository @Inject constructor(
     
     suspend fun searchLibrary(query: String, mediaType: String?) = runCatching { api.searchLibrary(query, mediaType) }
 
-    suspend fun identifyMedia(id: Long, providerId: String, mediaType: String?) = runCatching {
-        api.identifyMedia(id, org.knp.vortex.data.remote.IdentifyRequest(providerId, mediaType))
+    suspend fun identifyMedia(id: Long, providerId: String, mediaType: String?, providerName: String? = null) = runCatching {
+        api.identifyMedia(id, org.knp.vortex.data.remote.IdentifyRequest(providerId, mediaType, providerName))
     }
 
     // TV Show methods
@@ -75,8 +75,8 @@ class MediaRepository @Inject constructor(
 
     suspend fun refreshSeriesMetadata(name: String) = runCatching { api.refreshSeriesMetadata(name) }
 
-    suspend fun identifySeries(name: String, providerId: String, mediaType: String?) = runCatching {
-        api.identifySeries(name, org.knp.vortex.data.remote.IdentifyRequest(providerId, mediaType))
+    suspend fun identifySeries(name: String, providerId: String, mediaType: String?, providerName: String? = null) = runCatching {
+        api.identifySeries(name, org.knp.vortex.data.remote.IdentifyRequest(providerId, mediaType, providerName))
     }
 
     suspend fun getSettings() = runCatching { api.getSettings() }

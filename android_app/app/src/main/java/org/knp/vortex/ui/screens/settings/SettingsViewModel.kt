@@ -137,4 +137,16 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
+
+    suspend fun getProviderConfig(id: String): Map<String, Any>? {
+        return mediaRepository.getProviderConfig(id).getOrNull()?.config
+    }
+
+    fun updateProviderConfig(id: String, config: Map<String, Any>) {
+        viewModelScope.launch {
+            mediaRepository.updateProviderConfig(id, config).onSuccess {
+                loadProviders()
+            }
+        }
+    }
 }

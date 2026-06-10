@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Person
 import androidx.navigation.compose.currentBackStackEntryAsState
 
 
@@ -177,8 +178,8 @@ fun AppNavigation() {
                             launchSingleTop = true 
                             restoreState = true
                          } },
-                         icon = androidx.compose.material.icons.Icons.Default.Settings,
-                         label = "Settings"
+                         icon = androidx.compose.material.icons.Icons.Default.Person,
+                         label = "Profile"
                      )
                  }
              }
@@ -245,8 +246,7 @@ fun AppNavigation() {
                 onNavigateToServerConfig = { navController.navigate("settings/server") },
                 onNavigateToLibrarySettings = { navController.navigate("manage_libraries") },
                 onNavigateToMetadataProviders = { navController.navigate("settings/metadata") },
-                onNavigateToSecurity = { navController.navigate("settings/security") },
-                onNavigateToAccount = { navController.navigate("settings/account") }
+                onNavigateToSecurity = { navController.navigate("settings/security") }
             )
         }
         
@@ -398,7 +398,7 @@ fun AppNavigation() {
                 onBack = { navController.popBackStack() },
                 onIdentify = { name ->
                     val encodedTitle = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
-                    navController.navigate("identify/0/$encodedTitle/tv?seriesName=$encodedTitle")
+                    navController.navigate("identify/0/$encodedTitle/series?seriesName=$encodedTitle")
                 },
                 onPlayEpisode = { id -> navController.navigate("player/$id") }
             )

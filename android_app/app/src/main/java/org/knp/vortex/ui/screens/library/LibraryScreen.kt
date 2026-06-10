@@ -198,7 +198,7 @@ fun LibraryScreen(
                                     posterUrl = org.knp.vortex.utils.formatImageUrl(series.poster_url, uiState.serverUrl),
                                     year = null,
                                     onClick = { onOpenSeries(series.name) },
-                                    modifier = Modifier.width(140.dp)
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         } else if (libraryType.lowercase().let { it == "other" || it == "music_videos" }) {
@@ -207,7 +207,7 @@ fun LibraryScreen(
                                 // Custom Card for Files/Folders
                                 org.knp.vortex.ui.components.GlassyCard(
                                     modifier = Modifier
-                                        .width(140.dp)
+                                        .fillMaxWidth()
                                         .aspectRatio(1f), // Square for folders/files
                                     onClick = { 
                                         if (entry.is_directory) {
@@ -300,7 +300,7 @@ fun LibraryScreen(
                                     posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl) ?: "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail",
                                     year = item.year,
                                     onClick = { onPlayMedia(item.id, libraryType) },
-                                    modifier = Modifier.width(140.dp)
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }

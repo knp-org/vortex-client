@@ -126,7 +126,8 @@ data class MetadataSearchResultDto(
 
 data class IdentifyRequest(
     val provider_id: String,
-    val media_type: String?
+    val media_type: String?,
+    val provider_name: String? = null
 )
 
 data class ListDirectoriesRequest(

@@ -404,6 +404,7 @@ fun GlassyTextField(
     modifier: Modifier = Modifier,
     keyboardOptions: androidx.compose.foundation.text.KeyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default,
     singleLine: Boolean = true,
+    readOnly: Boolean = false,
     trailingIcon: @Composable (() -> Unit)? = null
 ) {
     OutlinedTextField(
@@ -412,6 +413,7 @@ fun GlassyTextField(
         label = { Text(label) },
         modifier = modifier,
         singleLine = singleLine,
+        readOnly = readOnly,
         keyboardOptions = keyboardOptions,
         trailingIcon = trailingIcon,
         shape = RoundedCornerShape(16.dp),

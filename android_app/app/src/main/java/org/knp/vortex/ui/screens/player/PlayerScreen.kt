@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,8 +21,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.foundation.layout.size
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
@@ -79,6 +82,13 @@ class PlayerViewModel @Inject constructor(
     }
 }
 
+enum class ScalingMode(val displayName: String) {
+    BEST_FIT("Best Fit"),
+    FIT_TO_SCREEN("Fit to Screen"),
+    FILL("Fill"),
+    CENTER("Center")
+}
+
 // Need to pass VM via Hilt
 
 
@@ -92,14 +102,21 @@ fun PlayerScreen(
     var savedPosition by remember { mutableStateOf(0L) }
     var isReady by remember { mutableStateOf(false) }
     var subtitles by remember { mutableStateOf<List<org.knp.vortex.data.remote.SubtitleTrackDto>>(emptyList()) }
+    var subtitlesLoaded by remember { mutableStateOf(false) }
+    var progressLoaded by remember { mutableStateOf(false) }
+    var scalingMode by remember { mutableStateOf(ScalingMode.BEST_FIT) }
+    var videoSize by remember { mutableStateOf<androidx.media3.common.VideoSize?>(null) }
 
     LaunchedEffect(mediaId) {
         viewModel.getSubtitles(mediaId) { subs ->
             subtitles = subs
+            subtitlesLoaded = true
+            if (progressLoaded) isReady = true
         }
         viewModel.getProgress(mediaId) { pos ->
             savedPosition = pos
-            isReady = true
+            progressLoaded = true
+            if (subtitlesLoaded) isReady = true
         }
     }
 
@@ -134,7 +151,8 @@ fun PlayerScreen(
                     .setUri(mediaUrl)
                 
                 val subtitleConfigs = subtitles.map { sub ->
-                    val mimeType = if (sub.url.endsWith(".vtt")) androidx.media3.common.MimeTypes.TEXT_VTT else androidx.media3.common.MimeTypes.APPLICATION_SUBRIP
+                    // The vortex-server backend converts all SRT files and embedded subtitles to WebVTT on the fly.
+                    val mimeType = androidx.media3.common.MimeTypes.TEXT_VTT
                     val subUrl = "$baseUrl${sub.url}$tokenQuery"
                     MediaItem.SubtitleConfiguration.Builder(android.net.Uri.parse(subUrl))
                         .setMimeType(mimeType)
@@ -151,6 +169,10 @@ fun PlayerScreen(
                 setMediaItem(mediaItemBuilder.build())
                 
                 addListener(object : androidx.media3.common.Player.Listener {
+                    override fun onVideoSizeChanged(newVideoSize: androidx.media3.common.VideoSize) {
+                        videoSize = newVideoSize
+                    }
+
                     override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                         errorMessage = "Error: ${error.message}\nCode: ${error.errorCodeName}"
                     }
@@ -173,9 +195,8 @@ fun PlayerScreen(
         }
     }
 
-    // Lifecycle handling & Full Screen Mode
+    // Lifecycle handling
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-    var isFullscreen by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) } // Default to false (Portrait/Normal)
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -191,30 +212,25 @@ fun PlayerScreen(
         }
     }
     
-    // Handle Fullscreen State Side-effects
+    // Handle Auto-rotation & Full Screen Mode
     val activity = context.findActivity()
     val window = activity?.window
 
-    DisposableEffect(isFullscreen) {
+    DisposableEffect(Unit) {
         if (activity != null && window != null) {
             val controller = androidx.core.view.WindowInsetsControllerCompat(window, window.decorView)
             
-            if (isFullscreen) {
-                // Enter Landscape & Fullscreen
-                activity.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-                controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-                controller.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            } else {
-                // Exit Landscape & Fullscreen
-                activity.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, true)
-                controller.show(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            }
+            // Allow sensor-based auto rotate (portrait & landscape)
+            activity.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            
+            // Enter Immersive Fullscreen
+            androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+            controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
         onDispose {
-            // Reset on cleanup (back press)
+            // Restore default configuration on exit
              if (activity != null && window != null) {
                  activity.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                  androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, true)
@@ -223,45 +239,126 @@ fun PlayerScreen(
         }
     }
 
-    AndroidView(
-        factory = {
-            PlayerView(context).apply {
-                player = exoPlayer
-                // Enable native subtitle button
-                setShowSubtitleButton(true)
-                // Enable native fullscreen button logic
-                setFullscreenButtonClickListener {
-                    isFullscreen = !isFullscreen
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    var panOffset by remember { mutableStateOf(0f) }
+
+    LaunchedEffect(scalingMode, videoSize) {
+        panOffset = 0f
+    }
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .clipToBounds(),
+        contentAlignment = Alignment.Center
+    ) {
+        val containerWidthPx = with(density) { maxWidth.roundToPx() }
+        val containerHeightPx = with(density) { maxHeight.roundToPx() }
+        val isPortrait = containerHeightPx > containerWidthPx
+
+        val (targetWidthPx, targetHeightPx) = if (videoSize != null && videoSize!!.width > 0 && videoSize!!.height > 0) {
+            val videoWidth = videoSize!!.width
+            val videoHeight = videoSize!!.height
+            val videoAspectRatio = videoWidth.toFloat() / videoHeight.toFloat()
+            val containerAspectRatio = containerWidthPx.toFloat() / containerHeightPx.toFloat()
+
+            when (scalingMode) {
+                ScalingMode.BEST_FIT -> {
+                    if (videoAspectRatio > containerAspectRatio) {
+                        Pair(containerWidthPx, (containerWidthPx / videoAspectRatio).toInt())
+                    } else {
+                        Pair((containerHeightPx * videoAspectRatio).toInt(), containerHeightPx)
+                    }
                 }
-                // Hide controller timeout to allow back button visibility if custom UI
-                controllerShowTimeoutMs = 3000
+                ScalingMode.FIT_TO_SCREEN -> {
+                    Pair(containerWidthPx, containerHeightPx)
+                }
+                ScalingMode.FILL -> {
+                    if (videoAspectRatio > containerAspectRatio) {
+                        Pair((containerHeightPx * videoAspectRatio).toInt(), containerHeightPx)
+                    } else {
+                        Pair(containerWidthPx, (containerWidthPx / videoAspectRatio).toInt())
+                    }
+                }
+                ScalingMode.CENTER -> {
+                    Pair(videoWidth, videoHeight)
+                }
             }
-        },
-        modifier = Modifier.fillMaxSize().background(Color.Black)
-    )
+        } else {
+            Pair(containerWidthPx, containerHeightPx)
+        }
+
+        val isScrollable = isPortrait && (videoSize != null) && (targetWidthPx > containerWidthPx)
+        val maxPan = if (isScrollable) (targetWidthPx - containerWidthPx) / 2f else 0f
+
+        val dragModifier = if (isScrollable) {
+            Modifier.pointerInput(maxPan) {
+                detectHorizontalDragGestures { change, dragAmount ->
+                    change.consume()
+                    panOffset = (panOffset + dragAmount).coerceIn(-maxPan, maxPan)
+                }
+            }
+        } else {
+            Modifier
+        }
+
+        AndroidView(
+            factory = {
+                PlayerView(context).apply {
+                    player = exoPlayer
+                    // Enable native subtitle button
+                    setShowSubtitleButton(true)
+                    // Enable native fullscreen button logic to cycle scaling modes
+                    setFullscreenButtonClickListener {
+                        scalingMode = when (scalingMode) {
+                            ScalingMode.BEST_FIT -> ScalingMode.FILL
+                            ScalingMode.FILL -> ScalingMode.CENTER
+                            ScalingMode.CENTER -> ScalingMode.BEST_FIT
+                            ScalingMode.FIT_TO_SCREEN -> ScalingMode.BEST_FIT
+                        }
+                    }
+                    // Hide controller timeout to allow back button visibility if custom UI
+                    controllerShowTimeoutMs = 3000
+                }
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .then(dragModifier),
+            update = { playerView ->
+                // Always fill layout bounds
+                playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL
+                
+                val contentFrame = playerView.findViewById<android.view.View>(androidx.media3.ui.R.id.exo_content_frame)
+                if (contentFrame != null) {
+                    val lp = contentFrame.layoutParams as android.widget.FrameLayout.LayoutParams
+                    lp.width = targetWidthPx
+                    lp.height = targetHeightPx
+                    lp.gravity = android.view.Gravity.CENTER
+                    contentFrame.layoutParams = lp
+                    contentFrame.translationX = panOffset
+                }
+            }
+        )
+    }
     
     // UI Overlays
     Box(Modifier.fillMaxSize()) {
         // Top Controls
-        androidx.compose.foundation.layout.Row(
+        androidx.compose.material3.IconButton(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
-        ) {
-            androidx.compose.material3.IconButton(
-                onClick = { 
-                    exoPlayer.pause()
-                    onBack() 
-                }
-            ) {
-                 androidx.compose.material3.Icon(
-                     imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
-                     contentDescription = "Back",
-                     tint = Color.White
-                 )
+                .padding(16.dp),
+            onClick = { 
+                exoPlayer.pause()
+                onBack() 
             }
+        ) {
+             androidx.compose.material3.Icon(
+                 imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                 contentDescription = "Back",
+                 tint = Color.White
+             )
         }
 
         if (errorMessage != null) {

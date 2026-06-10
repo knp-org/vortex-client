@@ -11,7 +11,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "org.knp.vortex.beta"
+        applicationId = "org.knp.vortex"
         minSdk = 33
         targetSdk = 35
         versionCode = 2

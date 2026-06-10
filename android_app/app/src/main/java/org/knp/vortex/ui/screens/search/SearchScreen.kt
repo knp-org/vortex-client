@@ -80,7 +80,7 @@ fun SearchScreen(
                                         title = series.name,
                                         posterUrl = org.knp.vortex.utils.formatImageUrl(series.poster_url, uiState.serverUrl),
                                         onClick = { onOpenSeries(series.name) },
-                                        modifier = Modifier.width(140.dp)
+                                        modifier = Modifier.width(120.dp)
                                     )
                                 }
                             }
@@ -101,7 +101,7 @@ fun SearchScreen(
                                         posterUrl = org.knp.vortex.utils.formatImageUrl(movie.poster_url, uiState.serverUrl),
                                         year = movie.year,
                                         onClick = { onPlayMedia(movie.id, movie.library_type) },
-                                        modifier = Modifier.width(140.dp)
+                                        modifier = Modifier.width(120.dp)
                                     )
                                 }
                             }

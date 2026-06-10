@@ -50,14 +50,14 @@ class IdentifyViewModel @Inject constructor(
         }
     }
 
-    fun identify(localMediaId: Long, providerId: String, mediaType: String?, seriesName: String? = null) {
+    fun identify(localMediaId: Long, providerId: String, mediaType: String?, seriesName: String? = null, providerName: String? = null) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isIdentifying = true)
             
             val result = if (localMediaId == 0L && !seriesName.isNullOrEmpty()) {
-                repository.identifySeries(seriesName, providerId, mediaType)
+                repository.identifySeries(seriesName, providerId, mediaType, providerName)
             } else {
-                repository.identifyMedia(localMediaId, providerId, mediaType)
+                repository.identifyMedia(localMediaId, providerId, mediaType, providerName)
             }
 
             result.onSuccess {

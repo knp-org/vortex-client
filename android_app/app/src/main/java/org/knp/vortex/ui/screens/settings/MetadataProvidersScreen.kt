@@ -83,7 +83,13 @@ fun MetadataProvidersScreen(
                                                     onValueChange = {},
                                                     readOnly = true,
                                                     label = field.label,
-                                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                                    trailingIcon = { 
+                                                        Icon(
+                                                            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                                            contentDescription = "Dropdown",
+                                                            tint = Color.White
+                                                        )
+                                                    },
                                                     modifier = Modifier.menuAnchor().fillMaxWidth()
                                                 )
                                                 ExposedDropdownMenu(

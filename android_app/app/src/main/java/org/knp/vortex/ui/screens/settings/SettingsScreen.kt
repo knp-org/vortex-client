@@ -24,6 +24,8 @@ import org.knp.vortex.ui.components.GlassyTopBar
 import org.knp.vortex.ui.theme.GrayText
 import org.knp.vortex.ui.theme.PrimaryBlue
 
+import androidx.hilt.navigation.compose.hiltViewModel
+
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -31,7 +33,7 @@ fun SettingsScreen(
     onNavigateToLibrarySettings: () -> Unit,
     onNavigateToMetadataProviders: () -> Unit,
     onNavigateToSecurity: () -> Unit,
-    onNavigateToAccount: () -> Unit
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
     GlassyBackground {
         Scaffold(
@@ -76,12 +78,16 @@ fun SettingsScreen(
                     onClick = onNavigateToSecurity
                 )
 
-                SettingsCategoryItem(
-                    title = "Account Settings",
-                    subtitle = "Logout and account management",
-                    icon = Icons.Default.AccountCircle,
-                    onClick = onNavigateToAccount
-                )
+                Spacer(modifier = Modifier.weight(1f))
+
+                Button(
+                    onClick = { viewModel.logout() },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = org.knp.vortex.ui.theme.ErrorRed),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Sign Out", color = Color.White)
+                }
             }
         }
     }

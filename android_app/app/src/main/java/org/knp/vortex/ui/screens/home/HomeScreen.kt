@@ -252,7 +252,7 @@ fun HomeScreen(
                                                 // Quick Play for Continue Watching
                                                 onQuickPlay(item.id)
                                             },
-                                            modifier = Modifier.width(160.dp),
+                                            modifier = Modifier.width(120.dp),
                                             videoUrl = if (item.poster_url == null) "${uiState.serverUrl.trimEnd('/')}/api/v1/stream/${item.id}" else null
                                         )
                                     }
@@ -278,7 +278,7 @@ fun HomeScreen(
                                                     title = series.name,
                                                     posterUrl = org.knp.vortex.utils.formatImageUrl(series.poster_url, uiState.serverUrl),
                                                     onClick = { onOpenSeries(series.name) },
-                                                    modifier = Modifier.width(140.dp)
+                                                    modifier = Modifier.width(120.dp)
                                                 )
                                             }
                                         }
@@ -304,7 +304,7 @@ fun HomeScreen(
                                                     posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl) ?: "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail",
                                                     year = item.year,
                                                     onClick = { onPlayMedia(item.id, library.library_type) },
-                                                    modifier = Modifier.width(140.dp)
+                                                    modifier = Modifier.width(120.dp)
                                                 )
                                             }
                                         }
@@ -331,7 +331,7 @@ fun HomeScreen(
                                                     onPlayMedia(item.id, item.library_type)
                                                 }
                                             },
-                                            modifier = Modifier.width(140.dp)
+                                            modifier = Modifier.width(120.dp)
                                         )
                                     }
                                 }
