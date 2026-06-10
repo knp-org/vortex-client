@@ -62,8 +62,8 @@ export const TranscodingTab: React.FC = () => {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            <h3 className="text-2xl font-bold text-white">Transcoding</h3>
-            <p className="text-gray-400 text-sm">Configure hardware acceleration for video playback.</p>
+            <h3 className="text-2xl font-bold text-primary font-heading">Transcoding</h3>
+            <p className="text-outline-variant text-sm font-body">Configure hardware acceleration for video playback.</p>
 
             {transcodeSettings ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
@@ -73,10 +73,10 @@ export const TranscodingTab: React.FC = () => {
                             onClick={() => handleSaveTranscode(encoder)}
                             disabled={isSavingTranscode}
                             className={`
-                                relative group p-4 rounded-xl border text-left transition-all
+                                relative group p-4 rounded-xl border text-left transition-all backdrop-blur-surface shadow-[0_0_20px_rgba(255,255,255,0.05)]
                                 ${transcodeSettings.current_encoder === encoder
-                                    ? 'bg-cyan-500/20 border-cyan-500 text-cyan-200'
-                                    : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20 hover:bg-white/10'}
+                                    ? 'bg-white/10 border-white/30 text-primary shadow-inner'
+                                    : 'bg-surface/50 border-outline text-outline-variant hover:border-white/30 hover:bg-white/5'}
                             `}
                         >
                             <div className="flex items-center justify-between mb-2">
@@ -88,7 +88,7 @@ export const TranscodingTab: React.FC = () => {
                                     {encoder}
                                 </span>
                                 {transcodeSettings.current_encoder === encoder && (
-                                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
+                                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
                                 )}
                             </div>
                             <div className="text-xs opacity-70">
@@ -102,20 +102,20 @@ export const TranscodingTab: React.FC = () => {
                     ))}
                 </div>
             ) : (
-                <div className="text-gray-400">Loading transcoding settings...</div>
+                <div className="text-outline-variant font-body">Loading transcoding settings...</div>
             )}
 
             {transcodeSettings && (
-                <div className="max-w-2xl space-y-6 pt-6 border-t border-white/5">
-                    <h4 className="text-lg font-semibold text-gray-200">Advanced Configuration</h4>
+                <div className="max-w-2xl space-y-6 pt-6 border-t border-outline">
+                    <h4 className="text-lg font-semibold text-primary font-heading">Advanced Configuration</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Thread Count */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Encoding Threads</label>
-                            <div className="flex gap-2 text-sm text-gray-500 mb-2">
+                            <label className="text-sm font-medium text-outline-variant font-label">Encoding Threads</label>
+                            <div className="flex gap-2 text-sm text-outline-variant opacity-70 mb-2 font-body">
                                 0 = Auto
                                 {transcodeSettings.system_threads > 0 && (
-                                    <span className="text-cyan-500/80 ml-2">
+                                    <span className="text-primary ml-2">
                                         (Detected {transcodeSettings.system_threads} vCPUs)
                                     </span>
                                 )}
@@ -129,14 +129,14 @@ export const TranscodingTab: React.FC = () => {
                                 placeholder="0"
                                 type="number"
                                 min="0"
-                                className="bg-white/5 border-white/10"
+                                className="bg-surface/50 border-outline text-primary placeholder-outline-variant focus:border-white/40 focus:ring-white/20"
                             />
                         </div>
 
                         {/* Bitrate Limit */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Bitrate Limit (Mbps)</label>
-                            <div className="flex gap-2 text-sm text-gray-500 mb-2">0 = Unlimited</div>
+                            <label className="text-sm font-medium text-outline-variant font-label">Bitrate Limit (Mbps)</label>
+                            <div className="flex gap-2 text-sm text-outline-variant opacity-70 mb-2 font-body">0 = Unlimited</div>
                             <Input
                                 value={transcodeSettings.max_bitrate?.toString() || '0'}
                                 onChange={e => {
@@ -146,14 +146,14 @@ export const TranscodingTab: React.FC = () => {
                                 placeholder="0"
                                 type="number"
                                 min="0"
-                                className="bg-white/5 border-white/10"
+                                className="bg-surface/50 border-outline text-primary placeholder-outline-variant focus:border-white/40 focus:ring-white/20"
                             />
                         </div>
 
                         {/* Encoding Preset */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Encoding Preset</label>
-                            <div className="flex gap-2 text-sm text-gray-500 mb-2">Balances speed vs quality</div>
+                            <label className="text-sm font-medium text-outline-variant font-label">Encoding Preset</label>
+                            <div className="flex gap-2 text-sm text-outline-variant opacity-70 mb-2 font-body">Balances speed vs quality</div>
                             <Select
                                 value={transcodeSettings.preset || ''}
                                 onChange={val => handleSaveAdvanced({ preset: val })}
@@ -173,16 +173,16 @@ export const TranscodingTab: React.FC = () => {
 
                         {/* Throttling */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Throttling</label>
-                            <div className="flex gap-2 text-sm text-gray-500 mb-2">Save CPU when buffer is full</div>
-                            <label className="flex items-center space-x-3 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
+                            <label className="text-sm font-medium text-outline-variant font-label">Throttling</label>
+                            <div className="flex gap-2 text-sm text-outline-variant opacity-70 mb-2 font-body">Save CPU when buffer is full</div>
+                            <label className="flex items-center space-x-3 p-3 rounded-xl bg-surface/50 border border-outline cursor-pointer hover:bg-white/10 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.05)]">
                                 <input
                                     type="checkbox"
                                     checked={transcodeSettings.throttle_transcodes}
                                     onChange={e => handleSaveAdvanced({ throttle_transcodes: e.target.checked })}
-                                    className="w-5 h-5 rounded border-gray-600 text-cyan-500 focus:ring-cyan-500 bg-gray-700"
+                                    className="w-5 h-5 rounded border-outline text-primary focus:ring-white/20 bg-surface"
                                 />
-                                <span className="text-gray-200">Enable Transcode Throttling</span>
+                                <span className="text-primary font-heading">Enable Transcode Throttling</span>
                             </label>
                         </div>
                     </div>

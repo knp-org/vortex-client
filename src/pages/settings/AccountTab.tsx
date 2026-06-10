@@ -51,27 +51,27 @@ export const AccountTab: React.FC = () => {
     return (
         <div className="space-y-8 animate-fade-in">
             <div>
-                <h3 className="text-2xl font-bold text-white">Account Settings</h3>
-                <p className="text-gray-400 text-sm mt-1">Manage your profile and security settings.</p>
+                <h3 className="text-2xl font-bold text-primary font-heading">Account Settings</h3>
+                <p className="text-outline-variant text-sm mt-1 font-body">Manage your profile and security settings.</p>
             </div>
 
             {/* Profile Overview */}
-            <div className="bg-white/5 border border-white/5 rounded-3xl p-6">
+            <div className="bg-surface/50 backdrop-blur-surface border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] rounded-3xl p-6">
                 <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg">
-                        <span className="text-3xl font-bold">{user?.username?.charAt(0).toUpperCase()}</span>
+                    <div className="w-20 h-20 rounded-full bg-white/10 border border-outline flex items-center justify-center text-primary shadow-lg">
+                        <span className="text-3xl font-bold font-heading">{user?.username?.charAt(0).toUpperCase()}</span>
                     </div>
 
                     <div className="flex-1">
-                        <h2 className="text-xl font-bold text-white mb-2">{user?.username}</h2>
-                        <div className="flex flex-wrap gap-3 text-sm text-gray-400">
-                            <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full">
-                                <Shield size={14} className="text-cyan-400" />
+                        <h2 className="text-xl font-bold text-primary mb-2 font-heading">{user?.username}</h2>
+                        <div className="flex flex-wrap gap-3 text-sm text-outline-variant font-label">
+                            <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                                <Shield size={14} className="text-primary" />
                                 <span className="capitalize">{user?.role || 'User'}</span>
                             </div>
                             {user?.created_at && (
-                                <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full">
-                                    <Calendar size={14} className="text-green-400" />
+                                <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                                    <Calendar size={14} className="text-primary" />
                                     <span>Joined: {new Date(user.created_at).toLocaleDateString()}</span>
                                 </div>
                             )}
@@ -92,9 +92,9 @@ export const AccountTab: React.FC = () => {
             </div>
 
             {/* Security */}
-            <div className="bg-white/5 border border-white/5 rounded-3xl p-6">
-                <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                    <Lock className="text-cyan-400" size={20} />
+            <div className="bg-surface/50 backdrop-blur-surface border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] rounded-3xl p-6">
+                <h4 className="text-lg font-bold text-primary mb-6 flex items-center gap-2 font-heading">
+                    <Lock className="text-primary" size={20} />
                     Change Password
                 </h4>
                 
@@ -127,11 +127,11 @@ export const AccountTab: React.FC = () => {
                     />
 
                     {passwordError && (
-                        <p className="text-red-400 text-sm mt-2">{passwordError}</p>
+                        <p className="text-error text-sm mt-2 font-body">{passwordError}</p>
                     )}
 
                     {passwordSuccess && (
-                        <p className="text-green-400 text-sm mt-2">Password changed successfully!</p>
+                        <p className="text-primary text-sm mt-2 font-body">Password changed successfully!</p>
                     )}
 
                     <div className="pt-4">
@@ -143,6 +143,32 @@ export const AccountTab: React.FC = () => {
                         </Button>
                     </div>
                 </form>
+            </div>
+
+            {/* Account Stats & Preferences */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-surface/30 border border-outline rounded-3xl p-6 shadow-[0_0_20px_rgba(255,255,255,0.02)]">
+                    <h3 className="text-lg font-semibold text-primary mb-4 font-heading">Account Stats</h3>
+                    <div className="space-y-3 font-body">
+                        <div className="flex justify-between text-sm text-outline-variant">
+                            <span>Watch Time</span>
+                            <span className="text-primary font-medium">0h 0m</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-outline-variant">
+                            <span>Movies Watched</span>
+                            <span className="text-primary font-medium">0</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-outline-variant">
+                            <span>Episodes Watched</span>
+                            <span className="text-primary font-medium">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-surface/30 border border-outline rounded-3xl p-6 shadow-[0_0_20px_rgba(255,255,255,0.02)]">
+                    <h3 className="text-lg font-semibold text-primary mb-4 font-heading">Preferences</h3>
+                    <p className="text-outline-variant text-sm font-body">No preferences available yet.</p>
+                </div>
             </div>
         </div>
     );

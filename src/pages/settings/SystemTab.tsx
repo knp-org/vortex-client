@@ -50,18 +50,18 @@ export const SystemTab: React.FC = () => {
             />
 
             <div className="space-y-6 animate-fade-in">
-                <h3 className="text-2xl font-bold text-white">System Actions</h3>
-                <p className="text-gray-400 text-sm">Manage server state and data. Use with caution.</p>
+                <h3 className="text-2xl font-bold text-primary font-heading">System Actions</h3>
+                <p className="text-outline-variant text-sm font-body">Manage server state and data. Use with caution.</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-                        <div className="flex items-center space-x-3 text-red-400">
+                    <div className="p-6 rounded-2xl bg-surface/50 backdrop-blur-surface border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] space-y-4">
+                        <div className="flex items-center space-x-3 text-error">
                             <Database size={24} />
-                            <h4 className="text-lg font-semibold">Database Management</h4>
+                            <h4 className="text-lg font-semibold font-heading">Database Management</h4>
                         </div>
-                        <p className="text-gray-400 text-sm leading-relaxed">
+                        <p className="text-outline-variant text-sm leading-relaxed font-body">
                             Reset your library data. This clears all media entries, libraries, and watch progress.
-                            <br /><strong className="text-red-400">Your physical files are NOT deleted.</strong>
+                            <br /><strong className="text-error">Your physical files are NOT deleted.</strong>
                             <br />Users and Settings are preserved.
                         </p>
                         <Button
@@ -73,14 +73,14 @@ export const SystemTab: React.FC = () => {
                         </Button>
                     </div>
 
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-                        <div className="flex items-center space-x-3 text-yellow-400">
+                    <div className="p-6 rounded-2xl bg-surface/50 backdrop-blur-surface border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] space-y-4">
+                        <div className="flex items-center space-x-3 text-primary">
                             <Power size={24} />
-                            <h4 className="text-lg font-semibold">Server Control</h4>
+                            <h4 className="text-lg font-semibold font-heading">Server Control</h4>
                         </div>
                         <div className="space-y-4">
                             <div>
-                                <p className="text-gray-400 text-sm mb-3">
+                                <p className="text-outline-variant text-sm mb-3 font-body">
                                     Restart the Vortex server application.
                                 </p>
                                 <Button
@@ -91,13 +91,13 @@ export const SystemTab: React.FC = () => {
                                     Restart Server
                                 </Button>
                             </div>
-                            <div className="pt-2 border-t border-white/10">
-                                <p className="text-gray-400 text-sm mb-3 mt-2">
+                            <div className="pt-2 border-t border-outline">
+                                <p className="text-outline-variant text-sm mb-3 mt-2 font-body">
                                     Shut down the server process completely.
                                 </p>
                                 <Button
                                     variant="secondary"
-                                    className="w-full justify-center text-red-300 hover:text-red-200 hover:bg-red-900/20"
+                                    className="w-full justify-center text-error hover:text-error-container hover:bg-error/20"
                                     onClick={() => setSystemAction('shutdown')}
                                 >
                                     Shutdown

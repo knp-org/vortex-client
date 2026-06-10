@@ -71,11 +71,11 @@ export const Header: React.FC = () => {
     };
 
     return (
-        <header className="h-16 flex-shrink-0 px-4 pt-4 flex items-center justify-between z-50">
+        <header className="h-16 w-full max-w-6xl px-6 flex items-center justify-between bg-surface/80 backdrop-blur-dock rounded-2xl border border-t-[rgba(255,255,255,0.3)] border-l-[rgba(255,255,255,0.3)] border-b-[rgba(255,255,255,0.05)] border-r-[rgba(255,255,255,0.05)] shadow-[0_0_40px_rgba(255,255,255,0.05)] text-primary z-50">
             {/* Left: Logo */}
             <div className="flex items-center space-x-2.5 cursor-pointer group" onClick={() => navigate('/')}>
-                <Logo size={28} className="group-hover:scale-105 transition-transform duration-300" />
-                <span className="text-xl font-semibold tracking-tight text-white">
+                <Logo size={28} className="group-hover:scale-105 transition-transform duration-300 drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]" />
+                <span className="text-xl font-bold font-heading tracking-tight text-primary">
                     Vortex
                 </span>
             </div>
@@ -86,8 +86,8 @@ export const Header: React.FC = () => {
                 className="absolute left-1/2 -translate-x-1/2 w-full max-w-[320px]"
             >
                 <div className="relative">
-                    <div className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-gray-400 rounded-full px-4 py-2 transition-all border border-white/10 focus-within:border-white/25 focus-within:bg-white/10">
-                        <Search size={18} className="text-gray-400 flex-shrink-0" />
+                    <div className="flex items-center gap-3 bg-black/40 hover:bg-black/60 text-outline-variant rounded-full px-4 py-2 transition-all border border-outline focus-within:border-white/40 focus-within:bg-black/80 shadow-inner">
+                        <Search size={18} className="text-outline flex-shrink-0" />
                         <input
                             ref={inputRef}
                             type="text"
@@ -95,12 +95,12 @@ export const Header: React.FC = () => {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={() => setIsSearchOpen(true)}
-                            className="bg-transparent outline-none text-sm text-gray-200 placeholder-gray-500 w-full"
+                            className="bg-transparent outline-none text-sm text-primary placeholder-outline-variant w-full font-label"
                         />
                         {searchQuery && (
                             <button
                                 onClick={() => { setSearchQuery(''); inputRef.current?.focus(); }}
-                                className="text-gray-500 hover:text-gray-300"
+                                className="text-outline hover:text-primary transition-colors"
                             >
                                 <X size={16} />
                             </button>
@@ -109,7 +109,7 @@ export const Header: React.FC = () => {
 
                     {/* Dropdown Results */}
                     {isSearchOpen && (searchQuery.trim() || isLoading) && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 max-h-[400px] overflow-y-auto">
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-black/90 backdrop-blur-surface border border-outline rounded-xl overflow-hidden shadow-2xl z-50 max-h-[400px] overflow-y-auto">
                             {isLoading ? (
                                 <div className="p-4 text-center text-gray-500 text-sm">
                                     <div className="w-5 h-5 border-2 border-white/50 rounded-full animate-spin border-t-transparent mx-auto" />
@@ -122,7 +122,7 @@ export const Header: React.FC = () => {
                                         className="w-full flex items-center gap-3 p-3 hover:bg-white/5 transition-colors text-left"
                                     >
                                         {/* Poster */}
-                                        <div className="w-10 h-14 rounded bg-gray-800 overflow-hidden flex-shrink-0">
+                                        <div className="w-10 h-14 rounded bg-surface/50 border border-outline overflow-hidden flex-shrink-0">
                                             {result.poster_url ? (
                                                 <img src={resolveImageUrl(result.poster_url)} alt="" className="w-full h-full object-cover" />
                                             ) : (
@@ -158,35 +158,35 @@ export const Header: React.FC = () => {
                 {/* User Profile Hook */}
                 <div className="relative" ref={profileRef}>
                     <div
-                        className="flex items-center space-x-3 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-colors cursor-pointer border border-white/5 select-none"
+                        className="flex items-center space-x-3 bg-black/40 hover:bg-black/60 px-3 py-1.5 rounded-full transition-colors cursor-pointer border border-outline select-none shadow-inner"
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-on-primary shadow-[0_0_10px_rgba(255,255,255,0.3)]">
                             {user?.username?.charAt(0).toUpperCase() || 'U'}
                         </div>
-                        <span className="text-sm font-medium text-gray-200 hidden md:block">{user?.username || 'Guest'}</span>
+                        <span className="text-sm font-medium text-primary hidden md:block font-heading">{user?.username || 'Guest'}</span>
                     </div>
 
                     {/* Dropdown Menu */}
                     {isDropdownOpen && (
-                        <div className="absolute top-full right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 py-1">
+                        <div className="absolute top-full right-0 mt-3 w-48 bg-black/90 backdrop-blur-glass border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] rounded-xl overflow-hidden py-1">
                             <button
                                 onClick={() => {
-                                    navigate('/profile');
+                                    navigate('/settings', { state: { tab: 'account' } });
                                     setIsDropdownOpen(false);
                                 }}
-                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-primary hover:bg-white/10 transition-colors font-label"
                             >
                                 <Settings size={16} />
                                 Account Settings
                             </button>
-                            <div className="h-px bg-white/5 my-1" />
+                            <div className="h-px bg-white/10 my-1" />
                             <button
                                 onClick={() => {
                                     logout();
                                     setIsDropdownOpen(false);
                                 }}
-                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors font-label"
                             >
                                 <LogOut size={16} />
                                 Sign Out

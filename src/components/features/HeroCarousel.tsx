@@ -84,9 +84,9 @@ export const HeroCarousel: React.FC = () => {
             <div className="absolute bottom-0 left-0 w-full p-6 sm:p-8 md:p-12 z-10 flex flex-col justify-end h-full overflow-hidden">
                 <div className="max-w-2xl space-y-2 sm:space-y-3 md:space-y-4 animate-fade-in">
                     {/* Meta Info */}
-                    <div className="flex items-center flex-wrap gap-2 text-xs sm:text-sm md:text-base text-gray-300 font-medium">
+                    <div className="flex items-center flex-wrap gap-2 text-xs sm:text-sm md:text-base text-outline-variant font-label">
                         {item.media_type && (
-                            <span className="bg-white/10 px-2 py-0.5 sm:py-1 rounded border border-white/10 uppercase text-[10px] sm:text-xs tracking-wider">
+                            <span className="bg-surface backdrop-blur-surface px-2 py-0.5 sm:py-1 rounded border border-outline uppercase text-[10px] sm:text-xs tracking-wider">
                                 {item.media_type}
                             </span>
                         )}
@@ -96,13 +96,13 @@ export const HeroCarousel: React.FC = () => {
                     </div>
 
                     {/* Title */}
-                    <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold text-white tracking-tight drop-shadow-2xl line-clamp-2">
+                    <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold font-heading text-primary tracking-tight drop-shadow-2xl line-clamp-2">
                         {item.title}
                     </h1>
 
                     {/* Description */}
                     {item.plot && (
-                        <p className="text-gray-200 text-sm sm:text-base md:text-lg line-clamp-2 sm:line-clamp-3 drop-shadow-md max-w-xl">
+                        <p className="text-outline-variant text-sm sm:text-base md:text-lg line-clamp-2 sm:line-clamp-3 drop-shadow-md max-w-xl font-body">
                             {item.plot}
                         </p>
                     )}
@@ -111,7 +111,7 @@ export const HeroCarousel: React.FC = () => {
                     <div className="flex items-center space-x-3 sm:space-x-4 pt-2 sm:pt-4">
                         <Button
                             size="lg"
-                            className="px-6 sm:px-8 shadow-cyan-500/20"
+                            className="px-6 sm:px-8 bg-primary text-on-primary shadow-[0_0_20px_rgba(255,255,255,0.2)] font-heading rounded-xl"
                             onClick={() => navigate(item.series_name ? `/series/${item.series_name}` : `/media/${item.id}`)}
                         >
                             Play Now
@@ -119,6 +119,7 @@ export const HeroCarousel: React.FC = () => {
                         <Button
                             size="lg"
                             variant="secondary"
+                            className="bg-surface backdrop-blur-surface border border-outline text-primary hover:bg-white/10 shadow-inner font-heading rounded-xl"
                             onClick={() => navigate(item.series_name ? `/series/${item.series_name}` : `/media/${item.id}`)}
                         >
                             More Info
@@ -134,9 +135,9 @@ export const HeroCarousel: React.FC = () => {
                         <button
                             key={index}
                             onClick={() => setCurrentIndex(index)}
-                            className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentIndex
-                                ? 'bg-cyan-400 w-8'
-                                : 'bg-white/30 hover:bg-white/50'
+                            className={`h-2 rounded-full transition-all duration-300 ${index === currentIndex
+                                ? 'bg-primary w-8 shadow-[0_0_10px_rgba(255,255,255,0.5)]'
+                                : 'bg-white/30 hover:bg-white/50 w-2'
                                 }`}
                         />
                     ))}

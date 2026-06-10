@@ -1,31 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-    --color-glass-bg: rgba(255, 255, 255, 0.04);
-    --color-glass-border: rgba(255, 255, 255, 0.08);
-    --color-glass-highlight: rgba(255, 255, 255, 0.12);
+    /* Liquid Glass Colors */
+    --color-background: #000000;
+    --color-surface: rgba(255, 255, 255, 0.05);
+    --color-surface-bright: rgba(255, 255, 255, 0.15);
+    --color-outline: rgba(255, 255, 255, 0.20);
+    --color-primary: #ffffff;
+    --color-on-primary: #000000;
+    
+    --color-glass-bg: rgba(255, 255, 255, 0.10);
+    --color-glass-border: rgba(255, 255, 255, 0.20);
+    --color-glass-highlight: rgba(255, 255, 255, 0.30);
 
-    --color-liquid-1: #0a0a0f;
-    --color-liquid-2: #12121a;
-    --color-liquid-3: #1a1a2e;
+    /* Blurs */
+    --backdrop-blur-glass: 40px;
+    --backdrop-blur-dock: 60px;
+    --backdrop-blur-surface: 24px;
 
-    --backdrop-blur-glass: 10px;
-
-    --animate-gradient: gradientBG 15s ease infinite;
-
-    @keyframes gradientBG {
-        0% {
-            background-position: 0% 50%;
-        }
-
-        50% {
-            background-position: 100% 50%;
-        }
-
-        100% {
-            background-position: 0% 50%;
-        }
-    }
+    /* Fonts */
+    --font-heading: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-label: 'Geist', monospace;
 
     @keyframes fadeIn {
         from {
@@ -41,12 +37,12 @@
 }
 
 @utility glass-panel {
-    @apply bg-glass-bg backdrop-blur-glass border border-glass-border shadow-lg rounded-2xl;
+    @apply bg-glass-bg backdrop-blur-glass border border-t-[rgba(255,255,255,0.3)] border-l-[rgba(255,255,255,0.3)] border-b-[rgba(255,255,255,0.05)] border-r-[rgba(255,255,255,0.05)] shadow-[0_0_20px_rgba(255,255,255,0.05)] rounded-2xl;
 }
 
 /* Base styles */
 body {
-    @apply bg-gradient-to-br from-liquid-1 via-liquid-2 to-liquid-3 bg-[length:400%_400%] animate-gradient text-white h-screen overflow-hidden select-none font-['Outfit'];
+    @apply bg-background text-white h-screen overflow-hidden select-none font-body;
 }
 
 /* Custom Scrollbar */

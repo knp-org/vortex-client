@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { PlayerControlActions } from '../types';
+import { api } from '../../services';
+import type { Setting } from '../../types/settings';
 
 interface PlayerKeyboardOptions {
     playing: boolean;
@@ -24,9 +26,30 @@ export const usePlayerKeyboard = ({
     actions,
     exitOnEscape = false,
 }: PlayerKeyboardOptions) => {
+    const skipTimes = useRef({ fwd: 10, bwd: 10 });
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const data = await api.get<Setting[]>('/settings');
+                const pSettings = data.find(s => s.key === 'player_settings');
+                if (pSettings) {
+                    const parsed = JSON.parse(pSettings.value);
+                    if (parsed.skipForwardTime) skipTimes.current.fwd = parsed.skipForwardTime;
+                    if (parsed.skipBackwardTime) skipTimes.current.bwd = parsed.skipBackwardTime;
+                }
+            } catch (e) {}
+        };
+        fetchSettings();
+    }, []);
+
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             actions.onInteraction();
+            
+            const skipFwd = skipTimes.current.fwd;
+            const skipBwd = skipTimes.current.bwd;
+
             switch (e.key) {
                 case ' ':
                 case 'k':
@@ -35,11 +58,11 @@ export const usePlayerKeyboard = ({
                     break;
                 case 'ArrowLeft':
                     e.preventDefault();
-                    actions.onSkip(-10);
+                    actions.onSkip(-skipBwd);
                     break;
                 case 'ArrowRight':
                     e.preventDefault();
-                    actions.onSkip(10);
+                    actions.onSkip(skipFwd);
                     break;
                 case 'ArrowUp':
                     e.preventDefault();

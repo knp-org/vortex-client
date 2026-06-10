@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MainLayout } from '../../layouts/MainLayout';
 import { SettingsTab } from '../../types/settings';
 import { LibrariesTab } from './LibrariesTab';
@@ -6,16 +7,25 @@ import { AccountTab } from './AccountTab';
 import { MetadataTab } from './MetadataTab';
 import { TranscodingTab } from './TranscodingTab';
 import { SystemTab } from './SystemTab';
+import { PlayerTab } from './PlayerTab';
 
 export const Settings: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<SettingsTab>('libraries');
+    const location = useLocation();
+    const initialTab = (location.state as any)?.tab as SettingsTab || 'libraries';
+    const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+
+    useEffect(() => {
+        if ((location.state as any)?.tab) {
+            setActiveTab((location.state as any).tab as SettingsTab);
+        }
+    }, [location.state]);
 
     const renderTabButton = (tab: SettingsTab, label: string) => (
         <button
             onClick={() => setActiveTab(tab)}
-            className={`text-left px-4 py-3 rounded-xl transition-all font-medium ${activeTab === tab
-                ? 'bg-cyan-500/20 text-cyan-50 border border-cyan-500/20 shadow-lg'
-                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+            className={`text-left px-4 py-3 rounded-xl transition-all font-heading ${activeTab === tab
+                ? 'bg-white/10 text-primary border border-white/20 shadow-inner'
+                : 'text-outline-variant hover:bg-white/5 hover:text-primary'
                 }`}
         >
             {label}
@@ -28,11 +38,12 @@ export const Settings: React.FC = () => {
                 {/* Settings Sidebar */}
                 <div className="w-full md:w-64 flex-shrink-0">
                     <div className="glass-panel h-full p-4 flex flex-col space-y-2">
-                        <h2 className="text-xl font-bold text-gray-200 mb-4 px-2">Settings</h2>
+                        <h2 className="text-xl font-bold text-primary mb-4 px-2 font-heading">Settings</h2>
                         {renderTabButton('libraries', 'Library Management')}
                         {renderTabButton('account', 'Account Settings')}
                         {renderTabButton('metadata', 'Metadata')}
                         {renderTabButton('transcoding', 'Transcoding')}
+                        {renderTabButton('player', 'Player')}
                         {renderTabButton('system', 'System')}
                     </div>
                 </div>
@@ -44,6 +55,7 @@ export const Settings: React.FC = () => {
                         {activeTab === 'account' && <AccountTab />}
                         {activeTab === 'metadata' && <MetadataTab />}
                         {activeTab === 'transcoding' && <TranscodingTab />}
+                        {activeTab === 'player' && <PlayerTab />}
                         {activeTab === 'system' && <SystemTab />}
                     </div>
                 </div>

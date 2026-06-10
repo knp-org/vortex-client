@@ -14,6 +14,8 @@ import {
     AudioLines,
 } from 'lucide-react';
 import { formatTime } from '../utils/formatTime';
+import { api } from '../../services';
+import type { Setting } from '../../types/settings';
 import type { PlayerControlActions, PlayerControlState, TrackSelection } from '../types';
 
 export interface PlayerControlsProps extends PlayerControlState, PlayerControlActions {
@@ -49,6 +51,26 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
     const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
     const [showAudioMenu, setShowAudioMenu] = useState(false);
 
+    const [skipForward, setSkipForward] = React.useState(10);
+    const [skipBackward, setSkipBackward] = React.useState(10);
+
+    React.useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const data = await api.get<Setting[]>('/settings');
+                const pSettings = data.find(s => s.key === 'player_settings');
+                if (pSettings) {
+                    const parsed = JSON.parse(pSettings.value);
+                    if (parsed.skipForwardTime) setSkipForward(parsed.skipForwardTime);
+                    if (parsed.skipBackwardTime) setSkipBackward(parsed.skipBackwardTime);
+                }
+            } catch (e) {
+                // ignore
+            }
+        };
+        fetchSettings();
+    }, []);
+
     const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
 
     const handleSeekInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,7 +101,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
         >
             <button
                 type="button"
-                className="flex items-center gap-3 text-white hover:text-cyan-400 transition-colors"
+                className="flex items-center gap-3 text-outline-variant hover:text-primary transition-colors"
                 onClick={(e) => {
                     e.stopPropagation();
                     onBack();
@@ -125,27 +147,29 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                             onChange={handleSeekInput}
                             onMouseUp={seekOnRelease ? handleSeekRelease : undefined}
                             onTouchEnd={seekOnRelease ? handleSeekRelease : undefined}
-                            className="flex-1 h-1 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-500"
+                            className="flex-1 h-1 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
                             style={{
-                                background: `linear-gradient(to right, rgb(6,182,212) 0%, rgb(6,182,212) ${pct}%, rgba(255,255,255,0.3) ${pct}%, rgba(255,255,255,0.3) 100%)`,
+                                background: `linear-gradient(to right, rgb(255,255,255) 0%, rgb(255,255,255) ${pct}%, rgba(255,255,255,0.3) ${pct}%, rgba(255,255,255,0.3) 100%)`,
                             }}
                         />
                         <span className="text-xs text-white/80 tabular-nums w-14">{formatTime(duration)}</span>
                     </div>
 
-                    <div className="flex items-center gap-4 text-white">
-                        <button className="hover:text-cyan-400 transition-colors" onClick={onPlayPause}>
+                    <div className="flex items-center gap-4 text-outline-variant">
+                        <button className="hover:text-primary transition-colors" onClick={onPlayPause}>
                             {playing ? <Pause size={24} /> : <Play size={24} />}
                         </button>
-                        <button className="hover:text-cyan-400 transition-colors" onClick={() => onSkip(-10)}>
+                        <button className="hover:text-primary transition-colors flex items-center gap-1" onClick={() => onSkip(-skipBackward)}>
                             <SkipBack size={20} />
+                            <span className="text-[10px] opacity-70 font-mono">-{skipBackward}s</span>
                         </button>
-                        <button className="hover:text-cyan-400 transition-colors" onClick={() => onSkip(10)}>
+                        <button className="hover:text-primary transition-colors flex items-center gap-1" onClick={() => onSkip(skipForward)}>
                             <SkipForward size={20} />
+                            <span className="text-[10px] opacity-70 font-mono">+{skipForward}s</span>
                         </button>
 
                         <div className="flex items-center gap-2">
-                            <button className="hover:text-cyan-400 transition-colors" onClick={onToggleMute}>
+                            <button className="hover:text-primary transition-colors" onClick={onToggleMute}>
                                 {muted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
                             </button>
                             <input
@@ -164,7 +188,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                         {tracks && tracks.subtitles.length > 0 && (
                             <div className="relative">
                                 <button
-                                    className={`transition-colors ${tracks.activeSubtitleId ? 'text-cyan-400' : 'hover:text-cyan-400'}`}
+                                    className={`transition-colors ${tracks.activeSubtitleId ? 'text-primary' : 'hover:text-primary'}`}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setShowSubtitleMenu(!showSubtitleMenu);
@@ -197,7 +221,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                                             >
                                                 <span className="w-4">
                                                     {tracks.activeSubtitleId === sub.id && (
-                                                        <Check size={14} className="text-cyan-400" />
+                                                        <Check size={14} className="text-primary" />
                                                     )}
                                                 </span>
                                                 <span className="flex-1 text-left truncate">{sub.label}</span>
@@ -214,7 +238,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                         {tracks && tracks.audioTracks.length > 1 && (
                             <div className="relative">
                                 <button
-                                    className="hover:text-cyan-400 transition-colors"
+                                    className="hover:text-primary transition-colors"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setShowAudioMenu(!showAudioMenu);
@@ -237,7 +261,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                                             >
                                                 <span className="w-4">
                                                     {tracks.activeAudioIndex === track.index && (
-                                                        <Check size={14} className="text-cyan-400" />
+                                                        <Check size={14} className="text-primary" />
                                                     )}
                                                 </span>
                                                 <span className="flex-1 text-left truncate">{track.label}</span>
@@ -248,7 +272,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                             </div>
                         )}
 
-                        <button className="hover:text-cyan-400 transition-colors" onClick={onToggleFullscreen}>
+                        <button className="hover:text-primary transition-colors" onClick={onToggleFullscreen}>
                             {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
                         </button>
                     </div>

@@ -20,28 +20,28 @@ export const Input: React.FC<InputProps> = ({
     return (
         <div className="flex flex-col space-y-1">
             {label && (
-                <label className="text-sm font-medium text-gray-300 ml-1">
+                <label className="text-sm font-label font-medium text-outline-variant ml-1">
                     {label}
                 </label>
             )}
             <div className="relative">
                 <input
                     type={inputType}
-                    className={`glass-panel w-full px-4 py-2 bg-black/20 focus:bg-black/30 border-white/10 focus:border-cyan-500/50 outline-none transition-all placeholder-white/20 text-white ${className} ${isPassword ? 'pr-10' : ''}`}
+                    className={`w-full px-4 py-2 bg-surface border border-outline rounded-xl focus:border-primary outline-none transition-all placeholder-outline-variant/50 text-primary font-body shadow-inner ${className} ${isPassword ? 'pr-10' : ''}`}
                     {...props}
                 />
                 {isPassword && (
                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors focus:outline-none"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-outline-variant hover:text-primary transition-colors focus:outline-none"
                     >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                 )}
             </div>
             {error && (
-                <span className="text-xs text-red-400 ml-1">{error}</span>
+                <span className="text-xs text-error font-label ml-1">{error}</span>
             )}
         </div>
     );

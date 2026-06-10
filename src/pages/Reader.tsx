@@ -334,36 +334,36 @@ export const Reader: React.FC = () => {
 
     if (error) {
         return (
-            <div className="h-full w-full flex flex-col items-center justify-center gap-4 bg-[#0a0a0f] text-white">
-                <p className="text-red-400">{error}</p>
-                <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20">Go Back</button>
+            <div className="h-full w-full flex flex-col items-center justify-center gap-4 bg-background text-primary">
+                <p className="text-error font-body">{error}</p>
+                <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 font-label">Go Back</button>
             </div>
         );
     }
 
     if (!info) {
         return (
-            <div className="h-full w-full flex items-center justify-center bg-[#0a0a0f] text-white/60">
+            <div className="h-full w-full flex items-center justify-center bg-background text-outline-variant">
                 <Loader2 className="animate-spin" size={28} />
             </div>
         );
     }
 
     return (
-        <div className="h-full w-full flex flex-col bg-[#0a0a0f]">
+        <div className="h-full w-full flex flex-col bg-background">
             {/* Toolbar */}
-            <div className="flex items-center justify-between px-4 py-2 bg-black/60 backdrop-blur border-b border-white/10 text-white z-30">
+            <div className="flex items-center justify-between px-4 py-2 bg-surface/80 backdrop-blur-surface border-b border-outline text-primary shadow-[0_0_20px_rgba(255,255,255,0.05)] z-30">
                 <div className="flex items-center gap-3 min-w-0">
                     <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-white/10" title="Back">
                         <ArrowLeft size={20} />
                     </button>
-                    <BookOpen size={18} className="text-cyan-400 shrink-0" />
-                    <span className="truncate text-sm font-medium">{info.title ?? 'Reading'}</span>
+                    <BookOpen size={18} className="text-primary shrink-0" />
+                    <span className="truncate text-sm font-heading">{info.title ?? 'Reading'}</span>
                 </div>
 
                 <div className="flex items-center gap-4">
                     {info.format !== 'epub' && pageCount > 0 && (
-                        <span className="text-xs text-gray-400 tabular-nums">
+                        <span className="text-xs text-outline-variant tabular-nums font-label">
                             {currentPage + 1} / {pageCount}
                         </span>
                     )}
@@ -372,12 +372,12 @@ export const Reader: React.FC = () => {
                             <Settings2 size={18} />
                         </button>
                         {menuOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-52 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden shadow-xl z-40">
+                            <div className="absolute top-full right-0 mt-2 w-52 bg-black/90 backdrop-blur-glass border border-outline rounded-xl overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.1)] z-40">
                                 {READING_MODE_OPTIONS.map((opt) => (
                                     <button
                                         key={opt.id}
                                         onClick={() => changeReadingMode(opt.id)}
-                                        className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-white/5 ${readingMode === opt.id ? 'text-cyan-400' : 'text-gray-300'}`}
+                                        className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-white/5 font-label ${readingMode === opt.id ? 'text-primary bg-white/10' : 'text-outline-variant'}`}
                                     >
                                         <span>{opt.label}</span>
                                         {readingMode === opt.id && <Check size={15} />}

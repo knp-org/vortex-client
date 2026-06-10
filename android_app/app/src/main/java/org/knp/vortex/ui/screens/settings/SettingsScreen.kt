@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -44,6 +45,7 @@ fun SettingsScreen(
     onNavigateToLibrarySettings: () -> Unit,
     onNavigateToMetadataProviders: () -> Unit,
     onNavigateToSecurity: () -> Unit,
+    onNavigateToPlayerSettings: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -142,6 +144,13 @@ fun SettingsScreen(
                             subtitle = "Network settings, ports, and access control",
                             icon = Icons.Default.Dns,
                             onClick = onNavigateToServerConfig
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.1f), thickness = 1.dp)
+                        SettingsListRow(
+                            title = "Player Settings",
+                            subtitle = "Playback, subtitles, and hardware decoding",
+                            icon = Icons.Default.PlayCircle,
+                            onClick = onNavigateToPlayerSettings
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.1f), thickness = 1.dp)
                         SettingsListRow(

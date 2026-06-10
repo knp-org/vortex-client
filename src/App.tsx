@@ -7,7 +7,6 @@ import { Settings } from './pages/settings';
 import { Library } from './pages/Library';
 import { MediaDetail } from './pages/MediaDetail';
 import { Player } from './pages/Player';
-import { Profile } from './pages/Profile';
 
 // The reader pulls in heavy renderers (pdf.js / epub.js); load it on demand
 // so they stay out of the main bundle.
@@ -73,9 +72,6 @@ function App() {
                   </Suspense>
                 </RouteGuard>
               } />
-              <Route path="/profile" element={<RouteGuard><Profile /></RouteGuard>} />
-              <Route path="/profile/preferences" element={<RouteGuard><Profile /></RouteGuard>} />
-              <Route path="/profile/security" element={<RouteGuard><Profile /></RouteGuard>} />
               <Route path="/settings" element={<RouteGuard><Settings /></RouteGuard>} />
 
               {/* Fallback */}

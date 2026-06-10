@@ -66,6 +66,25 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
+    fun getPlayerSettings(onResult: (org.json.JSONObject?) -> Unit) {
+        viewModelScope.launch {
+            repository.getSettings().onSuccess { settingsList ->
+                val pSettings = settingsList.find { it.key == "player_settings" }
+                if (pSettings != null) {
+                    try {
+                        onResult(org.json.JSONObject(pSettings.value))
+                    } catch (e: Exception) {
+                        onResult(null)
+                    }
+                } else {
+                    onResult(null)
+                }
+            }.onFailure {
+                onResult(null)
+            }
+        }
+    }
+
     fun getSubtitles(id: Long, onResult: (List<org.knp.vortex.data.remote.SubtitleTrackDto>) -> Unit) {
         viewModelScope.launch {
             repository.getSubtitles(id).onSuccess { 
@@ -105,18 +124,28 @@ fun PlayerScreen(
     var subtitlesLoaded by remember { mutableStateOf(false) }
     var progressLoaded by remember { mutableStateOf(false) }
     var scalingMode by remember { mutableStateOf(ScalingMode.BEST_FIT) }
-    var videoSize by remember { mutableStateOf<androidx.media3.common.VideoSize?>(null) }
+    var playerSettingsLoaded by remember { mutableStateOf(false) }
+    var skipForwardMs by remember { mutableStateOf(10000L) }
+    var skipBackwardMs by remember { mutableStateOf(10000L) }
 
     LaunchedEffect(mediaId) {
+        viewModel.getPlayerSettings { json ->
+            if (json != null) {
+                skipForwardMs = json.optInt("skipForwardTime", 10) * 1000L
+                skipBackwardMs = json.optInt("skipBackwardTime", 10) * 1000L
+            }
+            playerSettingsLoaded = true
+            if (progressLoaded && subtitlesLoaded) isReady = true
+        }
         viewModel.getSubtitles(mediaId) { subs ->
             subtitles = subs
             subtitlesLoaded = true
-            if (progressLoaded) isReady = true
+            if (progressLoaded && playerSettingsLoaded) isReady = true
         }
         viewModel.getProgress(mediaId) { pos ->
             savedPosition = pos
             progressLoaded = true
-            if (subtitlesLoaded) isReady = true
+            if (subtitlesLoaded && playerSettingsLoaded) isReady = true
         }
     }
 
@@ -139,6 +168,8 @@ fun PlayerScreen(
             .setMediaSourceFactory(
                 androidx.media3.exoplayer.source.DefaultMediaSourceFactory(dataSourceFactory)
             )
+            .setSeekForwardIncrementMs(skipForwardMs)
+            .setSeekBackIncrementMs(skipBackwardMs)
             .build()
             .apply {
                 // Dynamic Media URL from Settings

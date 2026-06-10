@@ -42,10 +42,11 @@ export const MediaCard: React.FC<MediaCardProps> = ({
 
         if (action === 'refresh') {
             try {
-                // Determine if it's a series refresh (scan) or single item refresh
-                // For now, assume single item refresh metadata API
-                await api.post(`/media/${mediaId}/refresh`);
-                // Maybe trigger reload?
+                if (type === 'folder' || type === 'series') {
+                    await api.post(`/series/${encodeURIComponent(title)}/refresh`);
+                } else {
+                    await api.post(`/media/${mediaId}/refresh`);
+                }
             } catch (err) {
                 console.error("Failed to refresh", err);
             }
@@ -53,8 +54,13 @@ export const MediaCard: React.FC<MediaCardProps> = ({
             setShowIdentify(true);
         } else if (action === 'info') {
             try {
-                const data = await api.get<Media>(`/media/${mediaId}`);
-                setMediaDetails(data);
+                if (type === 'folder' || type === 'series') {
+                    const data = await api.get<any>(`/series/${encodeURIComponent(title)}`);
+                    setMediaDetails(data);
+                } else {
+                    const data = await api.get<Media>(`/media/${mediaId}`);
+                    setMediaDetails(data);
+                }
                 setShowInfo(true);
             } catch (err) {
                 console.error("Failed to fetch details", err);
@@ -66,9 +72,13 @@ export const MediaCard: React.FC<MediaCardProps> = ({
     };
 
     const handleIdentify = async (providerId: string, mediaType: 'movie' | 'series', providerName?: string) => {
-        if (!id) return;
+        if (!id && !title) return;
         try {
-            await api.post(`/media/${id}/identify`, { provider_id: providerId, media_type: mediaType, provider_name: providerName });
+            if (type === 'folder' || type === 'series') {
+                await api.post(`/series/${encodeURIComponent(title)}/identify`, { provider_id: providerId, media_type: mediaType, provider_name: providerName });
+            } else {
+                await api.post(`/media/${id}/identify`, { provider_id: providerId, media_type: mediaType, provider_name: providerName });
+            }
             window.location.reload(); // Simple refresh to show new data
         } catch (error) {
             console.error(error);
@@ -78,11 +88,11 @@ export const MediaCard: React.FC<MediaCardProps> = ({
     return (
         <>
             <div
-                className={`group relative rounded-xl overflow-hidden bg-gray-900 shadow-lg border border-white/5 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:border-cyan-500/30 cursor-pointer ${className}`}
+                className={`group relative rounded-xl bg-surface/50 backdrop-blur-surface border border-t-[rgba(255,255,255,0.3)] border-l-[rgba(255,255,255,0.3)] border-b-[rgba(255,255,255,0.05)] border-r-[rgba(255,255,255,0.05)] shadow-[0_0_20px_rgba(255,255,255,0.05)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] cursor-pointer ${className}`}
                 onClick={onClick}
                 onMouseLeave={() => setShowMenu(false)}
             >
-                <div className={`${aspectClass} w-full relative`}>
+                <div className={`${aspectClass} w-full relative overflow-hidden rounded-xl`}>
                     {posterUrl ? (
                         <img
                             src={resolveImageUrl(posterUrl)}
@@ -106,57 +116,60 @@ export const MediaCard: React.FC<MediaCardProps> = ({
                         {/* Title */}
                         {!showMenu && (
                             <>
-                                <h3 className="text-sm font-bold text-white leading-tight mt-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 absolute bottom-4 px-4 w-full select-none">
+                                <h3 className="text-sm font-bold text-primary leading-tight mt-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 absolute bottom-4 px-4 w-full select-none font-heading">
                                     {title}
                                 </h3>
                                 {subtitle && (
-                                    <p className="text-xs text-gray-300 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75 absolute bottom-12 w-full px-4 truncate">
+                                    <p className="text-xs text-outline-variant transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75 absolute bottom-12 w-full px-4 truncate font-body">
                                         {subtitle}
                                     </p>
                                 )}
                             </>
                         )}
 
-                        {/* 3-Dots Menu Button */}
-                        {id && type !== 'folder' && (
-                            <div className="absolute top-2 right-2 flex flex-col items-end z-20">
-                                <button
-                                    className="p-1.5 rounded-full bg-black/60 text-white hover:bg-cyan-500 hover:text-white transition-colors"
-                                    onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-                                >
-                                    <MoreVertical size={16} />
-                                </button>
-
-                                {showMenu && (
-                                    <div className="mt-2 w-40 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl overflow-hidden animate-fade-in text-left">
-                                        <button onClick={(e) => handleAction(e, 'refresh')} className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/10 hover:text-white flex items-center gap-2">
-                                            <RefreshCw size={12} /> Refresh Metadata
-                                        </button>
-                                        <button onClick={(e) => handleAction(e, 'edit')} className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/10 hover:text-white flex items-center gap-2">
-                                            <Edit size={12} /> Edit Metadata
-                                        </button>
-                                        <button onClick={(e) => handleAction(e, 'identify')} className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/10 hover:text-white flex items-center gap-2">
-                                            <FileSearch size={12} /> Identity
-                                        </button>
-                                        <button onClick={(e) => handleAction(e, 'info')} className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/10 hover:text-white flex items-center gap-2 border-t border-white/5">
-                                            <Info size={12} /> Media Info
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
                     </div>
 
                     {/* Progress Bar */}
                     {progress !== undefined && (
-                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-700 z-10">
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50 z-10">
                             <div
-                                className="h-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"
+                                className="h-full bg-primary shadow-[0_0_10px_rgba(255,255,255,0.8)]"
                                 style={{ width: `${progress}%` }}
                             />
                         </div>
                     )}
                 </div>
+
+                {/* 3-Dots Menu Button (Moved outside overflow-hidden inner container) */}
+                {(id || title) && (
+                    <div className="absolute top-2 right-2 flex flex-col items-end z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <button
+                            className="p-1 rounded-full bg-black/60 text-primary hover:bg-primary hover:text-on-primary transition-colors"
+                            onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                        >
+                            <MoreVertical size={14} />
+                        </button>
+
+                        {showMenu && (
+                            <div className="mt-1 w-36 bg-surface/90 backdrop-blur-glass border border-t-[rgba(255,255,255,0.3)] border-l-[rgba(255,255,255,0.3)] border-b-[rgba(255,255,255,0.05)] border-r-[rgba(255,255,255,0.05)] rounded-lg shadow-[0_0_20px_rgba(255,255,255,0.1)] overflow-hidden animate-fade-in text-left">
+                                <button onClick={(e) => handleAction(e, 'refresh')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
+                                    <RefreshCw size={12} /> Refresh Metadata
+                                </button>
+                                <button onClick={(e) => handleAction(e, 'edit')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
+                                    <Edit size={12} /> Edit Metadata
+                                </button>
+                                <button onClick={(e) => handleAction(e, 'identify')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
+                                    <FileSearch size={12} /> Identity
+                                </button>
+                                {(type !== 'folder' && type !== 'series') && (
+                                    <button onClick={(e) => handleAction(e, 'info')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 border-t border-white/5 font-label">
+                                        <Info size={12} /> Media Info
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Modals */}

@@ -107,13 +107,13 @@ export const EditLibraryModal: React.FC<EditLibraryModalProps> = ({ isOpen, onCl
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
             <div className="w-full max-w-md p-4">
-                <Card className="bg-gray-900/90 border-white/10 shadow-2xl">
-                    <h2 className="text-xl font-bold text-white mb-6">Edit Library</h2>
+                <Card className="bg-surface/80 border-outline backdrop-blur-surface shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+                    <h2 className="text-xl font-bold text-primary font-heading mb-6">Edit Library</h2>
 
                     {error && (
-                        <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-200 text-sm">
+                        <div className="mb-4 p-3 rounded-xl bg-error/10 border border-error/30 text-error font-body text-sm">
                             {error}
                         </div>
                     )}
@@ -140,15 +140,15 @@ export const EditLibraryModal: React.FC<EditLibraryModalProps> = ({ isOpen, onCl
                             onChange={setPaths}
                         />
 
-                        <div className="border-t border-white/10 pt-4 mt-4">
+                        <div className="border-t border-outline pt-4 mt-4">
                             <label className="flex items-center space-x-3 mb-4 cursor-pointer w-max">
                                 <input
                                     type="checkbox"
                                     checked={overrideProviders}
                                     onChange={(e) => setOverrideProviders(e.target.checked)}
-                                    className="rounded border-white/20 bg-black/50 text-cyan-500 focus:ring-cyan-500"
+                                    className="rounded border-outline bg-surface/50 text-primary focus:ring-primary focus:ring-offset-surface"
                                 />
-                                <span className="text-sm font-medium text-white">Override Metadata Providers</span>
+                                <span className="text-sm font-medium text-primary font-body">Override Metadata Providers</span>
                             </label>
 
                             {overrideProviders && (
@@ -156,21 +156,21 @@ export const EditLibraryModal: React.FC<EditLibraryModalProps> = ({ isOpen, onCl
                                     {providers.map((p, idx) => {
                                         const info = allProviders.find(a => a.id === p.provider_id);
                                         return (
-                                            <div key={p.provider_id} className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
+                                            <div key={p.provider_id} className="flex items-center justify-between p-3 rounded-xl bg-surface/30 border border-outline">
                                                 <div className="flex items-center space-x-3">
                                                     <div className="flex flex-col gap-0.5">
-                                                        <button type="button" onClick={() => moveProvider(idx, -1)} disabled={idx === 0} className="text-gray-500 hover:text-white disabled:opacity-20 text-[10px] leading-none p-0.5">▲</button>
-                                                        <button type="button" onClick={() => moveProvider(idx, 1)} disabled={idx === providers.length - 1} className="text-gray-500 hover:text-white disabled:opacity-20 text-[10px] leading-none p-0.5">▼</button>
+                                                        <button type="button" onClick={() => moveProvider(idx, -1)} disabled={idx === 0} className="text-outline-variant hover:text-primary disabled:opacity-20 text-[10px] leading-none p-0.5">▲</button>
+                                                        <button type="button" onClick={() => moveProvider(idx, 1)} disabled={idx === providers.length - 1} className="text-outline-variant hover:text-primary disabled:opacity-20 text-[10px] leading-none p-0.5">▼</button>
                                                     </div>
-                                                    <span className="text-sm text-gray-200">{info?.name || p.provider_id}</span>
+                                                    <span className="text-sm text-primary font-body">{info?.name || p.provider_id}</span>
                                                 </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => toggleProvider(p.provider_id)}
                                                     className="flex-shrink-0"
                                                 >
-                                                    <div className={`w-9 h-5 rounded-full relative transition-colors ${p.enabled ? 'bg-cyan-500/30' : 'bg-white/10'} border border-white/10`}>
-                                                        <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full shadow-md transition-all ${p.enabled ? 'right-0.5 bg-cyan-400' : 'left-0.5 bg-gray-500'}`} />
+                                                    <div className={`w-10 h-5 rounded-full relative transition-colors ${p.enabled ? 'bg-primary/20 border-primary' : 'bg-surface/50 border-outline'} border`}>
+                                                        <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full shadow-md transition-all ${p.enabled ? 'right-0.5 bg-primary' : 'left-0.5 bg-outline'}`} />
                                                     </div>
                                                 </button>
                                             </div>

@@ -8,6 +8,7 @@ import { libraryService, api } from '../services';
 
 interface ContinueWatchingMedia extends Media {
     progress?: number;
+    total_duration?: number;
     library_type?: string;
 }
 
@@ -103,8 +104,8 @@ export const Dashboard: React.FC = () => {
                             ? `${m.series_name} S${m.season_number || 1}E${m.episode_number || 1}`
                             : m.title,
                         posterUrl: m.poster_url || m.still_url || '',
-                        progress: m.progress && m.runtime
-                            ? Math.min(100, Math.floor((m.progress / (m.runtime * 60)) * 100))
+                        progress: m.progress && (m.total_duration || m.runtime)
+                            ? Math.min(100, Math.floor((m.progress / (m.total_duration || (m.runtime! * 60))) * 100))
                             : undefined,
                         subtitle: m.series_name ? m.title : undefined,
                         isSeries: !!m.series_name,

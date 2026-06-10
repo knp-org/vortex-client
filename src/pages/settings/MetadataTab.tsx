@@ -12,7 +12,7 @@ interface ConfigFieldInputProps {
 }
 
 const ConfigFieldInput: React.FC<ConfigFieldInputProps> = ({ field, value, onChange }) => {
-    const baseClass = "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition-colors";
+    const baseClass = "w-full bg-surface/50 border border-outline rounded-xl px-4 py-2.5 text-primary placeholder-outline-variant focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-colors shadow-inner font-body";
 
     switch (field.field_type) {
         case 'secret':
@@ -31,10 +31,10 @@ const ConfigFieldInput: React.FC<ConfigFieldInputProps> = ({ field, value, onCha
                     onClick={() => onChange(field.key, !value)}
                     className="flex items-center gap-3"
                 >
-                    <div className={`w-11 h-6 rounded-full relative transition-colors ${value ? 'bg-cyan-500/30 border-cyan-500/40' : 'bg-white/10 border-white/10'} border`}>
-                        <div className={`absolute top-1 w-4 h-4 rounded-full shadow-md transition-all ${value ? 'right-1 bg-cyan-400' : 'left-1 bg-gray-500'}`} />
+                    <div className={`w-11 h-6 rounded-full relative transition-colors ${value ? 'bg-white/20 border-white/30' : 'bg-surface/50 border-outline'} border shadow-inner`}>
+                        <div className={`absolute top-1 w-4 h-4 rounded-full shadow-md transition-all ${value ? 'right-1 bg-primary' : 'left-1 bg-outline-variant'}`} />
                     </div>
-                    <span className="text-sm text-gray-300">{value ? 'Enabled' : 'Disabled'}</span>
+                    <span className="text-sm text-outline-variant font-label">{value ? 'Enabled' : 'Disabled'}</span>
                 </button>
             );
         case 'select': {
@@ -124,8 +124,8 @@ const ProviderCard: React.FC<ProviderCardProps> = ({
     return (
         <div className={`rounded-2xl border transition-all ${
             provider.enabled
-                ? 'bg-white/[0.03] border-white/10 hover:border-white/15'
-                : 'bg-white/[0.01] border-white/5 opacity-60'
+                ? 'bg-surface/50 backdrop-blur-surface border-outline hover:border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.05)]'
+                : 'bg-surface/30 backdrop-blur-surface border-outline opacity-60'
         }`}>
             {/* Header row */}
             <div className="flex items-center gap-4 px-5 py-4">
@@ -134,13 +134,13 @@ const ProviderCard: React.FC<ProviderCardProps> = ({
                     <button
                         onClick={() => onMoveUp(provider.id)}
                         disabled={index === 0}
-                        className="text-gray-500 hover:text-white disabled:opacity-20 transition-colors text-xs leading-none p-0.5"
+                        className="text-outline-variant hover:text-primary disabled:opacity-20 transition-colors text-xs leading-none p-0.5"
                         title="Move up (higher priority)"
                     >▲</button>
                     <button
                         onClick={() => onMoveDown(provider.id)}
                         disabled={index === total - 1}
-                        className="text-gray-500 hover:text-white disabled:opacity-20 transition-colors text-xs leading-none p-0.5"
+                        className="text-outline-variant hover:text-primary disabled:opacity-20 transition-colors text-xs leading-none p-0.5"
                         title="Move down (lower priority)"
                     >▼</button>
                 </div>
@@ -148,13 +148,13 @@ const ProviderCard: React.FC<ProviderCardProps> = ({
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                        <h4 className="text-white font-semibold">{provider.name}</h4>
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-gray-500">{provider.id}</span>
+                        <h4 className="text-primary font-semibold font-heading">{provider.name}</h4>
+                        <span className="text-[10px] font-label px-1.5 py-0.5 rounded bg-surface border border-outline text-outline-variant">{provider.id}</span>
                     </div>
-                    <p className="text-sm text-gray-400 mt-0.5 truncate">{provider.description}</p>
+                    <p className="text-sm text-outline-variant mt-0.5 truncate font-body">{provider.description}</p>
                     <div className="flex gap-1.5 mt-1.5">
                         {provider.media_types.map(mt => (
-                            <span key={mt} className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/10">
+                            <span key={mt} className="text-[10px] px-2 py-0.5 rounded-full bg-surface/50 text-outline-variant border border-outline font-label">
                                 {mt}
                             </span>
                         ))}
@@ -167,15 +167,15 @@ const ProviderCard: React.FC<ProviderCardProps> = ({
                     className="flex-shrink-0"
                     title={provider.enabled ? 'Disable' : 'Enable'}
                 >
-                    <div className={`w-11 h-6 rounded-full relative transition-colors ${provider.enabled ? 'bg-cyan-500/30 border-cyan-500/40' : 'bg-white/10 border-white/10'} border`}>
-                        <div className={`absolute top-1 w-4 h-4 rounded-full shadow-md transition-all ${provider.enabled ? 'right-1 bg-cyan-400' : 'left-1 bg-gray-500'}`} />
+                    <div className={`w-11 h-6 rounded-full relative transition-colors ${provider.enabled ? 'bg-white/20 border-white/30' : 'bg-surface/50 border-outline'} border shadow-inner`}>
+                        <div className={`absolute top-1 w-4 h-4 rounded-full shadow-md transition-all ${provider.enabled ? 'right-1 bg-primary' : 'left-1 bg-outline-variant'}`} />
                     </div>
                 </button>
 
                 {/* Expand */}
                 <button
                     onClick={() => setExpanded(!expanded)}
-                    className="text-gray-400 hover:text-white transition-colors text-sm px-2"
+                    className="text-outline-variant hover:text-primary transition-colors text-sm px-2 font-label"
                     title="Configure"
                 >
                     {expanded ? '▾ Settings' : '▸ Settings'}
@@ -184,12 +184,12 @@ const ProviderCard: React.FC<ProviderCardProps> = ({
 
             {/* Expanded config form */}
             {expanded && (
-                <div className="border-t border-white/5 px-5 py-4 space-y-4 animate-fade-in">
+                <div className="border-t border-outline px-5 py-4 space-y-4 animate-fade-in">
                     {provider.config_schema.map(field => (
                         <div key={field.key} className="space-y-1.5">
-                            <label className="block text-sm font-medium text-gray-300">
+                            <label className="block text-sm font-medium text-outline-variant font-label">
                                 {field.label}
-                                {field.required && <span className="text-red-400 ml-1">*</span>}
+                                {field.required && <span className="text-error ml-1">*</span>}
                             </label>
                             <ConfigFieldInput
                                 field={field}
@@ -203,19 +203,19 @@ const ProviderCard: React.FC<ProviderCardProps> = ({
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className="px-5 py-2 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 hover:bg-cyan-500/30 transition-colors text-sm font-medium disabled:opacity-50"
+                            className="px-5 py-2 rounded-xl bg-surface/80 text-primary border border-outline hover:bg-white/10 transition-colors text-sm font-label disabled:opacity-50"
                         >
                             {isSaving ? 'Saving...' : 'Save Configuration'}
                         </button>
                         <button
                             onClick={() => onTest(provider.id)}
                             disabled={isTesting}
-                            className="px-5 py-2 rounded-xl bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10 transition-colors text-sm font-medium disabled:opacity-50"
+                            className="px-5 py-2 rounded-xl bg-surface text-outline-variant border border-outline hover:bg-white/5 transition-colors text-sm font-label disabled:opacity-50"
                         >
                             {isTesting ? 'Testing...' : 'Test Connection'}
                         </button>
                         {testResult && (
-                            <span className={`text-sm ${testResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
+                            <span className={`text-sm font-label ${testResult.success ? 'text-primary' : 'text-error'}`}>
                                 {testResult.success ? '✓ ' : '✗ '}{testResult.message}
                             </span>
                         )}
@@ -324,15 +324,15 @@ export const MetadataTab: React.FC = () => {
             {/* General Metadata Settings */}
             <section className="space-y-4">
                 <div>
-                    <h3 className="text-2xl font-bold text-white">Metadata</h3>
-                    <p className="text-gray-400 text-sm mt-1">Configure how Vortex retrieves metadata for your content.</p>
+                    <h3 className="text-2xl font-bold text-primary font-heading">Metadata</h3>
+                    <p className="text-outline-variant text-sm mt-1 font-body">Configure how Vortex retrieves metadata for your content.</p>
                 </div>
                 
                 <div className="space-y-6 max-w-xl">
-                    <label className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">
-                        <span className="text-gray-200">Prefer Local Metadata</span>
-                        <div className="w-10 h-6 bg-cyan-500/20 rounded-full relative border border-cyan-500/30">
-                            <div className="absolute right-1 top-1 w-4 h-4 bg-cyan-400 rounded-full shadow-md" />
+                    <label className="flex items-center justify-between p-4 rounded-2xl bg-surface/50 backdrop-blur-surface border border-outline cursor-pointer hover:border-white/30 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+                        <span className="text-primary font-heading">Prefer Local Metadata</span>
+                        <div className="w-10 h-6 bg-white/20 rounded-full relative border border-white/30 shadow-inner">
+                            <div className="absolute right-1 top-1 w-4 h-4 bg-primary rounded-full shadow-md" />
                         </div>
                     </label>
                 </div>
@@ -341,22 +341,22 @@ export const MetadataTab: React.FC = () => {
             {/* Providers List */}
             <section className="space-y-4">
                 <div>
-                    <h3 className="text-xl font-bold text-white">Metadata Providers</h3>
-                    <p className="text-gray-400 text-sm mt-1">
+                    <h3 className="text-xl font-bold text-primary font-heading">Metadata Providers</h3>
+                    <p className="text-outline-variant text-sm mt-1 font-body">
                         Configure and prioritize metadata sources. Providers are tried in order — drag to reorder.
                         The first provider that returns results wins.
                     </p>
                 </div>
 
                 {loadingProviders ? (
-                    <div className="flex items-center gap-3 text-gray-400">
-                        <div className="w-5 h-5 border-2 border-gray-500 border-t-cyan-400 rounded-full animate-spin" />
+                    <div className="flex items-center gap-3 text-outline-variant font-label">
+                        <div className="w-5 h-5 border-2 border-outline border-t-primary rounded-full animate-spin" />
                         Loading providers...
                     </div>
                 ) : providers.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500 bg-white/5 rounded-2xl border border-white/5">
-                        <p className="text-lg">No providers available</p>
-                        <p className="text-sm mt-1">Provider plugins will appear here once registered in the server.</p>
+                    <div className="text-center py-12 text-outline-variant bg-surface/50 backdrop-blur-surface rounded-2xl border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+                        <p className="text-lg font-heading">No providers available</p>
+                        <p className="text-sm mt-1 font-body">Provider plugins will appear here once registered in the server.</p>
                     </div>
                 ) : (
                     <div className="space-y-3 max-w-3xl">

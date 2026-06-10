@@ -44,9 +44,9 @@ export const MediaInfoModal: React.FC<MediaInfoModalProps> = ({
     };
 
     const InfoRow = ({ label, value }: { label: string, value?: string | number | null }) => (
-        <div className="flex justify-between py-1 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 rounded transition-colors">
-            <span className="text-gray-400 text-sm">{label}</span>
-            <span className="text-gray-200 text-sm font-medium text-right ml-4 truncate max-w-[60%] selectable select-all">
+        <div className="flex justify-between py-1 border-b border-outline/50 last:border-0 hover:bg-white/5 px-2 rounded transition-colors">
+            <span className="text-outline-variant text-sm font-label">{label}</span>
+            <span className="text-primary text-sm font-body text-right ml-4 truncate max-w-[60%] selectable select-all">
                 {value || '-'}
             </span>
         </div>
@@ -54,26 +54,26 @@ export const MediaInfoModal: React.FC<MediaInfoModalProps> = ({
 
     return createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="bg-surface/80 backdrop-blur-surface border border-outline rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-[0_0_40px_rgba(255,255,255,0.05)] overflow-hidden">
                 {/* Header */}
-                <div className="p-5 border-b border-white/10 flex items-center justify-between bg-white/5">
+                <div className="p-5 border-b border-outline flex items-center justify-between bg-white/5">
                     <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-bold text-white">Media Info</h2>
-                        <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-xs border border-cyan-500/20 font-mono">
+                        <h2 className="text-xl font-bold text-primary font-heading">Media Info</h2>
+                        <span className="px-2 py-0.5 rounded bg-primary/20 text-primary text-xs border border-primary/20 font-mono">
                             {info?.container || media.file_path?.split('.').pop() || 'Unknown'}
                         </span>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                        <X size={20} className="text-gray-400" />
+                        <X size={20} className="text-outline-variant hover:text-primary" />
                     </button>
                 </div>
 
                 <div className="overflow-y-auto p-6 space-y-8 custom-scrollbar">
 
                     {/* General Section */}
-                    <div className="bg-white/5 rounded-xl p-5 border border-white/5">
-                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                            <Monitor size={18} className="text-purple-400" />
+                    <div className="bg-surface/50 rounded-xl p-5 border border-outline shadow-inner">
+                        <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2 font-heading">
+                            <Monitor size={18} className="text-primary" />
                             General
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
@@ -82,13 +82,13 @@ export const MediaInfoModal: React.FC<MediaInfoModalProps> = ({
                             <InfoRow label="Duration" value={`${((info?.duration || media.runtime && media.runtime * 60) || 0) / 60 | 0} min`} />
                             <InfoRow label="Bitrate" value={formatBitrate(info?.bit_rate)} />
                             <div className="col-span-1 md:col-span-2 mt-2">
-                                <div className="text-gray-400 text-sm mb-1">Path</div>
-                                <div className="bg-black/30 p-2 rounded text-xs font-mono text-gray-300 break-all select-all border border-white/5 flex items-center justify-between group">
+                                <div className="text-outline-variant text-sm mb-1 font-label">Path</div>
+                                <div className="bg-black/50 p-2 rounded-lg text-xs font-mono text-outline-variant break-all select-all border border-outline flex items-center justify-between group">
                                     {media.file_path || 'Unknown'}
                                     {media.file_path && (
                                         <button
                                             onClick={() => navigator.clipboard.writeText(media.file_path!)}
-                                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/10 rounded"
+                                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/10 hover:text-primary rounded"
                                             title="Copy path"
                                         >
                                             <Copy size={12} />
@@ -101,9 +101,9 @@ export const MediaInfoModal: React.FC<MediaInfoModalProps> = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Video Section */}
-                        <div className="bg-white/5 rounded-xl p-5 border border-white/5 h-fit">
-                            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                <FileVideo size={18} className="text-cyan-400" />
+                        <div className="bg-surface/50 rounded-xl p-5 border border-outline h-fit shadow-inner">
+                            <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2 font-heading">
+                                <FileVideo size={18} className="text-primary" />
                                 Video
                             </h3>
                             {info?.video ? (
@@ -123,24 +123,24 @@ export const MediaInfoModal: React.FC<MediaInfoModalProps> = ({
                                     <InfoRow label="Codec Tag" value={info.video.codec_tag} />
                                 </div>
                             ) : (
-                                <div className="text-gray-500 italic">No video stream info</div>
+                                <div className="text-outline-variant font-body italic">No video stream info</div>
                             )}
                         </div>
 
                         {/* Audio Section */}
-                        <div className="bg-white/5 rounded-xl p-5 border border-white/5 h-fit">
-                            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                <Music size={18} className="text-pink-400" />
+                        <div className="bg-surface/50 rounded-xl p-5 border border-outline h-fit shadow-inner">
+                            <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2 font-heading">
+                                <Music size={18} className="text-primary" />
                                 Audio
                             </h3>
                             {info?.audio && info.audio.length > 0 ? (
                                 <div className="space-y-6">
                                     {info.audio.map((track, i) => (
-                                        <div key={i} className={i > 0 ? "pt-4 border-t border-white/5" : ""}>
-                                            <div className="mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                        <div key={i} className={i > 0 ? "pt-4 border-t border-outline/50" : ""}>
+                                            <div className="mb-2 text-xs font-bold text-outline-variant font-label uppercase tracking-wider flex items-center gap-2">
                                                 Track {i + 1}
-                                                {track.default && <span className="bg-white/10 text-white px-1 rounded text-[10px]">Default</span>}
-                                                {track.forced && <span className="bg-yellow-500/20 text-yellow-500 px-1 rounded text-[10px]">Forced</span>}
+                                                {track.default && <span className="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[10px]">Default</span>}
+                                                {track.forced && <span className="bg-error/20 text-error px-1.5 py-0.5 rounded text-[10px]">Forced</span>}
                                             </div>
                                             <InfoRow label="Title" value={track.title || track.codec.toUpperCase()} />
                                             <InfoRow label="Language" value={track.language?.toUpperCase()} />
@@ -153,7 +153,7 @@ export const MediaInfoModal: React.FC<MediaInfoModalProps> = ({
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-gray-500 italic">No audio stream info</div>
+                                <div className="text-outline-variant font-body italic">No audio stream info</div>
                             )}
                         </div>
                     </div>

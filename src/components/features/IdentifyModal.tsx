@@ -116,12 +116,12 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+            <div className="bg-surface/80 backdrop-blur-surface border border-outline rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-[0_0_40px_rgba(255,255,255,0.05)]">
                 {/* Header */}
-                <div className="p-6 border-b border-white/10 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-white">Identify {isSeries ? 'Series' : 'Movie'}</h2>
+                <div className="p-6 border-b border-outline flex items-center justify-between bg-white/5">
+                    <h2 className="text-xl font-bold text-primary font-heading">Identify {isSeries ? 'Series' : 'Movie'}</h2>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                        <X size={20} className="text-gray-400" />
+                        <X size={20} className="text-outline-variant hover:text-primary" />
                     </button>
                 </div>
 
@@ -134,9 +134,9 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
                             onChange={(e) => setQuery(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch(query)}
                             placeholder="Search for correct title..."
-                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 pl-12 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                            className="w-full bg-surface border border-outline rounded-xl px-4 py-3 pl-12 text-primary focus:outline-none focus:border-primary transition-colors font-body shadow-inner"
                         />
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant" size={20} />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2">
                             <Button size="sm" onClick={() => handleSearch(query)} disabled={isLoading}>
                                 {isLoading ? 'Searching...' : 'Search'}
@@ -156,37 +156,37 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
                     {results.map((result, index) => (
                         <div
                             key={resultKey(result, index)}
-                            className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 cursor-pointer transition-all group"
+                            className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 border border-transparent hover:border-outline cursor-pointer transition-all group"
                             onClick={() => handleSelect(result)}
                         >
-                            <div className="w-12 h-16 bg-gray-800 rounded-md overflow-hidden flex-shrink-0">
+                            <div className="w-12 h-16 bg-surface/50 border border-outline rounded-md overflow-hidden flex-shrink-0">
                                 {result.poster_url ? (
                                     <img src={resolveImageUrl(result.poster_url)} alt={result.title} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-white/20">
+                                    <div className="w-full h-full flex items-center justify-center text-outline-variant">
                                         {result.media_type === 'series' ? <Tv size={16} /> : <Film size={16} />}
                                     </div>
                                 )}
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-white font-medium truncate group-hover:text-cyan-400 transition-colors">
+                                <h3 className="text-primary font-medium truncate group-hover:text-primary transition-colors font-heading">
                                     {result.title}
                                 </h3>
-                                <div className="text-sm text-gray-400 flex items-center gap-2">
+                                <div className="text-sm text-outline-variant flex items-center gap-2 font-label mt-0.5">
                                     {result.year && <span>{result.year}</span>}
-                                    <span className="capitalize px-1.5 py-0.5 rounded bg-white/5 text-xs border border-white/5">
+                                    <span className="capitalize px-1.5 py-0.5 rounded bg-white/5 text-xs border border-outline">
                                         {result.media_type}
                                     </span>
                                     {/* Show which provider this result came from */}
                                     {result.provider_ids && Object.keys(result.provider_ids).map(name => (
-                                        <span key={name} className="px-1.5 py-0.5 rounded bg-cyan-500/10 text-[10px] text-cyan-400 border border-cyan-500/10 uppercase">
+                                        <span key={name} className="px-1.5 py-0.5 rounded bg-primary/10 text-[10px] text-primary border border-primary/20 uppercase">
                                             {name}
                                         </span>
                                     ))}
                                 </div>
                                 {result.overview && (
-                                    <p className="text-xs text-gray-500 line-clamp-1 mt-1">{result.overview}</p>
+                                    <p className="text-xs text-outline-variant line-clamp-1 mt-1 font-body">{result.overview}</p>
                                 )}
                             </div>
 
@@ -205,8 +205,8 @@ export const IdentifyModal: React.FC<IdentifyModalProps> = ({
                 {isIdentifying && (
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 rounded-2xl">
                         <div className="flex flex-col items-center gap-3">
-                            <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-                            <p className="text-white font-medium">Updating Metadata...</p>
+                            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            <p className="text-primary font-heading font-medium">Updating Metadata...</p>
                         </div>
                     </div>
                 )}

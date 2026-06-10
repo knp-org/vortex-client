@@ -510,7 +510,7 @@ export const Player: React.FC = () => {
                 sits behind it and shows during launch / if mpv detaches. */}
             {mpvActive && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/70">
-                    <div className="w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                    <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin shadow-[0_0_20px_rgba(255,255,255,0.1)]" />
                     <p className="text-sm">Playing in mpv — press <kbd className="px-1.5 py-0.5 rounded bg-white/10">q</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-white/10">Esc</kbd> to return</p>
                 </div>
             )}
@@ -518,7 +518,7 @@ export const Player: React.FC = () => {
             {/* Loading Spinner */}
             {isLoading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 gap-4">
-                    <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                    <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin shadow-[0_0_20px_rgba(255,255,255,0.1)]" />
                     {isTranscoding && (
                         <span className="text-white/70 text-sm">Transcoding video...</span>
                     )}

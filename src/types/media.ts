@@ -24,6 +24,15 @@ export interface Media {
     // Books
     page_count?: number;
     reading_mode?: string;
+    
+    // Extended Metadata
+    age_rating?: string;
+    studio?: string;
+    trailer_url?: string;
+    origin_country?: string;
+    collection_name?: string;
+    creator?: string;
+    tags?: string;
 }
 
 export interface MediaInfo {
@@ -84,6 +93,13 @@ export interface SeriesDetail {
     genres?: string[];
     cast?: string;
     director?: string;
+    age_rating?: string;
+    studio?: string;
+    trailer_url?: string;
+    origin_country?: string;
+    collection_name?: string;
+    creator?: string;
+    tags?: string;
     seasons: Season[];
 }
 

@@ -48,7 +48,7 @@ export const Select: React.FC<SelectProps> = ({
     return (
         <div className={`relative flex flex-col space-y-1 ${className}`} ref={containerRef}>
             {label && (
-                <label className="text-sm font-medium text-gray-300 ml-1">
+                <label className="text-sm font-label font-medium text-outline-variant ml-1">
                     {label}
                 </label>
             )}
@@ -56,29 +56,29 @@ export const Select: React.FC<SelectProps> = ({
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full px-4 py-2 bg-black/20 focus:bg-black/30 border border-white/10 rounded-xl text-white flex items-center justify-between transition-all hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                className="w-full px-4 py-2 bg-surface/50 border border-outline rounded-xl text-primary flex items-center justify-between transition-all hover:bg-surface/80 focus:outline-none focus:ring-1 focus:ring-primary shadow-inner font-body"
             >
-                <div className="flex items-center space-x-2">
-                    {selectedOption?.icon && <selectedOption.icon size={18} className="text-cyan-400" />}
-                    <span>{selectedOption?.label || value}</span>
+                <div className="flex items-center space-x-2 min-w-0">
+                    {selectedOption?.icon && <selectedOption.icon size={18} className="text-primary shrink-0" />}
+                    <span className="truncate">{selectedOption?.label || value}</span>
                 </div>
-                <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={16} className={`text-outline-variant shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 p-1 bg-gray-900 border border-white/10 rounded-xl shadow-xl z-50 animate-fade-in max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-2 p-1 bg-black/90 border border-outline rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.05)] z-50 animate-fade-in max-h-60 overflow-y-auto custom-scrollbar backdrop-blur-surface">
                     {options.map((option) => (
                         <button
                             key={option.id}
                             type="button"
                             onClick={() => handleSelect(option.id)}
-                            className={`w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors ${value === option.id
-                                    ? 'bg-cyan-500/20 text-cyan-50'
-                                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                            className={`w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors font-body ${value === option.id
+                                    ? 'bg-primary/20 text-primary'
+                                    : 'text-outline-variant hover:bg-white/5 hover:text-primary'
                                 }`}
                         >
-                            {option.icon && <option.icon size={16} className={value === option.id ? 'text-cyan-400' : 'text-gray-500'} />}
-                            <span>{option.label}</span>
+                            {option.icon && <option.icon size={16} className={value === option.id ? 'text-primary shrink-0' : 'text-outline-variant shrink-0'} />}
+                            <span className="truncate">{option.label}</span>
                         </button>
                     ))}
                 </div>

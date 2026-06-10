@@ -39,11 +39,11 @@ export const Library: React.FC = () => {
 
     const getIcon = (type?: string) => {
         switch (type) {
-            case 'movies': return <Film size={32} className="text-cyan-400" />;
-            case 'tv_shows': return <Tv size={32} className="text-cyan-400" />;
-            case 'music_videos': return <Music size={32} className="text-cyan-400" />;
-            case 'books': return <BookOpen size={32} className="text-cyan-400" />;
-            default: return <FileQuestion size={32} className="text-cyan-400" />;
+            case 'movies': return <Film size={32} className="text-primary" />;
+            case 'tv_shows': return <Tv size={32} className="text-primary" />;
+            case 'music_videos': return <Music size={32} className="text-primary" />;
+            case 'books': return <BookOpen size={32} className="text-primary" />;
+            default: return <FileQuestion size={32} className="text-primary" />;
         }
     };
 
@@ -88,33 +88,33 @@ export const Library: React.FC = () => {
             <div className="p-8 space-y-8 animate-fade-in">
                 {/* Header */}
                 <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20">
+                    <div className="p-3 bg-surface/80 backdrop-blur-surface rounded-2xl border border-outline shadow-inner">
                         {getIcon(library?.library_type)}
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-white">{library?.name || 'Library'}</h1>
-                        <p className="text-gray-400 text-sm">{media.length} items</p>
+                        <h1 className="text-3xl font-bold text-primary font-heading">{library?.name || 'Library'}</h1>
+                        <p className="text-outline-variant text-sm font-label">{media.length} items</p>
                     </div>
                 </div>
 
                 {/* Grid */}
                 {isLoading ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 md:gap-6">
                         {[...Array(12)].map((_, i) => (
-                            <div key={i} className="aspect-[2/3] bg-white/5 rounded-xl animate-pulse" />
+                            <div key={i} className="aspect-[2/3] bg-surface/50 rounded-xl animate-pulse backdrop-blur-surface border border-white/5" />
                         ))}
                     </div>
                 ) : error ? (
                     <div className="text-center py-20">
-                        <p className="text-xl text-red-400 mb-2">Connection Error</p>
-                        <p className="text-gray-400">{error}</p>
+                        <p className="text-xl text-error mb-2 font-heading">Connection Error</p>
+                        <p className="text-outline-variant font-body">{error}</p>
                     </div>
                 ) : displayedItems.length === 0 ? (
                     <div className="text-center py-20">
-                        <p className="text-xl text-gray-400">No media found.</p>
+                        <p className="text-xl text-outline-variant font-heading">No media found.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 md:gap-6">
                         {displayedItems.map((item: any) => (
                             <div
                                 key={item.id} // Note: for series folder, key is first ep id

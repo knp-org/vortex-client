@@ -23,6 +23,7 @@ import org.knp.vortex.ui.screens.library.ManageLibrariesScreen
 import org.knp.vortex.ui.screens.library.CreateLibraryScreen
 import org.knp.vortex.ui.screens.library.LibraryScreen
 import org.knp.vortex.ui.screens.settings.SettingsScreen
+import org.knp.vortex.ui.screens.settings.PlayerSettingsScreen
 import org.knp.vortex.ui.screens.settings.ServerConfigScreen
 import org.knp.vortex.ui.screens.settings.LibrarySettingsScreen
 import org.knp.vortex.ui.screens.settings.MetadataProvidersScreen
@@ -246,8 +247,13 @@ fun AppNavigation() {
                 onNavigateToServerConfig = { navController.navigate("settings/server") },
                 onNavigateToLibrarySettings = { navController.navigate("manage_libraries") },
                 onNavigateToMetadataProviders = { navController.navigate("settings/metadata") },
-                onNavigateToSecurity = { navController.navigate("settings/security") }
+                onNavigateToSecurity = { navController.navigate("settings/security") },
+                onNavigateToPlayerSettings = { navController.navigate("settings/player") }
             )
+        }
+        
+        composable("settings/player") {
+            PlayerSettingsScreen(onBack = { navController.popBackStack() })
         }
         
         composable("settings/server") {

@@ -66,13 +66,13 @@ export const AddLibraryModal: React.FC<AddLibraryModalProps> = ({ isOpen, onClos
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
             <div className="w-full max-w-md p-4">
-                <Card className="bg-gray-900/90 border-white/10 shadow-2xl">
-                    <h2 className="text-xl font-bold text-white mb-6">Add New Library</h2>
+                <Card className="bg-surface/80 border-outline backdrop-blur-surface shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+                    <h2 className="text-xl font-bold text-primary font-heading mb-6">Add New Library</h2>
 
                     {error && (
-                        <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-200 text-sm">
+                        <div className="mb-4 p-3 rounded-xl bg-error/10 border border-error/30 text-error font-body text-sm">
                             {error}
                         </div>
                     )}
