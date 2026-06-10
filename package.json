@@ -3,7 +3,7 @@
   "description": "The official cross-platform client for Vortex, a high-performance self-hosted media server.",
   "author": "Vortex Contributors",
   "private": true,
-  "version": "0.2.5",
+  "version": "0.2.6",
   "type": "module",
   "scripts": {
     "dev": "vite",

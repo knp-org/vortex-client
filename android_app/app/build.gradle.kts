@@ -14,8 +14,8 @@ android {
         applicationId = "org.knp.vortex"
         minSdk = 33
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.2.5"
+        versionCode = 4
+        versionName = "0.2.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
