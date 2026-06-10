@@ -24,6 +24,7 @@ import org.knp.vortex.ui.theme.*
 import org.knp.vortex.ui.components.GlassyBackground
 import org.knp.vortex.ui.components.GlassyCard
 import org.knp.vortex.ui.components.GlassySurface
+import org.knp.vortex.ui.components.GlassyDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +35,8 @@ fun ManageLibrariesScreen(
     viewModel: ManageLibrariesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var libraryToDeleteId by remember { mutableStateOf<Long?>(null) }
+    var libraryToDeleteName by remember { mutableStateOf<String?>(null) }
 
     GlassyBackground {
         Scaffold(
@@ -44,10 +47,11 @@ fun ManageLibrariesScreen(
             floatingActionButton = {
                 ExtendedFloatingActionButton(
                     onClick = onAddLibrary,
-                    containerColor = PrimaryBlue,
-                    contentColor = Color.White,
-                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text("Add Library") }
+                    containerColor = Color.White,
+                    contentColor = Color.Black,
+                    icon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    text = { Text("ADD LIBRARY", fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp, style = MaterialTheme.typography.labelSmall) },
+                    shape = RoundedCornerShape(24.dp)
                 )
             }
         ) { padding ->
@@ -85,12 +89,16 @@ fun ManageLibrariesScreen(
                             )
                         }
                         
-                        Button(
+                        OutlinedButton(
                             onClick = { viewModel.scanLibraries() },
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.White.copy(alpha = 0.05f),
+                                contentColor = Color.White
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
                             enabled = !uiState.isScanning,
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(24.dp)
                         ) {
                             if (uiState.isScanning) {
                                 CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
@@ -116,7 +124,7 @@ fun ManageLibrariesScreen(
 
                 if (uiState.isLoading) {
                     Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = PrimaryBlue)
+                        CircularProgressIndicator(color = Color.White)
                     }
                 } else if (uiState.libraries.isEmpty()) {
                     Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
@@ -129,7 +137,10 @@ fun ManageLibrariesScreen(
                             path = lib.paths.joinToString(", "),
                             type = lib.library_type,
                             onEdit = { onEditLibrary(lib.id) },
-                            onDelete = { viewModel.deleteLibrary(lib.id) }
+                            onDelete = { 
+                                libraryToDeleteId = lib.id
+                                libraryToDeleteName = lib.name
+                            }
                         )
                     }
                 }
@@ -145,6 +156,54 @@ fun ManageLibrariesScreen(
                 Spacer(modifier = Modifier.height(80.dp)) // Floating action button spacer
             }
         }
+
+        libraryToDeleteId?.let { id ->
+            GlassyDialog(
+                onDismissRequest = { 
+                    libraryToDeleteId = null
+                    libraryToDeleteName = null 
+                },
+                title = "Delete Library",
+                content = {
+                    Text(
+                        text = "Are you sure you want to delete '${libraryToDeleteName}'? This action cannot be undone.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = GrayText
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.deleteLibrary(id)
+                            libraryToDeleteId = null
+                            libraryToDeleteName = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFB4AB),
+                            contentColor = Color.Black
+                        ),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Text("Delete", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = {
+                            libraryToDeleteId = null
+                            libraryToDeleteName = null
+                        },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.White
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -158,11 +217,11 @@ fun LibraryItem(
 ) {
     GlassyCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(horizontal = 24.dp, vertical = 20.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -172,12 +231,6 @@ fun LibraryItem(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
-                )
-                Text(
-                    text = type.replace("_", " ").uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = PrimaryBlue,
-                    fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -189,17 +242,20 @@ fun LibraryItem(
             }
             
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val errorColor = Color(0xFFFFB4AB)
                 IconButton(
                     onClick = onEdit,
-                    colors = IconButtonDefaults.iconButtonColors(contentColor = PrimaryBlue)
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White.copy(alpha = 0.7f)),
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(20.dp))
                 }
                 IconButton(
                     onClick = onDelete,
-                    colors = IconButtonDefaults.iconButtonColors(contentColor = Color.Red.copy(alpha = 0.7f))
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = errorColor),
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
                 }
             }
         }

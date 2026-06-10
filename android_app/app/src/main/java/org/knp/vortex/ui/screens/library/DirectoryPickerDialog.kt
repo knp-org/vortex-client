@@ -15,8 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import org.knp.vortex.data.remote.DirectoryEntryDto
+import org.knp.vortex.ui.components.GlassyDialog
+import org.knp.vortex.ui.theme.GrayText
 
 @Composable
 fun DirectoryPickerDialog(
@@ -27,48 +28,30 @@ fun DirectoryPickerDialog(
     onSelectPath: (String) -> Unit, // Confirm this path
     onNavigate: (String) -> Unit // Enter directory
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(500.dp)
-                .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Header
-                Text(
-                    text = "Select Server Folder",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                
+    GlassyDialog(
+        onDismissRequest = onDismiss,
+        title = "Select Server Folder",
+        content = {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 400.dp)) {
                 // Current Path and Up Button
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { 
-                        // Simplified Up navigation: just let View Model handle logic or simple string manipulation 
-                        // But path is just a string. ViewModel knows logic.
-                        // We will allow user to tap ".." in the list instead.
-                        onNavigate("..")
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Up", tint = Color.Gray)
+                    IconButton(onClick = { onNavigate("..") }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Up", tint = GrayText)
                     }
                     Text(
                         text = if (currentPath.isEmpty()) "Root" else currentPath,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.LightGray,
+                        color = Color.White.copy(alpha = 0.8f),
                         modifier = Modifier.weight(1f)
                     )
                 }
                 
-                HorizontalDivider(color = Color.Gray, thickness = 0.5.dp)
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f), thickness = 1.dp)
                 
                 // Directory List
                 Box(modifier = Modifier.weight(1f)) {
                     if (isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.align(Alignment.Center))
                     } else {
                         LazyColumn {
                             items(directories) { dir ->
@@ -76,34 +59,34 @@ fun DirectoryPickerDialog(
                             }
                             if (directories.isEmpty()) {
                                 item {
-                                    Text("No folders found", color = Color.Gray, modifier = Modifier.padding(16.dp))
+                                    Text("No folders found", color = GrayText, modifier = Modifier.padding(16.dp))
                                 }
                             }
                         }
                     }
                 }
-                
-                HorizontalDivider(color = Color.Gray, thickness = 0.5.dp)
-                
-                // Action Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancel", color = Color.Gray)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = { onSelectPath(currentPath) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                    ) {
-                        Text("Select Current")
-                    }
-                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSelectPath(currentPath) },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Text("Select Current", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Text("Cancel")
             }
         }
-    }
+    )
 }
 
 @Composable
@@ -115,7 +98,7 @@ fun DirectoryItem(entry: DirectoryEntryDto, onClick: () -> Unit) {
             .padding(vertical = 12.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Default.Folder, contentDescription = null, tint = Color(0xFFFFC107))
+        Icon(Icons.Default.Folder, contentDescription = null, tint = Color.White.copy(alpha = 0.7f))
         Spacer(modifier = Modifier.width(16.dp))
         Text(text = entry.name, color = Color.White)
     }

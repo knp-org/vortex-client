@@ -38,31 +38,41 @@ fun SecuritySettingsScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                org.knp.vortex.ui.components.GlassyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Biometric Lock",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Color.White
-                        )
-                        Text(
-                            text = "Require authentication when opening the app",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Biometric Lock",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color.White,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+                            Text(
+                                text = "Require authentication when opening the app",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                        Switch(
+                            checked = uiState.isBiometricEnabled,
+                            onCheckedChange = { viewModel.toggleBiometric(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.Black,
+                                checkedTrackColor = Color.White,
+                                checkedBorderColor = Color.Transparent,
+                                uncheckedThumbColor = Color.Gray,
+                                uncheckedTrackColor = Color.White.copy(alpha = 0.1f),
+                                uncheckedBorderColor = Color.White.copy(alpha = 0.3f)
+                            )
                         )
                     }
-                    Switch(
-                        checked = uiState.isBiometricEnabled,
-                        onCheckedChange = { viewModel.toggleBiometric(it) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = PrimaryBlue,
-                            checkedTrackColor = PrimaryBlue.copy(alpha = 0.5f)
-                        )
-                    )
                 }
             }
         }

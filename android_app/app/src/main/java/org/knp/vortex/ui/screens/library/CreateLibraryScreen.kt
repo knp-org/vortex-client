@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -95,7 +96,7 @@ fun CreateLibraryScreen(
                                 ) {
                                     Text(text = path, color = Color.White, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                                     IconButton(onClick = { viewModel.removePath(path) }, modifier = Modifier.size(32.dp)) {
-                                        Icon(Icons.Default.Close, contentDescription = "Remove Path", tint = Color.Red.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
+                                        Icon(Icons.Default.Close, contentDescription = "Remove Path", tint = Color(0xFFFFB4AB), modifier = Modifier.size(20.dp))
                                     }
                                 }
                             }
@@ -114,7 +115,7 @@ fun CreateLibraryScreen(
                                 singleLine = true,
                                 trailingIcon = {
                                     IconButton(onClick = { viewModel.openDirectoryPicker() }) {
-                                        Icon(Icons.Default.Folder, contentDescription = "Browse", tint = PrimaryBlue)
+                                        Icon(Icons.Default.Folder, contentDescription = "Browse", tint = Color.White)
                                     }
                                 }
                             )
@@ -122,7 +123,8 @@ fun CreateLibraryScreen(
                                 onClick = { viewModel.addPath(uiState.currentPathInput) },
                                 modifier = Modifier
                                     .size(56.dp) // Match height of GlassyTextField roughly
-                                    .background(PrimaryBlue, shape = RoundedCornerShape(12.dp))
+                                    .background(Color.White.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = "Add Path", tint = Color.White)
                             }
@@ -144,14 +146,15 @@ fun CreateLibraryScreen(
                             FilterChip(
                                 selected = isSelected,
                                 onClick = { viewModel.updateType(type) },
-                                label = { Text(type.replace("_", " ").capitalize()) },
+                                label = { Text(type.replace("_", " ").capitalize(), style = MaterialTheme.typography.labelSmall) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = PrimaryBlue,
-                                    containerColor = SurfaceColor,
-                                    labelColor = Color.White,
-                                    selectedLabelColor = Color.White
+                                    selectedContainerColor = Color.White,
+                                    containerColor = Color.White.copy(alpha = 0.05f),
+                                    labelColor = Color.White.copy(alpha = 0.7f),
+                                    selectedLabelColor = Color.Black
                                 ),
-                                border = null
+                                border = null,
+                                shape = RoundedCornerShape(24.dp)
                             )
                         }
                     }
@@ -171,14 +174,17 @@ fun CreateLibraryScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        ),
+                        shape = RoundedCornerShape(24.dp),
                         enabled = !uiState.isLoading
                     ) {
                         if (uiState.isLoading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                            CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp))
                         } else {
-                            val btnText = if (viewModel.libraryId != -1L) "Save Changes" else "Finish and Create"
+                            val btnText = if (viewModel.libraryId != -1L) "Save Changes" else "Done"
                             Text(btnText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                     }

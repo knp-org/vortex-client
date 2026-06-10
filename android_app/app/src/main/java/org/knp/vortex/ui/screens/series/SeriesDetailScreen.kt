@@ -51,7 +51,7 @@ fun SeriesDetailScreen(
             Box(modifier = Modifier.fillMaxSize()) {
                 if (uiState.isLoading && uiState.seriesDetail == null) {
                     CircularProgressIndicator(
-                        color = PrimaryBlue,
+                        color = Color.White,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else if (uiState.seriesDetail != null) {
@@ -203,9 +203,9 @@ fun SeriesDetailScreen(
                                         onClick = { viewModel.selectSeason(season.season_number) },
                                         label = { Text("Season ${season.season_number}") },
                                         colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = PrimaryBlue,
-                                            selectedLabelColor = Color.White,
-                                            containerColor = SurfaceColor,
+                                            selectedContainerColor = Color.White,
+                                            selectedLabelColor = Color.Black,
+                                            containerColor = Color.White.copy(alpha = 0.05f),
                                             labelColor = GrayText
                                         ),
                                         border = null
@@ -228,7 +228,7 @@ fun SeriesDetailScreen(
                             } else {
                                 Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
                                     if (uiState.isLoading) {
-                                        CircularProgressIndicator(color = PrimaryBlue)
+                                        CircularProgressIndicator(color = Color.White)
                                     } else {
                                         Text("No episodes found", color = GrayText)
                                     }

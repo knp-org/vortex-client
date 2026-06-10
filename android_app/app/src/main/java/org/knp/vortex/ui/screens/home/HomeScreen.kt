@@ -181,19 +181,19 @@ fun HomeScreen(
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
-                        color = PrimaryBlue,
+                        color = Color.White,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else if (uiState.error != null) {
                     Text(
                         text = "Error: ${uiState.error}\nIs the backend running?",
-                        color = ErrorRed,
+                        color = Color(0xFFffb4ab),
                         modifier = Modifier.align(Alignment.Center)
                     ) 
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 32.dp),
+                        contentPadding = PaddingValues(bottom = 120.dp),
                         verticalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
                         item {
@@ -429,7 +429,7 @@ fun FeaturedCarousel(
                     label = "DotWidth"
                 )
                 val color by androidx.compose.animation.animateColorAsState(
-                    targetValue = if (isSelected) PrimaryBlue else GrayText.copy(alpha = 0.5f),
+                    targetValue = if (isSelected) Color.White else Color.White.copy(alpha = 0.3f),
                     label = "DotColor"
                 )
                 

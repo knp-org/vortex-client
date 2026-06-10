@@ -19,7 +19,8 @@ data class SettingsUiState(
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
     val error: String? = null,
-    val providers: List<ProviderInfoDto> = emptyList()
+    val providers: List<ProviderInfoDto> = emptyList(),
+    val username: String? = null
 )
 
 @HiltViewModel
@@ -43,7 +44,8 @@ class SettingsViewModel @Inject constructor(
         
         _uiState.value = _uiState.value.copy(
             serverUrl = currentUrl,
-            isBiometricEnabled = biometric
+            isBiometricEnabled = biometric,
+            username = settingsRepository.getUsername()
         )
     }
 
@@ -90,6 +92,7 @@ class SettingsViewModel @Inject constructor(
 
     fun logout() {
         settingsRepository.setAuthToken(null)
+        settingsRepository.setUsername(null)
     }
 
     private fun loadProviders() {

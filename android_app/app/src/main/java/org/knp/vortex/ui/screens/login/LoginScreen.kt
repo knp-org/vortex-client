@@ -19,7 +19,7 @@ import org.knp.vortex.R
 import org.knp.vortex.ui.components.GlassyBackground
 import org.knp.vortex.ui.components.GlassySurface
 import org.knp.vortex.ui.components.GlassyTextField
-import org.knp.vortex.ui.theme.PrimaryBlue
+
 
 @Composable
 fun LoginScreen(
@@ -36,12 +36,11 @@ fun LoginScreen(
 
     GlassyBackground {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            GlassySurface(
+            org.knp.vortex.ui.components.GlassyCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(32.dp),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-                color = Color.Black.copy(alpha = 0.4f)
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -108,13 +107,13 @@ fun LoginScreen(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
-                            focusedContainerColor = Color.White.copy(alpha = 0.08f),
-                            unfocusedContainerColor = Color.White.copy(alpha = 0.04f),
-                            focusedBorderColor = PrimaryBlue,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
-                            focusedLabelColor = PrimaryBlue,
+                            focusedContainerColor = Color.White.copy(alpha = 0.05f),
+                            unfocusedContainerColor = Color.White.copy(alpha = 0.05f),
+                            focusedBorderColor = Color.White.copy(alpha = 0.5f),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                            focusedLabelColor = Color.White,
                             unfocusedLabelColor = Color.Gray,
-                            cursorColor = PrimaryBlue
+                            cursorColor = Color.White
                         ),
                         trailingIcon = {
                             Text(
@@ -132,7 +131,7 @@ fun LoginScreen(
                     if (uiState.error != null) {
                         Text(
                             text = uiState.error!!,
-                            color = if (uiState.isRegistrationSuccess) Color.Green else Color.Red,
+                            color = if (uiState.isRegistrationSuccess) Color.White else Color(0xFFffb4ab),
                             fontSize = 14.sp,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
@@ -156,7 +155,7 @@ fun LoginScreen(
                             contentColor = Color.Black,
                             disabledContainerColor = Color.White.copy(alpha = 0.5f)
                         ),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
                     ) {
                         Text(
                             text = if (uiState.isLoading) "Processing..." else if (isRegistering) "Create Account" else "Sign In",

@@ -188,7 +188,7 @@ fun AppNavigation() {
         NavHost(
             navController = navController, 
             startDestination = "home",
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.fillMaxSize().padding(top = innerPadding.calculateTopPadding()),
             enterTransition = { androidx.compose.animation.fadeIn() },
             exitTransition = { androidx.compose.animation.fadeOut() },
             popEnterTransition = { androidx.compose.animation.fadeIn() },

@@ -60,22 +60,25 @@ fun ServerConfigScreen(
                 ) {
                     OutlinedButton(
                         onClick = { viewModel.resetToDefault() },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.05f),
                             contentColor = Color.White
-                        )
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
                     ) {
                         Text("Reset to Default")
                     }
 
                     Button(
                         onClick = { viewModel.saveSettings() },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(48.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = PrimaryBlue
+                            containerColor = Color.White,
+                            contentColor = Color.Black
                         ),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(24.dp)
                     ) {
                         Text("Save")
                     }
@@ -99,14 +102,16 @@ fun ServerConfigScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
+                val errorColor = Color(0xFFFFB4AB) // From DESIGN.md
                 OutlinedButton(
                     onClick = { showResetDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFFFF5252)
+                        containerColor = errorColor.copy(alpha = 0.05f),
+                        contentColor = errorColor
                     ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF5252))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, errorColor.copy(alpha = 0.3f))
                 ) {
                     Text("Reset Server Database")
                 }
@@ -123,7 +128,7 @@ fun ServerConfigScreen(
                                 viewModel.resetDatabase()
                                 showResetDialog = false
                             },
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFF5252))
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFFB4AB))
                         ) {
                             Text("Reset")
                         }

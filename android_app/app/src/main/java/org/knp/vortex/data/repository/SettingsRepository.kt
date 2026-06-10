@@ -18,6 +18,7 @@ class SettingsRepository @Inject constructor(
         private const val KEY_SERVER_URL = "server_url"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
         private const val KEY_AUTH_TOKEN = "auth_token"
+        private const val KEY_USERNAME = "username"
         private const val DEFAULT_URL = "http://127.0.0.1:3000"
     }
 
@@ -31,6 +32,9 @@ class SettingsRepository @Inject constructor(
 
     private val _isBiometricEnabled = MutableStateFlow(isBiometricEnabled())
     val biometricEnabled: StateFlow<Boolean> = _isBiometricEnabled.asStateFlow()
+
+    private val _username = MutableStateFlow(getUsername())
+    val username: StateFlow<String?> = _username.asStateFlow()
 
     fun getServerUrl(): String {
         return prefs.getString(KEY_SERVER_URL, DEFAULT_URL) ?: DEFAULT_URL
@@ -58,6 +62,15 @@ class SettingsRepository @Inject constructor(
     fun setAuthToken(token: String?) {
         prefs.edit().putString(KEY_AUTH_TOKEN, token).apply()
         _authToken.value = token
+    }
+
+    fun getUsername(): String? {
+        return prefs.getString(KEY_USERNAME, null)
+    }
+
+    fun setUsername(username: String?) {
+        prefs.edit().putString(KEY_USERNAME, username).apply()
+        _username.value = username
     }
 
     fun getDefaultUrl(): String = DEFAULT_URL

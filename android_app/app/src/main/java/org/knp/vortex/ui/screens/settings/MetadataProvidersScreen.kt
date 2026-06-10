@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -128,9 +131,12 @@ fun MetadataProvidersScreen(
                                         viewModel.updateProviderConfig(provider.id, editedConfig)
                                         selectedProvider = null
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = org.knp.vortex.ui.theme.PrimaryBlue)
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.White,
+                                        contentColor = Color.Black
+                                    )
                                 ) {
-                                    Text("Save", color = Color.White)
+                                    Text("Save")
                                 }
                             },
                             dismissButton = {
@@ -172,25 +178,47 @@ fun MetadataProvidersScreen(
                     )
                 }
 
+                val errorColor = Color(0xFFFFB4AB)
                 org.knp.vortex.ui.components.GlassyCard(
                     onClick = { showResetDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    color = Color.Red.copy(alpha = 0.1f)
+                    color = errorColor.copy(alpha = 0.05f)
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Surface(
-                            color = Color.Red.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(12.dp)
+                        // Glowing circular icon container for Error
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                .background(
+                                    androidx.compose.ui.graphics.Brush.linearGradient(
+                                        colors = listOf(
+                                            errorColor.copy(alpha = 0.15f),
+                                            errorColor.copy(alpha = 0.02f)
+                                        )
+                                    )
+                                )
+                                .border(
+                                    1.dp,
+                                    androidx.compose.ui.graphics.Brush.linearGradient(
+                                        colors = listOf(
+                                            errorColor.copy(alpha = 0.35f),
+                                            errorColor.copy(alpha = 0.05f)
+                                        )
+                                    ),
+                                    androidx.compose.foundation.shape.CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Warning,
                                 contentDescription = null,
-                                tint = Color.Red,
-                                modifier = Modifier.padding(12.dp).size(24.dp)
+                                tint = errorColor,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
@@ -284,10 +312,12 @@ fun MetadataProvidersScreen(
                                 checked = provider.enabled,
                                 onCheckedChange = { viewModel.toggleProvider(provider.id, it) },
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
-                                    checkedTrackColor = org.knp.vortex.ui.theme.PrimaryBlue,
+                                    checkedThumbColor = Color.Black,
+                                    checkedTrackColor = Color.White,
+                                    checkedBorderColor = Color.Transparent,
                                     uncheckedThumbColor = Color.Gray,
-                                    uncheckedTrackColor = Color.DarkGray
+                                    uncheckedTrackColor = Color.White.copy(alpha = 0.1f),
+                                    uncheckedBorderColor = Color.White.copy(alpha = 0.3f)
                                 )
                             )
                         }

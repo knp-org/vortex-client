@@ -58,6 +58,7 @@ class LoginViewModel @Inject constructor(
                     val response = authApi.login(AuthRequest(username, password))
                     if (response.token != null) {
                         settingsRepository.setAuthToken(response.token)
+                        settingsRepository.setUsername(username)
                         onSuccess()
                     } else {
                         _uiState.value = _uiState.value.copy(isLoading = false, error = "Login failed: No token received.")

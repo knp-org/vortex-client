@@ -64,7 +64,7 @@ fun MovieDetailScreen(
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
-                        color = PrimaryBlue
+                        color = Color.White
                     )
                 } else if (uiState.media != null) {
                     val media = uiState.media!!
@@ -196,7 +196,7 @@ fun MovieDetailScreen(
                                             verticalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
                                             media.genres.split(", ").take(3).forEach { genre ->
-                                                MetadataChip(text = genre, backgroundColor = PrimaryBlue.copy(alpha = 0.2f))
+                                                MetadataChip(text = genre, backgroundColor = Color.White.copy(alpha = 0.15f))
                                             }
                                         }
                                     }

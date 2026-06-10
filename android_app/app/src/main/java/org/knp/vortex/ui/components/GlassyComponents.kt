@@ -2,10 +2,12 @@ package org.knp.vortex.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import org.knp.vortex.R
@@ -30,6 +32,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import org.knp.vortex.ui.theme.*
+import androidx.compose.animation.core.*
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
 
 @Composable
 fun GlassyTopBar(
@@ -326,16 +331,86 @@ fun GlassyBackground(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val infiniteTransition = rememberInfiniteTransition(label = "LiquidGlassyBackgroundTransition")
+    
+    // Animate coordinates for the dynamic glowing liquid circles
+    val xOffset1 by infiniteTransition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 0.8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(12000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "xOffset1"
+    )
+    val yOffset1 by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(15000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "yOffset1"
+    )
+    
+    val xOffset2 by infiniteTransition.animateFloat(
+        initialValue = 0.8f,
+        targetValue = 0.1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(18000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "xOffset2"
+    )
+    val yOffset2 by infiniteTransition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 0.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(14000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "yOffset2"
+    )
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(Liquid1, Liquid2, Liquid3)
+            .drawWithCache {
+                val brush1 = Brush.radialGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.05f), // Subtle monochrome glow
+                        Color.Transparent
+                    ),
+                    center = Offset(
+                        size.width * xOffset1,
+                        size.height * yOffset1
+                    ),
+                    radius = size.minDimension * 0.8f
                 )
-            )
+                val brush2 = Brush.radialGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.03f), // Another subtle monochrome glow
+                        Color.Transparent
+                    ),
+                    center = Offset(
+                        size.width * xOffset2,
+                        size.height * yOffset2
+                    ),
+                    radius = size.minDimension * 0.7f
+                )
+                onDrawBehind {
+                    // Deep dark monochrome void base
+                    drawRect(Color(0xFF080808))
+                    
+                    // Draw liquid monochrome glows
+                    drawRect(brush = brush1)
+                    drawRect(brush = brush2)
+                    
+                    // Overlay a translucent dark glassy layer
+                    drawRect(Color(0xFF000000).copy(alpha = 0.4f))
+                }
+            }
     ) {
-        // Content
         content()
     }
 }
@@ -369,31 +444,45 @@ fun GlassyCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(16.dp),
-    color: Color = Color.White.copy(alpha = 0.12f), // Increased from 0.1
+    color: Color = Color.Unspecified, // Defaults to Unspecified to trigger the frosted gradient
     content: @Composable () -> Unit
 ) {
+    val baseModifier = modifier.clip(shape)
     val cardModifier = if (onClick != null) {
-        modifier.clickable(onClick = onClick).clip(shape)
+        baseModifier.clickable(onClick = onClick)
     } else {
-        modifier.clip(shape)
+        baseModifier
     }
 
-    Surface(
-        modifier = cardModifier,
-        shape = shape,
-        color = color,
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp, // Increased from 0.5dp
-            Brush.linearGradient(
-                listOf(
-                    Color.White.copy(alpha = 0.45f), // Increased from 0.4
-                    Color.White.copy(alpha = 0.15f),
-                    Color.Transparent
-                )
+    Box(
+        modifier = cardModifier
+            .then(
+                if (color != Color.Unspecified) {
+                    Modifier.background(color)
+                } else {
+                    Modifier.background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.20f), // Top-left brighter frosted glass
+                                Color.White.copy(alpha = 0.06f)  // Bottom-right darker glassy fade
+                            )
+                        )
+                    )
+                }
             )
-        ),
-        content = content
-    )
+            .border(
+                1.dp,
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.4f),  // Top-left strong border highlight
+                        Color.White.copy(alpha = 0.05f)  // Bottom-right subtle border
+                    )
+                ),
+                shape = shape
+            )
+    ) {
+        content()
+    }
 }
 
 @Composable
@@ -420,13 +509,13 @@ fun GlassyTextField(
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = Color.White,
             unfocusedTextColor = Color.White,
-            focusedContainerColor = Color.White.copy(alpha = 0.08f), // Increased from 0.05
-            unfocusedContainerColor = Color.White.copy(alpha = 0.04f), // Increased from 0.02
-            focusedBorderColor = PrimaryBlue,
-            unfocusedBorderColor = Color.White.copy(alpha = 0.2f), // Increased from 0.1
-            focusedLabelColor = PrimaryBlue,
+            focusedContainerColor = Color.White.copy(alpha = 0.05f), // 5% white fill
+            unfocusedContainerColor = Color.White.copy(alpha = 0.05f), // 5% white fill
+            focusedBorderColor = Color.White.copy(alpha = 0.5f), // 50% opacity white on focus
+            unfocusedBorderColor = Color.White.copy(alpha = 0.1f), // Subtle border
+            focusedLabelColor = Color.White,
             unfocusedLabelColor = GrayText,
-            cursorColor = PrimaryBlue
+            cursorColor = Color.White
         )
     )
 }
@@ -482,44 +571,20 @@ fun GlassyBottomNavigation(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.Transparent)
+            .navigationBarsPadding()
+            .padding(16.dp) // Floating dock padding
     ) {
-        // Glassy Background
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                             Color(0xFF0F1119).copy(alpha = 0.6f), // More transparent
-                             Color(0xFF0F1119).copy(alpha = 0.85f)
-                        )
-                    )
-                ),
-        )
-        // Top Border
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            Color.Transparent, 
-                            Color.White.copy(alpha = 0.1f), 
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
+        // Glassy Dock Background mimicking GlassyCard exactly
+        GlassyCard(
+            modifier = Modifier.matchParentSize(),
+            shape = RoundedCornerShape(32.dp)
+        ) {}
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .height(80.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
+                .height(72.dp), // Dock height
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
             content = content
         )
@@ -533,27 +598,37 @@ fun GlassyBottomNavItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String
 ) {
-    val color = if (selected) PrimaryBlue else GrayText
+    val color = if (selected) Color.White else Color.White.copy(alpha = 0.4f)
+    val bgColor = if (selected) Color.White.copy(alpha = 0.15f) else Color.Transparent
     
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
-            .padding(12.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = color,
-            modifier = Modifier.size(26.dp)
-        )
-        Spacer(modifier = Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(bgColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = color,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
             color = color,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            fontSize = 10.sp
         )
     }
 }
