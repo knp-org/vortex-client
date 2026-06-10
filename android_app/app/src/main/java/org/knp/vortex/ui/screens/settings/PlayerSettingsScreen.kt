@@ -17,8 +17,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import org.knp.vortex.ui.components.GlassyBackground
 import org.knp.vortex.ui.components.GlassyTopBar
 import org.knp.vortex.ui.theme.GrayText
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import org.knp.vortex.ui.components.GlassyTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.material3.MenuAnchorType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,8 +38,7 @@ fun PlayerSettingsScreen(
             topBar = {
                 GlassyTopBar(
                     title = "Player Settings",
-                    navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
-                    onNavigationClick = onBack,
+                    onBack = onBack,
                     actions = {
                         IconButton(onClick = { viewModel.saveSettings() }) {
                             Icon(Icons.Default.Save, contentDescription = "Save Settings", tint = Color.White)
@@ -114,18 +117,21 @@ fun PlayerSettingsScreen(
                             
                             ExposedDropdownMenuBox(
                                 expanded = expanded,
-                                onExpandedChange = { expanded = !expanded }
+                                onExpandedChange = { expanded = it }
                             ) {
-                                OutlinedTextField(
+                                GlassyTextField(
                                     value = uiState.defaultQuality,
                                     onValueChange = {},
                                     readOnly = true,
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        unfocusedTextColor = Color.White,
-                                        focusedTextColor = Color.White
-                                    )
+                                    label = "",
+                                    trailingIcon = { 
+                                        Icon(
+                                            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                            contentDescription = "Dropdown",
+                                            tint = Color.White
+                                        )
+                                    },
+                                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
                                 )
                                 ExposedDropdownMenu(
                                     expanded = expanded,
@@ -150,7 +156,15 @@ fun PlayerSettingsScreen(
                             Text("Auto-Play Next Episode", color = Color.White)
                             Switch(
                                 checked = uiState.autoPlayNext,
-                                onCheckedChange = { viewModel.updateSetting("autoPlayNext", it) }
+                                onCheckedChange = { viewModel.updateSetting("autoPlayNext", it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.Black,
+                                    checkedTrackColor = Color.White,
+                                    checkedBorderColor = Color.Transparent,
+                                    uncheckedThumbColor = Color.Gray,
+                                    uncheckedTrackColor = Color.White.copy(alpha = 0.1f),
+                                    uncheckedBorderColor = Color.White.copy(alpha = 0.3f)
+                                )
                             )
                         }
                         
@@ -158,27 +172,33 @@ fun PlayerSettingsScreen(
                             Text("Auto-Skip Intro", color = Color.White)
                             Switch(
                                 checked = uiState.skipIntro,
-                                onCheckedChange = { viewModel.updateSetting("skipIntro", it) }
+                                onCheckedChange = { viewModel.updateSetting("skipIntro", it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.Black,
+                                    checkedTrackColor = Color.White,
+                                    checkedBorderColor = Color.Transparent,
+                                    uncheckedThumbColor = Color.Gray,
+                                    uncheckedTrackColor = Color.White.copy(alpha = 0.1f),
+                                    uncheckedBorderColor = Color.White.copy(alpha = 0.3f)
+                                )
                             )
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            OutlinedTextField(
+                            GlassyTextField(
                                 value = uiState.skipBackwardTime.toString(),
                                 onValueChange = { viewModel.updateSetting("skipBackwardTime", it.toIntOrNull() ?: 10) },
-                                label = { Text("Skip Back (s)") },
+                                label = "Skip Back (s)",
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(unfocusedTextColor = Color.White, focusedTextColor = Color.White)
+                                modifier = Modifier.weight(1f)
                             )
-                            OutlinedTextField(
+                            GlassyTextField(
                                 value = uiState.skipForwardTime.toString(),
                                 onValueChange = { viewModel.updateSetting("skipForwardTime", it.toIntOrNull() ?: 10) },
-                                label = { Text("Skip Fwd (s)") },
+                                label = "Skip Fwd (s)",
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(unfocusedTextColor = Color.White, focusedTextColor = Color.White)
+                                modifier = Modifier.weight(1f)
                             )
                         }
                         
@@ -194,15 +214,21 @@ fun PlayerSettingsScreen(
                         val subtitleOptions = listOf("small", "medium", "large", "xlarge")
                         ExposedDropdownMenuBox(
                             expanded = subtitleExpanded,
-                            onExpandedChange = { subtitleExpanded = !subtitleExpanded }
+                            onExpandedChange = { subtitleExpanded = it }
                         ) {
-                            OutlinedTextField(
+                            GlassyTextField(
                                 value = uiState.subtitleSize,
                                 onValueChange = {},
                                 readOnly = true,
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subtitleExpanded) },
-                                modifier = Modifier.fillMaxWidth().menuAnchor(),
-                                colors = OutlinedTextFieldDefaults.colors(unfocusedTextColor = Color.White, focusedTextColor = Color.White)
+                                label = "",
+                                trailingIcon = { 
+                                    Icon(
+                                        imageVector = if (subtitleExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                        contentDescription = "Dropdown",
+                                        tint = Color.White
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
                             )
                             ExposedDropdownMenu(
                                 expanded = subtitleExpanded,
@@ -225,7 +251,15 @@ fun PlayerSettingsScreen(
                             Text("Hardware Acceleration", color = Color.White)
                             Switch(
                                 checked = uiState.hardwareDecoding,
-                                onCheckedChange = { viewModel.updateSetting("hardwareDecoding", it) }
+                                onCheckedChange = { viewModel.updateSetting("hardwareDecoding", it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.Black,
+                                    checkedTrackColor = Color.White,
+                                    checkedBorderColor = Color.Transparent,
+                                    uncheckedThumbColor = Color.Gray,
+                                    uncheckedTrackColor = Color.White.copy(alpha = 0.1f),
+                                    uncheckedBorderColor = Color.White.copy(alpha = 0.3f)
+                                )
                             )
                         }
                     }
@@ -237,11 +271,15 @@ fun PlayerSettingsScreen(
                     onClick = { viewModel.saveSettings() },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     enabled = !uiState.isLoading,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black
+                    )
                 ) {
-                    Icon(Icons.Default.Save, contentDescription = null)
+                    Icon(Icons.Default.Save, contentDescription = null, tint = Color.Black)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Save Settings")
+                    Text("Save Settings", color = Color.Black)
                 }
                 
                 Spacer(modifier = Modifier.height(64.dp))

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { providerService } from '../../services';
 import type { ProviderInfo, ConfigField } from '../../types/providers';
 import { Select } from '../../components/common/Select';
+import { Toggle } from '../../components/common/Toggle';
 
 // ── Dynamic Config Field ───────────────────────────────────────────────
 
@@ -27,15 +28,11 @@ const ConfigFieldInput: React.FC<ConfigFieldInputProps> = ({ field, value, onCha
             );
         case 'bool':
             return (
-                <button
-                    onClick={() => onChange(field.key, !value)}
-                    className="flex items-center gap-3"
-                >
-                    <div className={`w-11 h-6 rounded-full relative transition-colors ${value ? 'bg-white/20 border-white/30' : 'bg-surface/50 border-outline'} border shadow-inner`}>
-                        <div className={`absolute top-1 w-4 h-4 rounded-full shadow-md transition-all ${value ? 'right-1 bg-primary' : 'left-1 bg-outline-variant'}`} />
-                    </div>
-                    <span className="text-sm text-outline-variant font-label">{value ? 'Enabled' : 'Disabled'}</span>
-                </button>
+                <Toggle
+                    label={value ? 'Enabled' : 'Disabled'}
+                    checked={!!value}
+                    onChange={(checked) => onChange(field.key, checked)}
+                />
             );
         case 'select': {
             const selectOptions = field.options?.map(([val, label]) => ({ id: val, label })) || [];

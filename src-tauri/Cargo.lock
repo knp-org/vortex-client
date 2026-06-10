@@ -3488,7 +3488,7 @@ dependencies = [
 
 [[package]]
 name = "tauri-app"
-version = "0.2.2"
+version = "0.2.5"
 dependencies = [
  "libc",
  "raw-window-handle",

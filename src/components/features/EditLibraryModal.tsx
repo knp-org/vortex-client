@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
+import { Toggle } from '../common/Toggle';
 import { Input } from '../common/Input';
 import { Select } from '../common/Select';
 import { MultiDirectoryPicker } from '../common/MultiDirectoryPicker';
@@ -141,15 +142,12 @@ export const EditLibraryModal: React.FC<EditLibraryModalProps> = ({ isOpen, onCl
                         />
 
                         <div className="border-t border-outline pt-4 mt-4">
-                            <label className="flex items-center space-x-3 mb-4 cursor-pointer w-max">
-                                <input
-                                    type="checkbox"
-                                    checked={overrideProviders}
-                                    onChange={(e) => setOverrideProviders(e.target.checked)}
-                                    className="rounded border-outline bg-surface/50 text-primary focus:ring-primary focus:ring-offset-surface"
-                                />
-                                <span className="text-sm font-medium text-primary font-body">Override Metadata Providers</span>
-                            </label>
+                            <Toggle
+                                label="Override Metadata Providers"
+                                checked={overrideProviders}
+                                onChange={setOverrideProviders}
+                                className="mb-4"
+                            />
 
                             {overrideProviders && (
                                 <div className="space-y-2 max-h-48 overflow-y-auto pr-2">

@@ -1,8 +1,8 @@
 [package]
-name = "tauri-app"
-version = "0.2.4"
-description = "A Tauri App"
-authors = ["you"]
+name = "vortex-client"
+version = "0.2.5"
+description = "The official cross-platform client for Vortex, a high-performance self-hosted media server."
+authors = ["Vortex Contributors"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

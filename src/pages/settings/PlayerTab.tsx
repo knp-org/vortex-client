@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Settings2, Subtitles, MonitorPlay, Save } from 'lucide-react';
 import { Select } from '../../components/common/Select';
+import { Toggle } from '../../components/common/Toggle';
+import { Button } from '../../components/common/Button';
 import { api } from '../../services';
 import type { Setting } from '../../types/settings';
 
@@ -94,37 +96,19 @@ export const PlayerTab: React.FC = () => {
                             />
                         </div>
 
-                        <div className="flex items-center justify-between">
-                            <div className="flex flex-col">
-                                <label className="text-sm font-label text-primary">Auto-Play Next Episode</label>
-                                <span className="text-xs text-outline-variant font-body">Automatically play the next episode in a series</span>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input 
-                                    type="checkbox" 
-                                    className="sr-only peer" 
-                                    checked={settings.autoPlayNext}
-                                    onChange={(e) => handleChange('autoPlayNext', e.target.checked)}
-                                />
-                                <div className="w-11 h-6 bg-surface peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-checked:after:bg-black"></div>
-                            </label>
-                        </div>
+                        <Toggle
+                            label="Auto-Play Next Episode"
+                            description="Automatically play the next episode in a series"
+                            checked={settings.autoPlayNext}
+                            onChange={(checked) => handleChange('autoPlayNext', checked)}
+                        />
                         
-                        <div className="flex items-center justify-between">
-                            <div className="flex flex-col">
-                                <label className="text-sm font-label text-primary">Auto-Skip Intro</label>
-                                <span className="text-xs text-outline-variant font-body">Automatically skip TV show intros when available</span>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input 
-                                    type="checkbox" 
-                                    className="sr-only peer" 
-                                    checked={settings.skipIntro}
-                                    onChange={(e) => handleChange('skipIntro', e.target.checked)}
-                                />
-                                <div className="w-11 h-6 bg-surface peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-checked:after:bg-black"></div>
-                            </label>
-                        </div>
+                        <Toggle
+                            label="Auto-Skip Intro"
+                            description="Automatically skip TV show intros when available"
+                            checked={settings.skipIntro}
+                            onChange={(checked) => handleChange('skipIntro', checked)}
+                        />
                         
                         <div className="grid grid-cols-2 gap-4 mt-4 border-t border-outline/50 pt-4">
                             <div className="flex flex-col space-y-2">
@@ -177,21 +161,13 @@ export const PlayerTab: React.FC = () => {
                             />
                         </div>
 
-                        <div className="flex items-center justify-between mt-4">
-                            <div className="flex flex-col">
-                                <label className="text-sm font-label text-primary">Hardware Acceleration</label>
-                                <span className="text-xs text-outline-variant font-body">Use GPU for video decoding if supported</span>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input 
-                                    type="checkbox" 
-                                    className="sr-only peer" 
-                                    checked={settings.hardwareDecoding}
-                                    onChange={(e) => handleChange('hardwareDecoding', e.target.checked)}
-                                />
-                                <div className="w-11 h-6 bg-surface peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-checked:after:bg-black"></div>
-                            </label>
-                        </div>
+                        <Toggle
+                            label="Hardware Acceleration"
+                            description="Use GPU for video decoding if supported"
+                            checked={settings.hardwareDecoding}
+                            onChange={(checked) => handleChange('hardwareDecoding', checked)}
+                            className="mt-4"
+                        />
                         
                         <div className="p-4 bg-black/30 rounded-xl border border-white/5 flex items-center gap-3">
                             <MonitorPlay className="text-outline-variant" size={20} />
@@ -204,14 +180,16 @@ export const PlayerTab: React.FC = () => {
             </div>
 
             <div className="flex justify-end pt-4">
-                <button
+                <Button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 shadow-lg font-label font-bold"
+                    variant="primary"
+                    size="lg"
+                    icon={Save}
+                    className="font-bold rounded-full"
                 >
-                    <Save size={18} />
                     {isSaving ? 'Saving...' : 'Save Player Settings'}
-                </button>
+                </Button>
             </div>
         </div>
     );

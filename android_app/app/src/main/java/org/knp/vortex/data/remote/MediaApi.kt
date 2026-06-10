@@ -188,7 +188,14 @@ data class MediaItemDto(
     val still_url: String?,
     val rating: Float?,
     val cast: String?,
-    val director: String?
+    val director: String?,
+    val age_rating: String?,
+    val studio: String?,
+    val trailer_url: String?,
+    val origin_country: String?,
+    val collection_name: String?,
+    val creator: String?,
+    val tags: String?
 )
 
 data class LibraryDto(
@@ -227,7 +234,14 @@ data class EpisodeDto(
     val runtime: Int?,
     val rating: Float?,
     val cast: String?,
-    val director: String?
+    val director: String?,
+    val age_rating: String?,
+    val studio: String?,
+    val trailer_url: String?,
+    val origin_country: String?,
+    val collection_name: String?,
+    val creator: String?,
+    val tags: String?
 )
 
 data class SeriesDetailDto(
@@ -239,6 +253,13 @@ data class SeriesDetailDto(
     val genres: String?,
     val cast: String?,
     val director: String?,
+    val age_rating: String?,
+    val studio: String?,
+    val trailer_url: String?,
+    val origin_country: String?,
+    val collection_name: String?,
+    val creator: String?,
+    val tags: String?,
     val seasons: List<SeasonDto>
 )
 

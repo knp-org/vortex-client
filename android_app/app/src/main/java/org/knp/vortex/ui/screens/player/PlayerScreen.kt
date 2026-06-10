@@ -127,6 +127,7 @@ fun PlayerScreen(
     var playerSettingsLoaded by remember { mutableStateOf(false) }
     var skipForwardMs by remember { mutableStateOf(10000L) }
     var skipBackwardMs by remember { mutableStateOf(10000L) }
+    var videoSize by remember { mutableStateOf<androidx.media3.common.VideoSize?>(null) }
 
     LaunchedEffect(mediaId) {
         viewModel.getPlayerSettings { json ->

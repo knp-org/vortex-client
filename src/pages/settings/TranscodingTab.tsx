@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
+import { Toggle } from '../../components/common/Toggle';
 import { Server, Monitor, Cpu, Activity } from 'lucide-react';
 import { TranscodeSettings } from '../../types';
 import { settingsService } from '../../services';
@@ -172,18 +173,13 @@ export const TranscodingTab: React.FC = () => {
                         </div>
 
                         {/* Throttling */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-outline-variant font-label">Throttling</label>
-                            <div className="flex gap-2 text-sm text-outline-variant opacity-70 mb-2 font-body">Save CPU when buffer is full</div>
-                            <label className="flex items-center space-x-3 p-3 rounded-xl bg-surface/50 border border-outline cursor-pointer hover:bg-white/10 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.05)]">
-                                <input
-                                    type="checkbox"
-                                    checked={transcodeSettings.throttle_transcodes}
-                                    onChange={e => handleSaveAdvanced({ throttle_transcodes: e.target.checked })}
-                                    className="w-5 h-5 rounded border-outline text-primary focus:ring-white/20 bg-surface"
-                                />
-                                <span className="text-primary font-heading">Enable Transcode Throttling</span>
-                            </label>
+                        <div className="space-y-2 mt-4 pt-4 border-t border-outline/50">
+                            <Toggle
+                                label="Enable Transcode Throttling"
+                                description="Save CPU when buffer is full"
+                                checked={transcodeSettings.throttle_transcodes}
+                                onChange={checked => handleSaveAdvanced({ throttle_transcodes: checked })}
+                            />
                         </div>
                     </div>
                 </div>

@@ -128,12 +128,24 @@ fun SeriesDetailScreen(
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        if (detail.year != null && detail.year > 0) {
-                                            Text(
-                                                text = "${detail.year}",
-                                                style = MaterialTheme.typography.titleMedium,
-                                                color = GrayText
-                                            )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            if (detail.year != null && detail.year > 0) {
+                                                Text(
+                                                    text = "${detail.year}",
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    color = GrayText
+                                                )
+                                            }
+                                            if (!detail.age_rating.isNullOrBlank()) {
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Surface(
+                                                    color = Color.Transparent,
+                                                    shape = RoundedCornerShape(4.dp),
+                                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
+                                                ) {
+                                                    Text(detail.age_rating, color = Color.White, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
+                                                }
+                                            }
                                         }
                                         
                                         Spacer(modifier = Modifier.height(12.dp))
@@ -167,6 +179,41 @@ fun SeriesDetailScreen(
                                     Row {
                                         Text("Director", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
                                         Text(detail.director ?: "Unknown", color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                    if (!detail.studio.isNullOrBlank()) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row {
+                                            Text("Studio", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                            Text(detail.studio, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                        }
+                                    }
+                                    if (!detail.origin_country.isNullOrBlank()) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row {
+                                            Text("Country", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                            Text(detail.origin_country, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                        }
+                                    }
+                                    if (!detail.collection_name.isNullOrBlank()) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row {
+                                            Text("Collection", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                            Text(detail.collection_name, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                        }
+                                    }
+                                    if (!detail.creator.isNullOrBlank()) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row {
+                                            Text("Creator", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                            Text(detail.creator, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                        }
+                                    }
+                                    if (!detail.tags.isNullOrBlank()) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row {
+                                            Text("Tags", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                            Text(detail.tags, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                        }
                                     }
                                 }
                                 

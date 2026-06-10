@@ -177,6 +177,15 @@ fun MovieDetailScreen(
                                                 color = GrayText
                                             )
                                         }
+                                        if (!media.age_rating.isNullOrBlank()) {
+                                            Surface(
+                                                color = Color.Transparent,
+                                                shape = RoundedCornerShape(4.dp),
+                                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
+                                            ) {
+                                                Text(media.age_rating, color = Color.White, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
+                                            }
+                                        }
                                         Surface(
                                             color = Color.Transparent,
                                             shape = RoundedCornerShape(4.dp),
@@ -235,6 +244,41 @@ fun MovieDetailScreen(
                                 Row {
                                     Text("Director", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
                                     Text(media.director ?: "Unknown", color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                }
+                                if (!media.studio.isNullOrBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row {
+                                        Text("Studio", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                        Text(media.studio, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                }
+                                if (!media.origin_country.isNullOrBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row {
+                                        Text("Country", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                        Text(media.origin_country, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                }
+                                if (!media.collection_name.isNullOrBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row {
+                                        Text("Collection", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                        Text(media.collection_name, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                }
+                                if (!media.creator.isNullOrBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row {
+                                        Text("Creator", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                        Text(media.creator, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                }
+                                if (!media.tags.isNullOrBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row {
+                                        Text("Tags", color = GrayText, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodyMedium)
+                                        Text(media.tags, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                                    }
                                 }
                             }
                             

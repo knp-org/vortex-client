@@ -1,7 +1,7 @@
-# Tauri + React + Typescript
+# Vortex Client
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+The official cross-platform client for Vortex, a high-performance self-hosted media server.
 
-## Recommended IDE Setup
+## Overview
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+This repository contains the frontend client application built with React, Vite, and Tauri, as well as the Android client app built with Kotlin and Jetpack Compose.
