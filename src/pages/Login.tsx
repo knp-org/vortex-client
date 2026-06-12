@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Cpu, Server, Eye, EyeOff } from 'lucide-react';
-import { usePlatform } from '@/hooks/usePlatform';
+import { usePlatform } from '@/shared/hooks/usePlatform';
 import { api, ApiError } from '@/services';
-import { Logo } from '@/components/common/Logo';
+import { Logo } from '@/shared/ui/Logo';
 
 export const Login: React.FC = () => {
     const { login } = useAuth();

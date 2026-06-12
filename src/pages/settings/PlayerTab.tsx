@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Settings2, Subtitles, MonitorPlay, Save } from 'lucide-react';
-import { Select } from '@/components/common/Select';
-import { Toggle } from '@/components/common/Toggle';
-import { Button } from '@/components/common/Button';
+import { Select } from '@/shared/ui/Select';
+import { Toggle } from '@/shared/ui/Toggle';
+import { Button } from '@/shared/ui/Button';
 import { api } from '@/services';
 import type { Setting } from '@/types/settings';
 

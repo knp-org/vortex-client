@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/layouts/MainLayout';
 import { Film, Tv, Music, BookOpen, FileQuestion } from 'lucide-react';
-import { MediaCard } from '@/components/common/MediaCard';
+import { MediaCard } from '@/shared/ui/MediaCard';
 import { Library as ILibrary, Media } from '@/types';
 import { libraryService, api } from '@/services';
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/common/Button';
+import { Button } from '@/shared/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { resolveImageUrl, api } from '@/services';
 

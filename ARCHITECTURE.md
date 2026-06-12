@@ -97,8 +97,9 @@ build green (`npm run build`) and changes no runtime behavior.
 
 - [x] **Phase 0 — Path aliases.** `@/*` alias added; all parent-relative
       imports rewritten. (Codemod: `scripts/codemod-aliases.mjs`.)
-- [ ] **Phase 1 — `shared/` layer.** Move `components/common`→`shared/ui`,
-      `services/api`→`shared/api`, generic hooks/types/styles.
+- [x] **Phase 1 — `shared/` layer.** `components/common`→`shared/ui`,
+      `services/api`→`shared/api`, `usePlatform`→`shared/hooks`, `glass.css`→
+      `shared/styles`. Each has a barrel `index.ts`.
 - [ ] **Phase 2 — Carve features** one at a time:
       auth → library → settings → books → media → player → reader.
 - [ ] **Phase 3 — Split god files** (MediaDetail, Player, Reader, MetadataTab)
@@ -106,9 +107,10 @@ build green (`npm run build`) and changes no runtime behavior.
 - [ ] **Phase 4 — Enforce boundaries** with ESLint (`import/no-restricted-paths`).
 - [ ] **Phase 5 — Docs** per feature + keep this file current.
 
-Until a slice is migrated, today's folders still apply:
-`components/{common,features,layout}`, `pages/`, `services/`, `types/`,
-`hooks/`, `context/`, `player/`, `layouts/`, `constants/`, `styles/`.
+Until a slice is migrated, these pre-migration folders still apply:
+`components/{features,layout}`, `pages/`, `services/` (domain services only —
+the HTTP client now lives in `shared/api`), `types/`, `hooks/` (feature hooks
+only), `context/`, `player/`, `layouts/`, `constants/`.
 
 ---
 

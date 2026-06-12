@@ -1,5 +1,5 @@
 // API Services - Centralized API layer
-export { api, ApiError, getApiBase, resolveUrl, resolveImageUrl, withAuthToken } from './api';
+export { api, ApiError, getApiBase, resolveUrl, resolveImageUrl, withAuthToken } from '@/shared/api';
 export { libraryService } from './libraries';
 export { bookService } from './books';
 export type { BookInfo, BookFormat } from './books';

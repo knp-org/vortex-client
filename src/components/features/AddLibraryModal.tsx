@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { Input } from '@/components/common/Input';
-import { Select } from '@/components/common/Select';
-import { MultiDirectoryPicker } from '@/components/common/MultiDirectoryPicker';
+import { Card } from '@/shared/ui/Card';
+import { Button } from '@/shared/ui/Button';
+import { Input } from '@/shared/ui/Input';
+import { Select } from '@/shared/ui/Select';
+import { MultiDirectoryPicker } from '@/shared/ui/MultiDirectoryPicker';
 import { libraryService } from '@/services';
 import { Film, Tv, Music, FileQuestion, BookOpen } from 'lucide-react';
 import { READING_MODE_OPTIONS } from '@/constants/reading';

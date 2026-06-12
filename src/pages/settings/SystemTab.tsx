@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/common/Button';
-import { ConfirmModal } from '@/components/common/ConfirmModal';
+import { Button } from '@/shared/ui/Button';
+import { ConfirmModal } from '@/shared/ui/ConfirmModal';
 import { Power, Database } from 'lucide-react';
 import { systemService, SystemAction } from '@/services';
 

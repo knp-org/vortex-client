@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from '@/shared/api';
 import type { Setting, TranscodeSettings, TranscodeSettingsRequest } from '@/types';
 
 export const settingsService = {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePlatform } from '@/hooks/usePlatform';
+import { usePlatform } from '@/shared/hooks/usePlatform';
 import { WindowControls } from './WindowControls';
 
 export const Titlebar: React.FC = () => {

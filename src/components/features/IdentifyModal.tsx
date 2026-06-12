@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Search, Film, Tv } from 'lucide-react';
-import { Button } from '@/components/common/Button';
+import { Button } from '@/shared/ui/Button';
 import { resolveImageUrl, api } from '@/services';
 
 interface IdentifyModalProps {

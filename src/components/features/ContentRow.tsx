@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { MediaCard } from '@/components/common/MediaCard';
+import { MediaCard } from '@/shared/ui/MediaCard';
 
 export interface MediaItem {
     id: string;

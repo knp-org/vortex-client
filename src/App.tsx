@@ -1,6 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Titlebar } from './components/common/Titlebar';
+import { Titlebar } from './shared/ui/Titlebar';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Settings } from './pages/settings';

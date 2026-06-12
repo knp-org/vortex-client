@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from '@/shared/api';
 import type { ProviderInfo, ProviderConfigResponse, TestResult } from '@/types/providers';
 
 export const providerService = {

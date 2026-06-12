@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/layouts/MainLayout';
-import { Button } from '@/components/common/Button';
+import { Button } from '@/shared/ui/Button';
 import { ArrowLeft, BookOpen, MoreVertical, RefreshCw, SortAsc, SortDesc } from 'lucide-react';
 import { SeriesDetail, Episode } from '@/types';
 import { resolveImageUrl, api } from '@/services';

@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from '@/shared/api';
 import type { Library, CreateLibraryRequest, UpdateLibraryRequest } from '@/types';
 import type { LibraryProviderInput, LibraryProviderResponse } from '@/types/providers';
 

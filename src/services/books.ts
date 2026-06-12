@@ -1,4 +1,4 @@
-import { api, resolveUrl, withAuthToken } from './api';
+import { api, resolveUrl, withAuthToken } from '@/shared/api';
 import type { ReadingMode } from '@/types';
 
 export type BookFormat = 'cbz' | 'pdf' | 'epub';

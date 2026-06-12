@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/layouts/MainLayout';
-import { Button } from '@/components/common/Button';
+import { Button } from '@/shared/ui/Button';
 import { IdentifyModal } from '@/components/features/IdentifyModal';
 import { ArrowLeft, Play, BookOpen, ChevronDown, Search, PlusCircle, Heart, MoreVertical, RefreshCw } from 'lucide-react';
 import { Media, SeriesDetail, CastMember, Episode } from '@/types';

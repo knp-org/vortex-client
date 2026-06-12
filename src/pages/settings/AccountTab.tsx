@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Lock, Shield, Calendar, LogOut } from 'lucide-react';
-import { Button } from '@/components/common/Button';
-import { Input } from '@/components/common/Input';
+import { Button } from '@/shared/ui/Button';
+import { Input } from '@/shared/ui/Input';
 import { api } from '@/services';
 
 export const AccountTab: React.FC = () => {
