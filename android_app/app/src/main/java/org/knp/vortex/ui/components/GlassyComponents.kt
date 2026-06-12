@@ -234,7 +234,7 @@ fun ModernMediaCard(
                         .fillMaxSize()
                         .background(
                             Brush.linearGradient(
-                                colors = listOf(Color(0xFF1A237E), Color(0xFF311B92))
+                                colors = listOf(Color(0xFF12121A), Color(0xFF1A1A2E))
                             )
                         ),
                     contentAlignment = Alignment.Center
@@ -319,7 +319,7 @@ fun SectionHeader(
             Text(
                 text = "See All",
                 style = MaterialTheme.typography.bodyMedium,
-                color = PrimaryBlue,
+                color = Color.White,
                 modifier = Modifier.clickable { onSeeAll() }
             )
         }

@@ -202,14 +202,19 @@ fun AppNavigation() {
                     if (t == "other" || t == "music_videos") {
                         navController.navigate("player/$id")
                     } else if (t == "books") {
-                        navController.navigate("reader/$id")
+                        navController.navigate("book/$id")
                     } else {
                         navController.navigate("movie/$id")
                     }
                 },
-                onOpenSeries = { name -> 
+                onOpenSeries = { name, type -> 
+                    // Forced recompile comment
                     val encoded = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
-                    navController.navigate("series/$encoded/detail")
+                    if (type.lowercase() == "books") {
+                        navController.navigate("comicseries/$encoded")
+                    } else {
+                        navController.navigate("series/$encoded/detail")
+                    }
                 },
                 onOpenLibrary = { id, name, type -> 
                     val encodedName = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
@@ -230,7 +235,7 @@ fun AppNavigation() {
                     if (t == "other" || t == "music_videos") {
                         navController.navigate("player/$id")
                     } else if (t == "books") {
-                        navController.navigate("reader/$id")
+                        navController.navigate("book/$id")
                     } else {
                         navController.navigate("movie/$id")
                     }
@@ -311,7 +316,15 @@ fun AppNavigation() {
             arguments = listOf(navArgument("id") { type = NavType.LongType })
         ) {
             val id = it.arguments?.getLong("id") ?: return@composable
-            ReaderScreen(mediaId = id, onBack = { navController.popBackStack() })
+            ReaderScreen(
+                mediaId = id, 
+                onBack = { navController.popBackStack() },
+                onNextChapter = { nextId ->
+                    navController.navigate("reader/$nextId") {
+                        popUpTo("reader/$id") { inclusive = true }
+                    }
+                }
+            )
         }
 
 
@@ -335,14 +348,18 @@ fun AppNavigation() {
                     if (t == "other" || t == "music_videos") {
                         navController.navigate("player/$id")
                     } else if (t == "books") {
-                        navController.navigate("reader/$id")
+                        navController.navigate("book/$id")
                     } else {
                         navController.navigate("movie/$id")
                     }
                 },
-                onOpenSeries = { seriesName ->
+                onOpenSeries = { seriesName, libType ->
                     val encoded = URLEncoder.encode(seriesName, StandardCharsets.UTF_8.toString())
-                    navController.navigate("series/$encoded/detail")
+                    if (libType.lowercase() == "books") {
+                        navController.navigate("comicseries/$encoded")
+                    } else {
+                        navController.navigate("series/$encoded/detail")
+                    }
                 },
                 onBack = { navController.popBackStack() }
             )
@@ -406,7 +423,40 @@ fun AppNavigation() {
                     val encodedTitle = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
                     navController.navigate("identify/0/$encodedTitle/series?seriesName=$encodedTitle")
                 },
-                onPlayEpisode = { id -> navController.navigate("player/$id") }
+                onPlayEpisode = { id, filePath -> 
+                    val ext = filePath.substringAfterLast('.', "").lowercase()
+                    if (ext == "cbz" || ext == "epub" || ext == "pdf") {
+                        navController.navigate("reader/$id")
+                    } else {
+                        navController.navigate("player/$id") 
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = "book/{mediaId}",
+            arguments = listOf(navArgument("mediaId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val mediaId = backStackEntry.arguments?.getLong("mediaId") ?: return@composable
+            org.knp.vortex.ui.screens.book.BookDetailScreen(
+                mediaId = mediaId,
+                onRead = { id -> navController.navigate("reader/$id") },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(
+            route = "comicseries/{seriesName}",
+            arguments = listOf(navArgument("seriesName") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val seriesName = URLDecoder.decode(
+                backStackEntry.arguments?.getString("seriesName") ?: "",
+                StandardCharsets.UTF_8.toString()
+            )
+            org.knp.vortex.ui.screens.comic.ComicSeriesDetailScreen(
+                onBack = { navController.popBackStack() },
+                onReadChapter = { id -> navController.navigate("reader/$id") }
             )
         }
     }

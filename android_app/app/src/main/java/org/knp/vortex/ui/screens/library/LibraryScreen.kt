@@ -41,6 +41,12 @@ import javax.inject.Inject
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.SortByAlpha
+import androidx.compose.material.icons.Icons
+
+enum class SortOrder {
+    NAME_ASC, NAME_DESC
+}
 
 data class LibraryUiState(
     val isLoading: Boolean = true,
@@ -49,7 +55,8 @@ data class LibraryUiState(
     val fileSystemEntries: List<FileSystemEntryDto> = emptyList(),
     val currentPath: String = "",
     val error: String? = null,
-    val serverUrl: String = ""
+    val serverUrl: String = "",
+    val sortOrder: SortOrder = SortOrder.NAME_ASC
 )
 
 @HiltViewModel
@@ -72,9 +79,10 @@ class LibraryViewModel @Inject constructor(
             
             val type = libraryType.lowercase()
             when {
-                type == "tv_shows" -> {
-                    repository.getSeries().onSuccess { allSeries ->
-                        uiState = uiState.copy(isLoading = false, seriesList = allSeries)
+                type == "tv_shows" || type == "books" -> {
+                    repository.getSeries(libId).onSuccess { series ->
+                        val sorted = sortSeries(series, uiState.sortOrder)
+                        uiState = uiState.copy(isLoading = false, seriesList = sorted)
                     }.onFailure { error -> uiState = uiState.copy(isLoading = false, error = error.message) }
                 }
                 type == "other" || type == "music_videos" -> {
@@ -113,6 +121,21 @@ class LibraryViewModel @Inject constructor(
         val newPath = if (parts.size <= 1) "" else parts.dropLast(1).joinToString("/")
         browse(libId, newPath)
     }
+
+    fun toggleSortOrder() {
+        val newOrder = if (uiState.sortOrder == SortOrder.NAME_ASC) SortOrder.NAME_DESC else SortOrder.NAME_ASC
+        uiState = uiState.copy(
+            sortOrder = newOrder,
+            seriesList = sortSeries(uiState.seriesList, newOrder)
+        )
+    }
+
+    private fun sortSeries(series: List<SeriesDto>, order: SortOrder): List<SeriesDto> {
+        return when (order) {
+            SortOrder.NAME_ASC -> series.sortedBy { it.name.lowercase() }
+            SortOrder.NAME_DESC -> series.sortedByDescending { it.name.lowercase() }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,7 +145,7 @@ fun LibraryScreen(
     libraryName: String,
     libraryType: String,
     onPlayMedia: (Long, String?) -> Unit,
-    onOpenSeries: (String) -> Unit,
+    onOpenSeries: (String, String) -> Unit,
     onBack: () -> Unit,
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
@@ -155,8 +178,18 @@ fun LibraryScreen(
             topBar = {
                 AppHeader(
                     title = displayTitle,
-                    onBack = onBack,
-                    actions = { }
+                    onBack = effectiveOnBack,
+                    actions = {
+                        if (libraryType == "tv_shows" || libraryType == "books") {
+                            IconButton(onClick = { viewModel.toggleSortOrder() }) {
+                                Icon(
+                                    imageVector = Icons.Filled.SortByAlpha,
+                                    contentDescription = "Sort",
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    }
                 )
             }
         ) { padding ->
@@ -175,7 +208,7 @@ fun LibraryScreen(
             when {
                 uiState.isLoading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = PrimaryBlue)
+                        CircularProgressIndicator(color = Color.White)
                     }
                 }
                 uiState.error != null -> {
@@ -191,13 +224,13 @@ fun LibraryScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        if (libraryType == "tv_shows") {
+                        if (libraryType == "tv_shows" || libraryType == "books") {
                             items(uiState.seriesList) { series ->
                                 ModernMediaCard(
                                     title = series.name,
                                     posterUrl = org.knp.vortex.utils.formatImageUrl(series.poster_url, uiState.serverUrl),
                                     year = null,
-                                    onClick = { onOpenSeries(series.name) },
+                                    onClick = { onOpenSeries(series.name, libraryType) },
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
@@ -277,7 +310,7 @@ fun LibraryScreen(
                                                 Icon(
                                                     imageVector = if (entry.is_directory) androidx.compose.material.icons.Icons.Filled.Folder else androidx.compose.material.icons.Icons.Filled.PlayArrow,
                                                     contentDescription = null,
-                                                    tint = if (entry.is_directory) Color(0xFFFFC107) else Color.White,
+                                                    tint = Color.White,
                                                     modifier = Modifier.size(48.dp)
                                                 )
                                                 Spacer(modifier = Modifier.height(8.dp))

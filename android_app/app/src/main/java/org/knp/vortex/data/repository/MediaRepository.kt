@@ -46,11 +46,12 @@ class MediaRepository @Inject constructor(
 
     suspend fun getProgress(id: Long) = runCatching { api.getProgress(id) }
 
-    suspend fun updateProgress(id: Long, position: Long, total: Long) = runCatching {
-        api.updateProgress(id, ProgressDto(position, total))
+    suspend fun updateProgress(id: Long, position: Long, total: Long, readingStyle: String? = null) = runCatching {
+        api.updateProgress(id, ProgressDto(position, total, readingStyle))
     }
 
     suspend fun getMediaDetails(id: Long) = runCatching { api.getMediaDetails(id) }
+    suspend fun getBookInfo(id: Long) = runCatching { api.getBookInfo(id) }
 
     suspend fun refreshMetadata(id: Long) = runCatching { api.refreshMetadata(id) }
 
@@ -62,8 +63,8 @@ class MediaRepository @Inject constructor(
         api.identifyMedia(id, org.knp.vortex.data.remote.IdentifyRequest(providerId, mediaType, providerName))
     }
 
-    // TV Show methods
-    suspend fun getSeries() = runCatching { api.getSeries() }
+    // TV Show / Comic series methods. Pass a libraryId to scope the result to one library.
+    suspend fun getSeries(libraryId: Long? = null) = runCatching { api.getSeries(libraryId) }
     
     suspend fun getSeriesSeasons(name: String) = runCatching { api.getSeriesSeasons(name) }
     

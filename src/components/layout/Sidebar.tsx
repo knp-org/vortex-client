@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Film, Tv, Music, Settings, FileQuestion, BookOpen } from 'lucide-react';
-import { api } from '../../services';
+import { api } from '@/services';
 
 interface LibraryData {
     id: number;

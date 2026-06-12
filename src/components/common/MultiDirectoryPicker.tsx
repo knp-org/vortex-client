@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './Button';
 import { Card } from './Card';
-import { api } from '../../services';
+import { api } from '@/services';
 import { Folder, Plus, X } from 'lucide-react';
 
 interface DirectoryEntry {

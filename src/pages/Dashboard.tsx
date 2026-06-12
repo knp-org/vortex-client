@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MainLayout } from '../layouts/MainLayout';
-import { HeroCarousel } from '../components/features/HeroCarousel';
-import { ContentRow, MediaItem } from '../components/features/ContentRow';
-import { Library, Media } from '../types';
-import { libraryService, api } from '../services';
+import { MainLayout } from '@/layouts/MainLayout';
+import { HeroCarousel } from '@/components/features/HeroCarousel';
+import { ContentRow, MediaItem } from '@/components/features/ContentRow';
+import { Library, Media } from '@/types';
+import { libraryService, api } from '@/services';
 
 interface ContinueWatchingMedia extends Media {
     progress?: number;
@@ -24,8 +24,8 @@ const LibraryRow: React.FC<{ library: Library }> = React.memo(({ library }) => {
 
                     let processedData = data;
 
-                    // Group if TV Shows
-                    if (library.library_type === 'tv_shows') {
+                    // Group if TV Shows or Books
+                    if (library.library_type === 'tv_shows' || library.library_type === 'books') {
                         const seriesMap = new Map<string, Media>();
                         const looseItems: Media[] = [];
 
@@ -67,7 +67,11 @@ const LibraryRow: React.FC<{ library: Library }> = React.memo(({ library }) => {
 
     const handleItemClick = (item: MediaItem) => {
         if (item.isSeries && item.seriesName) {
-            navigate(`/series/${encodeURIComponent(item.seriesName)}`);
+            if (library.library_type === 'books') {
+                navigate(`/book-series/${encodeURIComponent(item.seriesName)}`);
+            } else {
+                navigate(`/series/${encodeURIComponent(item.seriesName)}`);
+            }
         } else {
             navigate(`/media/${item.id}`);
         }

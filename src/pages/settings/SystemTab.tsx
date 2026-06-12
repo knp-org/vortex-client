@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Button } from '../../components/common/Button';
-import { ConfirmModal } from '../../components/common/ConfirmModal';
+import { Button } from '@/components/common/Button';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { Power, Database } from 'lucide-react';
-import { systemService, SystemAction } from '../../services';
+import { systemService, SystemAction } from '@/services';
 
 export const SystemTab: React.FC = () => {
     const [systemAction, setSystemAction] = useState<SystemAction | null>(null);

@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MainLayout } from '../layouts/MainLayout';
+import { MainLayout } from '@/layouts/MainLayout';
 import { Film, Tv, Music, BookOpen, FileQuestion } from 'lucide-react';
-import { MediaCard } from '../components/common/MediaCard';
-import { Library as ILibrary, Media } from '../types';
-import { libraryService, api } from '../services';
+import { MediaCard } from '@/components/common/MediaCard';
+import { Library as ILibrary, Media } from '@/types';
+import { libraryService, api } from '@/services';
 
 export const Library: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -49,7 +49,7 @@ export const Library: React.FC = () => {
 
     // Grouping Logic
     const displayedItems = useMemo(() => {
-        if (library?.library_type !== 'tv_shows') return media;
+        if (library?.library_type !== 'tv_shows' && library?.library_type !== 'books') return media;
 
         // Show unique series
         const seriesMap = new Map<string, Media>();
@@ -77,7 +77,11 @@ export const Library: React.FC = () => {
 
     const handleItemClick = (item: Media & { is_series_folder?: boolean }) => {
         if (item.is_series_folder) {
-            navigate(`/series/${encodeURIComponent(item.series_name!)}`);
+            if (library?.library_type === 'books') {
+                navigate(`/book-series/${encodeURIComponent(item.series_name!)}`);
+            } else {
+                navigate(`/series/${encodeURIComponent(item.series_name!)}`);
+            }
         } else {
             navigate(`/media/${item.id}`);
         }

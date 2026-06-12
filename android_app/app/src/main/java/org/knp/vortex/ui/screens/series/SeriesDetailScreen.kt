@@ -40,7 +40,7 @@ import kotlinx.coroutines.launch
 fun SeriesDetailScreen(
     onBack: () -> Unit,
     onIdentify: (String) -> Unit,
-    onPlayEpisode: (Long) -> Unit,
+    onPlayEpisode: (Long, String) -> Unit,
     viewModel: SeriesDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -269,7 +269,7 @@ fun SeriesDetailScreen(
                                     contentPadding = PaddingValues(horizontal = 24.dp)
                                 ) {
                                     items(uiState.episodes) { episode ->
-                                        SleekEpisodeItem(episode, uiState.serverUrl, onClick = { onPlayEpisode(episode.id) })
+                                        SleekEpisodeItem(episode, uiState.serverUrl, onClick = { onPlayEpisode(episode.id, episode.file_path) })
                                     }
                                 }
                             } else {

@@ -3,10 +3,10 @@ import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { emit } from '@tauri-apps/api/event';
-import { api } from '../../services';
-import { useMediaTitle } from '../hooks/useMediaTitle';
-import { useAutoHideControls } from '../hooks/useAutoHideControls';
-import { usePlayerKeyboard } from '../hooks/usePlayerKeyboard';
+import { api } from '@/services';
+import { useMediaTitle } from '@/player/hooks/useMediaTitle';
+import { useAutoHideControls } from '@/player/hooks/useAutoHideControls';
+import { usePlayerKeyboard } from '@/player/hooks/usePlayerKeyboard';
 
 interface MpvSnapshot {
     time: number;

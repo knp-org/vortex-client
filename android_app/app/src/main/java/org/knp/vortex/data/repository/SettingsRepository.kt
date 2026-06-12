@@ -19,6 +19,7 @@ class SettingsRepository @Inject constructor(
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
         private const val KEY_AUTH_TOKEN = "auth_token"
         private const val KEY_USERNAME = "username"
+        private const val KEY_SAVED_URLS = "saved_urls"
         private const val DEFAULT_URL = "http://127.0.0.1:3000"
     }
 
@@ -35,6 +36,21 @@ class SettingsRepository @Inject constructor(
 
     private val _username = MutableStateFlow(getUsername())
     val username: StateFlow<String?> = _username.asStateFlow()
+
+    private val _savedUrls = MutableStateFlow(getSavedUrlsFromPrefs())
+    val savedUrls: StateFlow<List<String>> = _savedUrls.asStateFlow()
+
+    private fun getSavedUrlsFromPrefs(): List<String> {
+        return prefs.getStringSet(KEY_SAVED_URLS, setOf(DEFAULT_URL))?.toList() ?: listOf(DEFAULT_URL)
+    }
+
+    fun addSavedUrl(url: String) {
+        val normalizedUrl = url.trim().removeSuffix("/")
+        val currentSet = prefs.getStringSet(KEY_SAVED_URLS, setOf(DEFAULT_URL)) ?: setOf(DEFAULT_URL)
+        val newSet = currentSet.toMutableSet().apply { add(normalizedUrl) }
+        prefs.edit().putStringSet(KEY_SAVED_URLS, newSet).apply()
+        _savedUrls.value = newSet.toList()
+    }
 
     fun getServerUrl(): String {
         return prefs.getString(KEY_SERVER_URL, DEFAULT_URL) ?: DEFAULT_URL
@@ -71,6 +87,14 @@ class SettingsRepository @Inject constructor(
     fun setUsername(username: String?) {
         prefs.edit().putString(KEY_USERNAME, username).apply()
         _username.value = username
+    }
+
+    fun getReadingStyle(seriesIdentifier: String): String {
+        return prefs.getString("reading_style_$seriesIdentifier", "HORIZONTAL_LTR") ?: "HORIZONTAL_LTR"
+    }
+
+    fun setReadingStyle(seriesIdentifier: String, style: String) {
+        prefs.edit().putString("reading_style_$seriesIdentifier", style).apply()
     }
 
     fun getDefaultUrl(): String = DEFAULT_URL

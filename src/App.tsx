@@ -6,6 +6,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Settings } from './pages/settings';
 import { Library } from './pages/Library';
 import { MediaDetail } from './pages/MediaDetail';
+import { BookSeriesDetail } from './pages/BookSeriesDetail';
 import { Player } from './pages/Player';
 
 // The reader pulls in heavy renderers (pdf.js / epub.js); load it on demand
@@ -60,6 +61,7 @@ function App() {
               <Route path="/libraries/:id" element={<RouteGuard><Library /></RouteGuard>} />
               <Route path="/media/:id" element={<RouteGuard><MediaDetail /></RouteGuard>} />
               <Route path="/series/:name" element={<RouteGuard><MediaDetail /></RouteGuard>} />
+              <Route path="/book-series/:name" element={<RouteGuard><BookSeriesDetail /></RouteGuard>} />
               <Route path="/player/:id" element={<RouteGuard><Player /></RouteGuard>} />
               <Route path="/reader/:id" element={
                 <RouteGuard>

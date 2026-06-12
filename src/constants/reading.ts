@@ -1,4 +1,4 @@
-import type { ReadingMode } from '../types';
+import type { ReadingMode } from '@/types';
 
 /** Reading-mode options shared by the library modals and the reader toolbar. */
 export const READING_MODE_OPTIONS: { id: ReadingMode; label: string }[] = [

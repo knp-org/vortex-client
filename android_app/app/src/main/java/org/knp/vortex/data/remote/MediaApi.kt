@@ -50,9 +50,10 @@ interface MediaApi {
     @retrofit2.http.DELETE("$API_VERSION/libraries/{id}")
     suspend fun deleteLibrary(@Path("id") id: Long): retrofit2.Response<Unit>
 
-    // TV Show endpoints
+    // TV Show / Comic series endpoints. `library_id` scopes the list to a single
+    // library so TV shows and Books (comics) don't bleed into each other.
     @GET("$API_VERSION/series")
-    suspend fun getSeries(): List<SeriesDto>
+    suspend fun getSeries(@Query("library_id") libraryId: Long? = null): List<SeriesDto>
 
     @GET("$API_VERSION/series/{name}/seasons")
     suspend fun getSeriesSeasons(@Path("name") name: String): List<SeasonDto>
@@ -105,7 +106,18 @@ interface MediaApi {
 
     @GET("$API_VERSION/stream/{id}/subtitles")
     suspend fun getSubtitles(@Path("id") id: Long): List<SubtitleTrackDto>
+
+    @GET("$API_VERSION/books/{id}/info")
+    suspend fun getBookInfo(@Path("id") id: Long): BookInfoDto
 }
+
+data class BookInfoDto(
+    val id: Long,
+    val title: String?,
+    val format: String,
+    val page_count: Long?,
+    val reading_mode: String
+)
 
 data class SubtitleTrackDto(
     val id: String,
@@ -195,7 +207,8 @@ data class MediaItemDto(
     val origin_country: String?,
     val collection_name: String?,
     val creator: String?,
-    val tags: String?
+    val tags: String?,
+    val page_count: Int?
 )
 
 data class LibraryDto(
@@ -208,7 +221,8 @@ data class LibraryDto(
 
 data class ProgressDto(
     val position: Long,
-    val total_duration: Long? = 0
+    val total_duration: Long? = 0,
+    val reading_style: String? = null
 )
 
 // TV Show DTOs

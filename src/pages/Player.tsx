@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Hls from 'hls.js';
-import { SubtitleTrack, AudioTrack, StreamInfo, DeviceProfile, detectCapabilities } from '../types';
-import { api, getApiBase, resolveUrl, withAuthToken } from '../services';
+import { SubtitleTrack, AudioTrack, StreamInfo, DeviceProfile, detectCapabilities } from '@/types';
+import { api, getApiBase, resolveUrl, withAuthToken } from '@/services';
 import { invoke } from '@tauri-apps/api/core';
 import {
     PlayerControls,
@@ -11,7 +11,7 @@ import {
     usePlayerKeyboard,
     openMpvOverlayWindow,
     closeMpvOverlayWindow,
-} from '../player';
+} from '@/player';
 
 export const Player: React.FC = () => {
     const { id } = useParams<{ id: string }>();

@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Setting, TranscodeSettings, TranscodeSettingsRequest } from '../types';
+import type { Setting, TranscodeSettings, TranscodeSettingsRequest } from '@/types';
 
 export const settingsService = {
     async getAll(): Promise<Setting[]> {

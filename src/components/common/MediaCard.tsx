@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Play, Tv, Film, MoreVertical, RefreshCw, FileSearch, Info, Edit } from 'lucide-react';
-import { Media } from '../../types/media';
-import { api, resolveImageUrl } from '../../services';
-import { IdentifyModal } from '../features/IdentifyModal';
-import { MediaInfoModal } from '../features/MediaInfoModal';
+import { Media } from '@/types/media';
+import { api, resolveImageUrl } from '@/services';
+import { IdentifyModal } from '@/components/features/IdentifyModal';
+import { MediaInfoModal } from '@/components/features/MediaInfoModal';
 
 interface MediaCardProps {
     id?: number | string;

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import type { PlayerControlActions } from '../types';
-import { api } from '../../services';
-import type { Setting } from '../../types/settings';
+import type { PlayerControlActions } from '@/player/types';
+import { api } from '@/services';
+import type { Setting } from '@/types/settings';
 
 interface PlayerKeyboardOptions {
     playing: boolean;

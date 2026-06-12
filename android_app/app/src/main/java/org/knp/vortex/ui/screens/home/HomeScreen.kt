@@ -53,7 +53,7 @@ import coil.request.ImageRequest
 @Composable
 fun HomeScreen(
     onPlayMedia: (Long, String?) -> Unit,
-    onOpenSeries: (String) -> Unit,
+    onOpenSeries: (String, String) -> Unit,
     onOpenLibrary: (Long, String, String) -> Unit,  // id, name, type
     onQuickPlay: (Long) -> Unit, // New callback for direct playback
     viewModel: HomeViewModel = hiltViewModel()
@@ -112,53 +112,67 @@ fun HomeScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    if (uiState.isUnlocked) {
-                        viewModel.lock()
-                        showPinDialog = false
-                    } else if (!uiState.isPinSet) {
-                        if (!isSettingPin) {
-                            confirmPin = pinInput
-                            pinInput = ""
-                            isSettingPin = true
+                Button(
+                    onClick = {
+                        if (uiState.isUnlocked) {
+                            viewModel.lock()
+                            showPinDialog = false
+                        } else if (!uiState.isPinSet) {
+                            if (!isSettingPin) {
+                                confirmPin = pinInput
+                                pinInput = ""
+                                isSettingPin = true
+                            } else {
+                                if (pinInput == confirmPin) {
+                                    viewModel.setPin(pinInput)
+                                    viewModel.verifyAndUnlock(pinInput)
+                                    showPinDialog = false
+                                    pinInput = ""
+                                    confirmPin = ""
+                                    isSettingPin = false
+                                } else {
+                                    pinError = true
+                                }
+                            }
                         } else {
-                            if (pinInput == confirmPin) {
-                                viewModel.setPin(pinInput)
-                                viewModel.verifyAndUnlock(pinInput)
+                            if (viewModel.verifyAndUnlock(pinInput)) {
                                 showPinDialog = false
                                 pinInput = ""
-                                confirmPin = ""
-                                isSettingPin = false
                             } else {
                                 pinError = true
                             }
                         }
-                    } else {
-                        if (viewModel.verifyAndUnlock(pinInput)) {
-                            showPinDialog = false
-                            pinInput = ""
-                        } else {
-                            pinError = true
-                        }
-                    }
-                }) {
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black
+                    ),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
                     Text(
                         if (uiState.isUnlocked) "Lock" 
                         else if (!uiState.isPinSet && !isSettingPin) "Next"
                         else "Unlock",
-                        color = PrimaryBlue
+                        fontWeight = FontWeight.Bold
                     )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { 
-                    showPinDialog = false
-                    pinInput = ""
-                    confirmPin = ""
-                    pinError = false
-                    isSettingPin = false
-                }) {
-                    Text("Cancel", color = GrayText)
+                OutlinedButton(
+                    onClick = { 
+                        showPinDialog = false
+                        pinInput = ""
+                        confirmPin = ""
+                        pinError = false
+                        isSettingPin = false
+                    },
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.White
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Text("Cancel")
                 }
             }
         )
@@ -197,7 +211,10 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
                         item {
-                            val rawItems = (uiState.allSeries.take(5) + uiState.recentlyAdded.take(5))
+                            // Only typed items (MediaItemDto carries library_type) so the
+                            // carousel always routes to the right detail screen and TV
+                            // shows / Books never get confused for one another.
+                            val rawItems = uiState.recentlyAdded.take(10)
                             val featuredItems = rawItems
                                 .distinctBy { item: Any ->
                                     val name = when(item) {
@@ -222,10 +239,10 @@ fun HomeScreen(
                                     serverUrl = uiState.serverUrl,
                                     onItemClick = { item ->
                                         when (item) {
-                                            is SeriesDto -> onOpenSeries(item.name)
+                                            is SeriesDto -> onOpenSeries(item.name, "")
                                             is MediaItemDto -> {
                                                 if (item.media_type == "series") {
-                                                    onOpenSeries(item.series_name ?: item.title ?: "")
+                                                    onOpenSeries(item.series_name ?: item.title ?: "", item.library_type ?: "")
                                                 } else {
                                                     onPlayMedia(item.id, item.library_type)
                                                 }
@@ -261,23 +278,29 @@ fun HomeScreen(
                         }
 
                         uiState.visibleLibraries.forEach { library ->
-                            if (library.library_type == "tv_shows") {
-                                val seriesContent = uiState.tvShowLibraryContent[library.id] ?: emptyList()
-                                if (seriesContent.isNotEmpty()) {
+                            val isSeriesLibrary = library.library_type == "tv_shows" || library.library_type == "books"
+                            val sectionTitle = library.name.ifBlank {
+                                library.library_type.replace("_", " ").split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+                            }
+
+                            if (isSeriesLibrary) {
+                                val series = uiState.librarySeries[library.id] ?: emptyList()
+                                if (series.isNotEmpty()) {
                                     item {
                                         SectionHeader(
-                                            title = library.name.ifBlank { "TV Shows" },
+                                            title = sectionTitle,
                                             onClick = { onOpenLibrary(library.id, library.name, library.library_type) }
                                         )
                                         LazyRow(
                                             contentPadding = PaddingValues(horizontal = 24.dp),
                                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                                         ) {
-                                            items(seriesContent) { series ->
+                                            items(series) { item ->
                                                 ModernMediaCard(
-                                                    title = series.name,
-                                                    posterUrl = org.knp.vortex.utils.formatImageUrl(series.poster_url, uiState.serverUrl),
-                                                    onClick = { onOpenSeries(series.name) },
+                                                    title = item.name,
+                                                    posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl),
+                                                    year = null,
+                                                    onClick = { onOpenSeries(item.name, library.library_type) },
                                                     modifier = Modifier.width(120.dp)
                                                 )
                                             }
@@ -289,9 +312,7 @@ fun HomeScreen(
                                 if (content.isNotEmpty()) {
                                     item {
                                         SectionHeader(
-                                            title = library.name.ifBlank {
-                                                library.library_type.replace("_", " ").split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
-                                            },
+                                            title = sectionTitle,
                                             onClick = { onOpenLibrary(library.id, library.name, library.library_type) }
                                         )
                                         LazyRow(
@@ -303,7 +324,13 @@ fun HomeScreen(
                                                     title = item.title,
                                                     posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl) ?: "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail",
                                                     year = item.year,
-                                                    onClick = { onPlayMedia(item.id, library.library_type) },
+                                                    onClick = {
+                                                        if (item.media_type == "series") {
+                                                            onOpenSeries(item.series_name ?: item.title ?: "", library.library_type)
+                                                        } else {
+                                                            onPlayMedia(item.id, library.library_type)
+                                                        }
+                                                    },
                                                     modifier = Modifier.width(120.dp)
                                                 )
                                             }
@@ -326,7 +353,7 @@ fun HomeScreen(
                                             year = item.year,
                                             onClick = {
                                                 if (item.media_type == "series") {
-                                                    onOpenSeries(item.series_name ?: item.title ?: "")
+                                                    onOpenSeries(item.series_name ?: item.title ?: "", item.library_type ?: "")
                                                 } else {
                                                     onPlayMedia(item.id, item.library_type)
                                                 }

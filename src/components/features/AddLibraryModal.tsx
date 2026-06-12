@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Card } from '../common/Card';
-import { Button } from '../common/Button';
-import { Input } from '../common/Input';
-import { Select } from '../common/Select';
-import { MultiDirectoryPicker } from '../common/MultiDirectoryPicker';
-import { libraryService } from '../../services';
+import { Card } from '@/components/common/Card';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/common/Input';
+import { Select } from '@/components/common/Select';
+import { MultiDirectoryPicker } from '@/components/common/MultiDirectoryPicker';
+import { libraryService } from '@/services';
 import { Film, Tv, Music, FileQuestion, BookOpen } from 'lucide-react';
-import { READING_MODE_OPTIONS } from '../../constants/reading';
+import { READING_MODE_OPTIONS } from '@/constants/reading';
 
 interface AddLibraryModalProps {
     isOpen: boolean;

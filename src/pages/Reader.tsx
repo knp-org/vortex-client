@@ -4,9 +4,9 @@ import { ArrowLeft, BookOpen, Check, Loader2, Settings2 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import ePub from 'epubjs';
-import { bookService, type BookInfo } from '../services';
-import type { ReadingMode } from '../types';
-import { READING_MODE_OPTIONS, DEFAULT_READING_MODE } from '../constants/reading';
+import { bookService, type BookInfo } from '@/services';
+import type { ReadingMode } from '@/types';
+import { READING_MODE_OPTIONS, DEFAULT_READING_MODE } from '@/constants/reading';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 

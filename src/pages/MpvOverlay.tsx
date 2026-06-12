@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { PlayerControls, useMpvPlayerBackend } from '../player';
+import { PlayerControls, useMpvPlayerBackend } from '@/player';
 
 /**
  * Transparent, always-on-top overlay window that renders the player controls

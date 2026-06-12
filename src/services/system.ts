@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { SystemAction } from '../types';
+import type { SystemAction } from '@/types';
 
 export const systemService = {
     async shutdown(): Promise<void> {

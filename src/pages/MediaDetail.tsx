@@ -1,17 +1,16 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MainLayout } from '../layouts/MainLayout';
-import { Button } from '../components/common/Button';
-import { IdentifyModal } from '../components/features/IdentifyModal';
+import { MainLayout } from '@/layouts/MainLayout';
+import { Button } from '@/components/common/Button';
+import { IdentifyModal } from '@/components/features/IdentifyModal';
 import { ArrowLeft, Play, BookOpen, ChevronDown, Search, PlusCircle, Heart, MoreVertical, RefreshCw } from 'lucide-react';
-import { Media, SeriesDetail, CastMember, Episode } from '../types';
-import { resolveImageUrl, api } from '../services';
+import { Media, SeriesDetail, CastMember, Episode } from '@/types';
+import { resolveImageUrl, api } from '@/services';
 
 export const MediaDetail: React.FC = () => {
     const { id, name } = useParams<{ id?: string; name?: string }>();
     const navigate = useNavigate();
-
     const isSeries = !!name;
 
     const [media, setMedia] = useState<Media | null>(null);
@@ -170,8 +169,11 @@ export const MediaDetail: React.FC = () => {
         } else if (media?.id) {
             navigate(`/player/${media.id}`);
         } else if (episodes.length > 0) {
-            // Play first episode if series play clicked?
-            navigate(`/player/${episodes[0].id}`);
+            if (isBook) {
+                navigate(`/reader/${episodes[0].id}`);
+            } else {
+                navigate(`/player/${episodes[0].id}`);
+            }
         }
     };
 
@@ -389,23 +391,35 @@ export const MediaDetail: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Details Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-[120px_1fr] gap-y-2 text-sm mb-6 font-body">
-                                {isBook ? (
-                                    <>
-                                        <div className="text-outline-variant font-label">Format</div>
-                                        <div className="text-primary">{bookFormat || 'Unknown'}</div>
-                                        <div className="text-outline-variant font-label">Pages</div>
-                                        <div className="text-primary">{pageCount ?? 'N/A'}</div>
-                                        {genres.length > 0 && (
-                                            <>
-                                                <div className="text-outline-variant font-label">Genres</div>
-                                                <div className="text-primary">{genres.join(', ')}</div>
-                                            </>
-                                        )}
-                                    </>
-                                ) : (
-                                    <>
+                            {/* Details/File Info Grid */}
+                            {isBook ? (
+                                <div className="space-y-6">
+                                    <div className="bg-surface/30 backdrop-blur-surface border border-outline rounded-2xl p-6">
+                                        <h3 className="text-lg font-bold text-primary font-heading mb-4">File Information</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-[120px_1fr] gap-y-3 text-sm font-body">
+                                            <div className="text-outline-variant font-label">Format</div>
+                                            <div className="text-primary">{bookFormat || 'Unknown'}</div>
+                                            <div className="text-outline-variant font-label">Pages</div>
+                                            <div className="text-primary">{pageCount ?? 'N/A'}</div>
+                                            {genres.length > 0 && (
+                                                <>
+                                                    <div className="text-outline-variant font-label">Genres</div>
+                                                    <div className="text-primary">{genres.join(', ')}</div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="text-lg font-bold text-primary font-heading mb-3">Description</h3>
+                                        <p className="text-outline-variant leading-relaxed max-w-3xl text-sm md:text-base font-body">
+                                            {plot || 'No plot available.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-1 md:grid-cols-[120px_1fr] gap-y-2 text-sm mb-6 font-body">
                                         <div className="text-outline-variant font-label">Genres</div>
                                         <div className="text-primary">
                                             {genres.join(', ') || 'N/A'}
@@ -434,14 +448,14 @@ export const MediaDetail: React.FC = () => {
 
                                         <div className="text-outline-variant font-label">Audio</div>
                                         <div className="text-primary">English - AAC - Stereo</div>
-                                    </>
-                                )}
-                            </div>
+                                    </div>
 
-                            {/* Plot */}
-                            <p className="text-outline-variant leading-relaxed max-w-3xl text-sm md:text-base font-body">
-                                {plot || 'No plot available.'}
-                            </p>
+                                    {/* Plot */}
+                                    <p className="text-outline-variant leading-relaxed max-w-3xl text-sm md:text-base font-body">
+                                        {plot || 'No plot available.'}
+                                    </p>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -490,7 +504,7 @@ export const MediaDetail: React.FC = () => {
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-xl font-bold text-primary font-heading">Episodes</h3>
 
-                                {/* Season Selector Moved Here */}
+                                {/* Season Selector */}
                                 {series && (
                                     <div className="relative z-40">
                                         <button
@@ -525,6 +539,7 @@ export const MediaDetail: React.FC = () => {
                                     <div className="w-8 h-8 border-2 border-primary rounded-full animate-spin border-t-transparent" />
                                 </div>
                             ) : (
+                                /* Standard Video Episodes Carousel */
                                 <div className="relative">
                                     <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory hide-scrollbar">
                                         {episodes.map((episode) => (

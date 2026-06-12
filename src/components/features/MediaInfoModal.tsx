@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, FileVideo, Music, Copy, Monitor } from 'lucide-react';
-import { Media, MediaInfo } from '../../types/media';
+import { Media, MediaInfo } from '@/types/media';
 
 interface MediaInfoModalProps {
     isOpen: boolean;

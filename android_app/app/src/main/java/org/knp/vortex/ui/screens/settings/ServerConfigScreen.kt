@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.knp.vortex.ui.components.GlassyBackground
 import org.knp.vortex.ui.components.GlassyTopBar
@@ -123,18 +124,29 @@ fun ServerConfigScreen(
                     title = { Text("Reset Database") },
                     text = { Text("Are you sure you want to clear the server database? This will delete all media and library data. This action cannot be undone.") },
                     confirmButton = {
-                        TextButton(
+                        Button(
                             onClick = {
                                 viewModel.resetDatabase()
                                 showResetDialog = false
                             },
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFFB4AB))
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFFFB4AB),
+                                contentColor = Color.Black
+                            ),
+                            shape = RoundedCornerShape(24.dp)
                         ) {
-                            Text("Reset")
+                            Text("Reset", fontWeight = FontWeight.Bold)
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showResetDialog = false }) {
+                        OutlinedButton(
+                            onClick = { showResetDialog = false },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color.White
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
                             Text("Cancel")
                         }
                     }

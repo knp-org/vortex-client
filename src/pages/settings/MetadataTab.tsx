@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { providerService } from '../../services';
-import type { ProviderInfo, ConfigField } from '../../types/providers';
-import { Select } from '../../components/common/Select';
-import { Toggle } from '../../components/common/Toggle';
+import { providerService } from '@/services';
+import type { ProviderInfo, ConfigField } from '@/types/providers';
+import { Select } from '@/components/common/Select';
+import { Toggle } from '@/components/common/Toggle';
 
 // ── Dynamic Config Field ───────────────────────────────────────────────
 

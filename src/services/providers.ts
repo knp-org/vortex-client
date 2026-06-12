@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { ProviderInfo, ProviderConfigResponse, TestResult } from '../types/providers';
+import type { ProviderInfo, ProviderConfigResponse, TestResult } from '@/types/providers';
 
 export const providerService = {
     /** List all providers with manifest + current status */

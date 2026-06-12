@@ -28,6 +28,7 @@ class LoginViewModel @Inject constructor(
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     val serverUrl = settingsRepository.serverUrl
+    val savedUrls = settingsRepository.savedUrls
 
     fun setServerUrl(url: String) {
         settingsRepository.setServerUrl(url)
@@ -59,6 +60,7 @@ class LoginViewModel @Inject constructor(
                     if (response.token != null) {
                         settingsRepository.setAuthToken(response.token)
                         settingsRepository.setUsername(username)
+                        settingsRepository.addSavedUrl(serverUrl.value)
                         onSuccess()
                     } else {
                         _uiState.value = _uiState.value.copy(isLoading = false, error = "Login failed: No token received.")

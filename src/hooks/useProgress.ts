@@ -1,5 +1,5 @@
 import { useEffect, useRef, RefObject } from 'react';
-import { api, resolveUrl, withAuthToken } from '../services';
+import { api, resolveUrl, withAuthToken } from '@/services';
 
 interface UseProgressOptions {
     mediaId: string | undefined;

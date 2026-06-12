@@ -134,14 +134,22 @@ fun MetadataProvidersScreen(
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color.White,
                                         contentColor = Color.Black
-                                    )
+                                    ),
+                                    shape = RoundedCornerShape(24.dp)
                                 ) {
-                                    Text("Save")
+                                    Text("Save", fontWeight = FontWeight.Bold)
                                 }
                             },
                             dismissButton = {
-                                TextButton(onClick = { selectedProvider = null }) {
-                                    Text("Cancel", color = Color.Gray)
+                                OutlinedButton(
+                                    onClick = { selectedProvider = null },
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = Color.White
+                                    ),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                                    shape = RoundedCornerShape(24.dp)
+                                ) {
+                                    Text("Cancel")
                                 }
                             }
                         )
@@ -165,14 +173,25 @@ fun MetadataProvidersScreen(
                                     viewModel.resetDatabase() 
                                     showResetDialog = false
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFFFB4AB),
+                                    contentColor = Color.Black
+                                ),
+                                shape = RoundedCornerShape(24.dp)
                             ) {
-                                Text("Reset", color = Color.White)
+                                Text("Reset", fontWeight = FontWeight.Bold)
                             }
                         },
                         dismissButton = {
-                            TextButton(onClick = { showResetDialog = false }) {
-                                Text("Cancel", color = Color.Gray)
+                            OutlinedButton(
+                                onClick = { showResetDialog = false },
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color.White
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                                shape = RoundedCornerShape(24.dp)
+                            ) {
+                                Text("Cancel")
                             }
                         }
                     )

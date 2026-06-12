@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../../services';
+import { api } from '@/services';
 
 type MediaMeta = {
     title?: string;

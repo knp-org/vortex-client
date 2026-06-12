@@ -1,6 +1,6 @@
 import { api } from './api';
-import type { Library, CreateLibraryRequest, UpdateLibraryRequest } from '../types';
-import type { LibraryProviderInput, LibraryProviderResponse } from '../types/providers';
+import type { Library, CreateLibraryRequest, UpdateLibraryRequest } from '@/types';
+import type { LibraryProviderInput, LibraryProviderResponse } from '@/types/providers';
 
 export const libraryService = {
     async getAll(): Promise<Library[]> {

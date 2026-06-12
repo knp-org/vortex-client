@@ -16,4 +16,4 @@ export type {
     TranscodeSettings,
     TranscodeSettingsRequest,
     SystemAction
-} from '../types';
+} from '@/types';

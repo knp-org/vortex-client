@@ -20,6 +20,7 @@ data class SearchUiState(
     val serverUrl: String = ""
 )
 
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val repository: MediaRepository,
@@ -29,64 +30,41 @@ class SearchViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SearchUiState(serverUrl = settingsRepository.getServerUrl()))
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
-    // Cache of all media to avoid hitting API on every keystroke
-    private var cachedMovies: List<MediaItemDto> = emptyList()
-    private var cachedSeries: List<SeriesDto> = emptyList()
-    private var isDataLoaded = false
+    private val queryFlow = MutableStateFlow("")
 
     init {
-        // Pre-fetch data or fetch on first search
-        loadAllData()
-    }
-
-    private fun loadAllData() {
+        // Search runs entirely on the server (`/library/search`), which matches
+        // across all library types except the hidden `other` type and groups
+        // comics/series into a single entity. Debounced so we don't hit the API
+        // on every keystroke.
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            
-            // Fetch all series
-            val seriesResult = repository.getSeries()
-            cachedSeries = seriesResult.getOrDefault(emptyList())
-
-            // Fetch all libraries and their movies
-            val libResult = repository.getLibraries()
-            val libraries = libResult.getOrDefault(emptyList())
-            
-            val allMovies = mutableListOf<MediaItemDto>()
-            libraries.filter { it.library_type == "movies" || it.library_type == "other" }.forEach { lib ->
-                repository.getLibraryMedia(lib.id).onSuccess { media ->
-                    allMovies.addAll(media)
-                }
-            }
-            cachedMovies = allMovies
-            isDataLoaded = true
-            
-            _uiState.update { it.copy(isLoading = false) }
+            queryFlow
+                .debounce(300)
+                .distinctUntilChanged()
+                .collectLatest { query -> runSearch(query) }
         }
     }
 
     fun onQueryChange(query: String) {
         _uiState.update { it.copy(query = query) }
-        performSearch(query)
+        queryFlow.value = query
     }
 
-    private fun performSearch(query: String) {
+    private suspend fun runSearch(query: String) {
         if (query.isBlank()) {
-            _uiState.update { it.copy(movies = emptyList(), series = emptyList()) }
+            _uiState.update { it.copy(movies = emptyList(), series = emptyList(), isLoading = false) }
             return
         }
 
-        val lowercaseQuery = query.lowercase()
-        
-        val filteredMovies = cachedMovies.filter { 
-            (it.title?.lowercase()?.contains(lowercaseQuery) == true)
-        }
-        
-        val filteredSeries = cachedSeries.filter {
-            (it.name.lowercase().contains(lowercaseQuery))
-        }
+        _uiState.update { it.copy(isLoading = true) }
 
-        _uiState.update { 
-            it.copy(movies = filteredMovies, series = filteredSeries) 
-        }
+        val results = repository.searchLibrary(query, null).getOrDefault(emptyList())
+        // The server tags grouped series rows with media_type == "series".
+        val series = results
+            .filter { it.media_type == "series" }
+            .map { SeriesDto(name = it.series_name ?: it.title ?: "", poster_url = it.poster_url, season_count = 0) }
+        val movies = results.filter { it.media_type != "series" }
+
+        _uiState.update { it.copy(movies = movies, series = series, isLoading = false) }
     }
 }

@@ -73,7 +73,7 @@ fun IdentifyScreen(
                     singleLine = true,
                     trailingIcon = {
                         IconButton(onClick = { viewModel.search(mediaType) }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search", tint = PrimaryBlue)
+                            Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
                         }
                     }
                 )
@@ -82,7 +82,7 @@ fun IdentifyScreen(
 
                 if (uiState.isLoading || uiState.isIdentifying) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = PrimaryBlue)
+                        CircularProgressIndicator(color = Color.White)
                     }
                 } else if (uiState.searchResults.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

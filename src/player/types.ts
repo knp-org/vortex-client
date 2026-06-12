@@ -1,4 +1,4 @@
-import type { SubtitleTrack, AudioTrack } from '../types';
+import type { SubtitleTrack, AudioTrack } from '@/types';
 
 export interface PlayerControlState {
     playing: boolean;

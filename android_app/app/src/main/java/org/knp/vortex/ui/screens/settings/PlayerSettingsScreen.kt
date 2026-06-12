@@ -38,12 +38,7 @@ fun PlayerSettingsScreen(
             topBar = {
                 GlassyTopBar(
                     title = "Player Settings",
-                    onBack = onBack,
-                    actions = {
-                        IconButton(onClick = { viewModel.saveSettings() }) {
-                            Icon(Icons.Default.Save, contentDescription = "Save Settings", tint = Color.White)
-                        }
-                    }
+                    onBack = onBack
                 )
             }
         ) { padding ->
@@ -56,27 +51,6 @@ fun PlayerSettingsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
-                
-                Icon(
-                    imageVector = Icons.Default.PlayCircle,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.8f),
-                    modifier = Modifier.size(64.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(
-                    text = "Player Configuration",
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Text(
-                    text = "Adjust playback, skipping, and subtitles",
-                    color = GrayText.copy(alpha = 0.8f),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                
-                Spacer(modifier = Modifier.height(32.dp))
 
                 if (uiState.error != null) {
                     Text(

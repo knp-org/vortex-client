@@ -1,5 +1,5 @@
 import { api, resolveUrl, withAuthToken } from './api';
-import type { ReadingMode } from '../types';
+import type { ReadingMode } from '@/types';
 
 export type BookFormat = 'cbz' | 'pdf' | 'epub';
 

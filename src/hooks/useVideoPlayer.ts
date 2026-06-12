@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useCallback, RefObject } from 'react';
 import Hls from 'hls.js';
-import type { StreamInfo } from '../types/player';
-import { api, getApiBase, resolveUrl, withAuthToken } from '../services/api';
+import type { StreamInfo } from '@/types/player';
+import { api, getApiBase, resolveUrl, withAuthToken } from '@/services/api';
 
 export interface VideoPlayerState {
     isPlaying: boolean;

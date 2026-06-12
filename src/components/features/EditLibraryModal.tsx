@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Card } from '../common/Card';
-import { Button } from '../common/Button';
-import { Toggle } from '../common/Toggle';
-import { Input } from '../common/Input';
-import { Select } from '../common/Select';
-import { MultiDirectoryPicker } from '../common/MultiDirectoryPicker';
-import { libraryService, providerService } from '../../services';
-import type { ProviderInfo, LibraryProviderInput } from '../../types/providers';
-import type { Library } from '../../types';
-import { READING_MODE_OPTIONS, DEFAULT_READING_MODE } from '../../constants/reading';
+import { Card } from '@/components/common/Card';
+import { Button } from '@/components/common/Button';
+import { Toggle } from '@/components/common/Toggle';
+import { Input } from '@/components/common/Input';
+import { Select } from '@/components/common/Select';
+import { MultiDirectoryPicker } from '@/components/common/MultiDirectoryPicker';
+import { libraryService, providerService } from '@/services';
+import type { ProviderInfo, LibraryProviderInput } from '@/types/providers';
+import type { Library } from '@/types';
+import { READING_MODE_OPTIONS, DEFAULT_READING_MODE } from '@/constants/reading';
 
 interface EditLibraryModalProps {
     isOpen: boolean;

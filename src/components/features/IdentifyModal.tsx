@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Search, Film, Tv } from 'lucide-react';
-import { Button } from '../common/Button';
-import { resolveImageUrl, api } from '../../services';
+import { Button } from '@/components/common/Button';
+import { resolveImageUrl, api } from '@/services';
 
 interface IdentifyModalProps {
     isOpen: boolean;

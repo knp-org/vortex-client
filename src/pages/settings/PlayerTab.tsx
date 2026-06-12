@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Settings2, Subtitles, MonitorPlay, Save } from 'lucide-react';
-import { Select } from '../../components/common/Select';
-import { Toggle } from '../../components/common/Toggle';
-import { Button } from '../../components/common/Button';
-import { api } from '../../services';
-import type { Setting } from '../../types/settings';
+import { Select } from '@/components/common/Select';
+import { Toggle } from '@/components/common/Toggle';
+import { Button } from '@/components/common/Button';
+import { api } from '@/services';
+import type { Setting } from '@/types/settings';
 
 export const PlayerTab: React.FC = () => {
     const [settings, setSettings] = useState({

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '../common/Button';
+import { Button } from '@/components/common/Button';
 import { useNavigate } from 'react-router-dom';
-import { resolveImageUrl, api } from '../../services';
+import { resolveImageUrl, api } from '@/services';
 
 interface HeroItem {
     id: number;

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Input } from '../../components/common/Input';
-import { Select } from '../../components/common/Select';
-import { Toggle } from '../../components/common/Toggle';
+import { Input } from '@/components/common/Input';
+import { Select } from '@/components/common/Select';
+import { Toggle } from '@/components/common/Toggle';
 import { Server, Monitor, Cpu, Activity } from 'lucide-react';
-import { TranscodeSettings } from '../../types';
-import { settingsService } from '../../services';
+import { TranscodeSettings } from '@/types';
+import { settingsService } from '@/services';
 
 export const TranscodingTab: React.FC = () => {
     const [transcodeSettings, setTranscodeSettings] = useState<TranscodeSettings | null>(null);

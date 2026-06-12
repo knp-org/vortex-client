@@ -13,10 +13,10 @@ import {
     Check,
     AudioLines,
 } from 'lucide-react';
-import { formatTime } from '../utils/formatTime';
-import { api } from '../../services';
-import type { Setting } from '../../types/settings';
-import type { PlayerControlActions, PlayerControlState, TrackSelection } from '../types';
+import { formatTime } from '@/player/utils/formatTime';
+import { api } from '@/services';
+import type { Setting } from '@/types/settings';
+import type { PlayerControlActions, PlayerControlState, TrackSelection } from '@/player/types';
 
 export interface PlayerControlsProps extends PlayerControlState, PlayerControlActions {
     /** Transparent overlay window: persistent back bar + pass-through clicks. */

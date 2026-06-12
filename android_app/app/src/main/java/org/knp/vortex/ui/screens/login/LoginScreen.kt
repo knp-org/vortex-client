@@ -1,6 +1,7 @@
 package org.knp.vortex.ui.screens.login
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -21,6 +22,7 @@ import org.knp.vortex.ui.components.GlassySurface
 import org.knp.vortex.ui.components.GlassyTextField
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
@@ -78,12 +80,37 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    GlassyTextField(
-                        value = serverUrl,
-                        onValueChange = { viewModel.setServerUrl(it) },
-                        label = "Server URL",
+                    val savedUrls by viewModel.savedUrls.collectAsState()
+                    var expanded by remember { mutableStateOf(false) }
+
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded },
                         modifier = Modifier.fillMaxWidth()
-                    )
+                    ) {
+                        GlassyTextField(
+                            value = serverUrl,
+                            onValueChange = { viewModel.setServerUrl(it) },
+                            label = "Server URL",
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.background(Color.Black.copy(alpha = 0.8f))
+                        ) {
+                            savedUrls.forEach { url ->
+                                DropdownMenuItem(
+                                    text = { Text(url, color = Color.White) },
+                                    onClick = {
+                                        viewModel.setServerUrl(url)
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 

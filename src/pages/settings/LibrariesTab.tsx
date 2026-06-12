@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '../../components/common/Button';
-import { AddLibraryModal } from '../../components/features/AddLibraryModal';
-import { ConfirmModal } from '../../components/common/ConfirmModal';
-import { EditLibraryModal } from '../../components/features/EditLibraryModal';
+import { Button } from '@/components/common/Button';
+import { AddLibraryModal } from '@/components/features/AddLibraryModal';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
+import { EditLibraryModal } from '@/components/features/EditLibraryModal';
 import { Film, Tv, Music, BookOpen, Trash2, MoreVertical, RefreshCw, Scan, Edit2 } from 'lucide-react';
-import { Library } from '../../types';
-import { libraryService } from '../../services';
+import { Library } from '@/types';
+import { libraryService } from '@/services';
 
 export const LibrariesTab: React.FC = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);

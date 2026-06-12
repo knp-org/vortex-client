@@ -31,7 +31,9 @@ import org.knp.vortex.data.repository.MediaRepository
 import org.knp.vortex.data.repository.SettingsRepository
 import javax.inject.Inject
 
-enum class ReaderFormat { PDF, WEB }
+enum class ReaderFormat { PDF, WEB, CBZ }
+
+enum class ReadingStyle { HORIZONTAL_LTR, HORIZONTAL_RTL, VERTICAL, WEBTOON }
 
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
@@ -47,20 +49,104 @@ class ReaderViewModel @Inject constructor(
     private val _title = MutableStateFlow<String?>(null)
     val title: StateFlow<String?> = _title.asStateFlow()
 
+    private val _pageCount = MutableStateFlow(0)
+    val pageCount: StateFlow<Int> = _pageCount.asStateFlow()
+
+    private val _readingStyle = MutableStateFlow(ReadingStyle.HORIZONTAL_LTR)
+    val readingStyle: StateFlow<ReadingStyle> = _readingStyle.asStateFlow()
+
+    private val _nextChapterId = MutableStateFlow<Long?>(null)
+    val nextChapterId: StateFlow<Long?> = _nextChapterId.asStateFlow()
+
+    private val _seriesName = MutableStateFlow<String?>(null)
+    val seriesName: StateFlow<String?> = _seriesName.asStateFlow()
+
+    fun updateReadingStyle(mediaId: Long, style: ReadingStyle) {
+        _readingStyle.value = style
+        val identifier = _seriesName.value ?: mediaId.toString()
+        settingsRepository.setReadingStyle(identifier, style.name)
+        viewModelScope.launch {
+            // Update server with the new reading style. 
+            // We pass the current page (if available) or just 0, and the new style.
+            mediaRepository.updateProgress(mediaId, 0, _pageCount.value.toLong(), style.name)
+        }
+    }
+
+    fun loadReadingStyle(mediaId: Long, seriesIdentifier: String?) {
+        viewModelScope.launch {
+            // 1. Try fetching from server first
+            mediaRepository.getProgress(mediaId)
+                .onSuccess { progressDto ->
+                    val serverStyle = progressDto.reading_style
+                    if (!serverStyle.isNullOrEmpty()) {
+                        val style = try {
+                            ReadingStyle.valueOf(serverStyle)
+                        } catch (e: Exception) {
+                            ReadingStyle.HORIZONTAL_LTR
+                        }
+                        _readingStyle.value = style
+                        val identifierToSave = seriesIdentifier ?: mediaId.toString()
+                        settingsRepository.setReadingStyle(identifierToSave, style.name)
+                        return@onSuccess
+                    }
+                    loadLocalReadingStyle(seriesIdentifier ?: mediaId.toString())
+                }
+                .onFailure {
+                    loadLocalReadingStyle(seriesIdentifier ?: mediaId.toString())
+                }
+        }
+    }
+
+    private fun loadLocalReadingStyle(identifier: String) {
+        val styleStr = settingsRepository.getReadingStyle(identifier)
+        val style = try {
+            ReadingStyle.valueOf(styleStr)
+        } catch (e: Exception) {
+            ReadingStyle.HORIZONTAL_LTR
+        }
+        _readingStyle.value = style
+    }
+
     /** PDFs render natively; everything else (epub/cbz) falls back to the web reader. */
     fun resolveFormat(id: Long) {
         if (_format.value != null) return
         viewModelScope.launch {
-            mediaRepository.getMediaDetails(id)
-                .onSuccess { media ->
-                    _title.value = media.title
-                    val ext = media.file_path.substringAfterLast('.', "").lowercase()
-                    _format.value = if (ext == "pdf") ReaderFormat.PDF else ReaderFormat.WEB
+            mediaRepository.getBookInfo(id)
+                .onSuccess { info ->
+                    _title.value = info.title
+                    _pageCount.value = info.page_count?.toInt() ?: 0
+                    _format.value = when (info.format.lowercase()) {
+                        "pdf" -> ReaderFormat.PDF
+                        "cbz" -> ReaderFormat.CBZ
+                        else -> ReaderFormat.WEB
+                    }
                 }
                 .onFailure {
-                    // The web reader has its own error handling; default to it.
+                    // Fallback to web reader if API fails
                     _format.value = ReaderFormat.WEB
                 }
+            
+            // Fetch media details to get series name
+            mediaRepository.getMediaDetails(id).onSuccess { details ->
+                val sName = details.series_name
+                _seriesName.value = sName
+                
+                loadReadingStyle(id, sName)
+                
+                val currentEpisode = details.episode_number
+                if (!sName.isNullOrEmpty() && currentEpisode != null) {
+                    mediaRepository.getSeasonEpisodes(sName, 1).onSuccess { chapters ->
+                        // Find the chapter with the next highest episode number
+                        val nextChapter = chapters
+                            .filter { it.episode_number > currentEpisode }
+                            .minByOrNull { it.episode_number }
+                        
+                        _nextChapterId.value = nextChapter?.id
+                    }
+                }
+            }.onFailure {
+                loadReadingStyle(id, null)
+            }
         }
     }
 }
@@ -69,6 +155,7 @@ class ReaderViewModel @Inject constructor(
 fun ReaderScreen(
     mediaId: Long,
     onBack: () -> Unit,
+    onNextChapter: (Long) -> Unit = {},
     viewModel: ReaderViewModel = hiltViewModel(),
 ) {
     val format by viewModel.format.collectAsState()
@@ -88,6 +175,7 @@ fun ReaderScreen(
             )
         }
         ReaderFormat.PDF -> PdfReaderScreen(mediaId = mediaId, title = title, onBack = onBack)
+        ReaderFormat.CBZ -> CbzReaderScreen(mediaId = mediaId, viewModel = viewModel, onBack = onBack, onNextChapter = onNextChapter)
         ReaderFormat.WEB -> WebBookReader(mediaId = mediaId, viewModel = viewModel)
     }
 }

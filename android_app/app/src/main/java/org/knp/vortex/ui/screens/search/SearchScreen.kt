@@ -47,7 +47,7 @@ fun SearchScreen(
         ) { padding ->
         if (uiState.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                CircularProgressIndicator(color = PrimaryBlue)
+                CircularProgressIndicator(color = Color.White)
             }
         } else {
             LazyColumn(

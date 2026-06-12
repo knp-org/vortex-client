@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { usePlatform } from '../../hooks/usePlatform';
+import { usePlatform } from '@/hooks/usePlatform';
 
 export const WindowControls: React.FC = () => {
     const { isTauri } = usePlatform();

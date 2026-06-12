@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Logo } from '../common/Logo';
-import { useAuth } from '../../context/AuthContext';
+import { Logo } from '@/components/common/Logo';
+import { useAuth } from '@/context/AuthContext';
 import { Search, Film, Tv, X, LogOut, Settings } from 'lucide-react';
-import { resolveImageUrl, api } from '../../services';
+import { resolveImageUrl, api } from '@/services';
 
 interface SearchResult {
     id: number;

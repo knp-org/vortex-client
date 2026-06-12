@@ -23,8 +23,9 @@ data class HomeUiState(
     val libraries: List<LibraryDto> = emptyList(),
     val visibleLibraries: List<LibraryDto> = emptyList(), // Filtered libraries for display
     val libraryContent: Map<Long, List<MediaItemDto>> = emptyMap(),
-    val tvShowLibraryContent: Map<Long, List<SeriesDto>> = emptyMap(),
-    val allSeries: List<SeriesDto> = emptyList(),
+    /// Per-library series for series-type libraries (TV shows and Books/comics),
+    /// scoped to each library so they never mix.
+    val librarySeries: Map<Long, List<SeriesDto>> = emptyMap(),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val error: String? = null,
@@ -78,19 +79,19 @@ class HomeViewModel @Inject constructor(
             val recentResult = repository.getRecentlyAdded()
             val librariesResult = repository.getLibraries()
             val continueResult = repository.getContinueWatching()
-            val seriesResult = repository.getSeries()
-            
+
             val libraries = librariesResult.getOrDefault(emptyList())
-            val allSeries = seriesResult.getOrDefault(emptyList())
-            
+
             // Fetch content for each library (max 10 items each)
             val libraryContent = mutableMapOf<Long, List<MediaItemDto>>()
-            val tvShowLibraryContent = mutableMapOf<Long, List<SeriesDto>>()
-            
+            val librarySeries = mutableMapOf<Long, List<SeriesDto>>()
+
             libraries.forEach { lib ->
-                if (lib.library_type == "tv_shows") {
-                    // For TV Shows, use series data
-                    tvShowLibraryContent[lib.id] = allSeries.take(10)
+                if (lib.library_type == "tv_shows" || lib.library_type == "books") {
+                    // TV Shows and Books/comics are grouped into series, scoped to this library.
+                    repository.getSeries(lib.id).onSuccess { series ->
+                        librarySeries[lib.id] = series.take(10)
+                    }
                 } else {
                     // For Movies and other types, use library media
                     repository.getLibraryMedia(lib.id).onSuccess { media ->
@@ -99,13 +100,16 @@ class HomeViewModel @Inject constructor(
                 }
             }
 
+            if (recentResult.isFailure && !isRefresh) {
+                settingsRepository.setAuthToken(null)
+            }
+
             _uiState.value = _uiState.value.copy(
                 recentlyAdded = recentResult.getOrDefault(emptyList()),
                 libraries = libraries,
                 libraryContent = libraryContent,
-                tvShowLibraryContent = tvShowLibraryContent,
+                librarySeries = librarySeries,
                 continueWatching = continueResult.getOrDefault(emptyList()),
-                allSeries = allSeries,
                 isLoading = false,
                 isRefreshing = false,
                 error = if (recentResult.isFailure && !isRefresh) "Failed to connect to server" else null
