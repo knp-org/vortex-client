@@ -6,8 +6,10 @@
     --color-surface: rgba(255, 255, 255, 0.05);
     --color-surface-bright: rgba(255, 255, 255, 0.15);
     --color-outline: rgba(255, 255, 255, 0.20);
+    --color-outline-variant: #b3b3b3;   /* secondary / metadata text (DESIGN.md) */
     --color-primary: #ffffff;
     --color-on-primary: #000000;
+    --color-error: #ef4444;              /* errors + destructive actions */
     
     --color-glass-bg: rgba(255, 255, 255, 0.10);
     --color-glass-border: rgba(255, 255, 255, 0.20);

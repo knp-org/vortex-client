@@ -9,6 +9,8 @@ import { useMediaTitle } from '../hooks/useMediaTitle';
 import { useAutoHideControls } from '../hooks/useAutoHideControls';
 import { usePlayerKeyboard } from '../hooks/usePlayerKeyboard';
 import { openMpvOverlayWindow, closeMpvOverlayWindow } from '../backends/mpvOverlayWindow';
+import { EpisodeEndOverlay } from './EpisodeEndOverlay';
+import { useNextEpisode } from '../hooks/useNextEpisode';
 
 export const Player: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -43,6 +45,16 @@ export const Player: React.FC = () => {
     void streamInfo; // Suppress unused warning
 
     const { showControls, resetControlsTimeout } = useAutoHideControls(isPlaying);
+
+    // Next-episode prompt (TV shows only). Resolves the following episode and
+    // shows "Next Episode" / "Watch Credits" in the last stretch of playback.
+    const { nextEpisode } = useNextEpisode(id);
+    const [creditsDismissed, setCreditsDismissed] = useState(false);
+    useEffect(() => { setCreditsDismissed(false); }, [id]);
+    const remaining = duration - currentTime;
+    const showEpisodeEnd =
+        !mpvActive && !!nextEpisode && !creditsDismissed &&
+        duration > 0 && currentTime > 0 && remaining > 0 && remaining <= 45;
 
     // Fetch stream info and setup video source
     useEffect(() => {
@@ -520,6 +532,14 @@ export const Player: React.FC = () => {
                         <span className="text-white/70 text-sm">Transcoding video...</span>
                     )}
                 </div>
+            )}
+
+            {showEpisodeEnd && nextEpisode && (
+                <EpisodeEndOverlay
+                    nextTitle={nextEpisode.title}
+                    onNextEpisode={() => navigate(`/player/${nextEpisode.id}`)}
+                    onWatchCredits={() => setCreditsDismissed(true)}
+                />
             )}
 
             {!mpvActive && (

@@ -102,20 +102,32 @@ fun CbzReaderScreen(
                                 contentScale = ContentScale.FillWidth
                             )
                         }
-                        if (nextChapterId != null) {
-                            item {
-                                Box(
-                                    modifier = Modifier.fillMaxWidth().height(200.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
+                        // Always show an end-of-chapter panel in webtoon mode so the
+                        // "Read Next Chapter" action is reliably reachable (and the
+                        // reader gives clear "End of Series" feedback when there's none).
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp)
+                                    .background(Color.Black),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (nextChapterId != null) {
                                     Button(
                                         onClick = { onNextChapter(nextChapterId!!) },
                                         colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f), contentColor = Color.White)
                                     ) {
                                         Icon(Icons.Filled.ArrowForward, contentDescription = null)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Next Chapter")
+                                        Text("Read Next Chapter")
                                     }
+                                } else {
+                                    Text(
+                                        text = "End of Series",
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.titleLarge
+                                    )
                                 }
                             }
                         }

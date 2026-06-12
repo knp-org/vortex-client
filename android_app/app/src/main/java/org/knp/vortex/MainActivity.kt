@@ -307,7 +307,12 @@ fun AppNavigation() {
             val mediaId = backStackEntry.arguments?.getLong("mediaId") ?: return@composable
             PlayerScreen(
                 mediaId = mediaId,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNextEpisode = { nextId ->
+                    navController.navigate("player/$nextId") {
+                        popUpTo("player/$mediaId") { inclusive = true }
+                    }
+                }
             )
         }
 

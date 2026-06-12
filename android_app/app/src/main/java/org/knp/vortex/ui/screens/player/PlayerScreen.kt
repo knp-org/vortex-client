@@ -1,6 +1,11 @@
 package org.knp.vortex.ui.screens.player
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -115,7 +120,46 @@ class PlayerViewModel @Inject constructor(
     fun handleConnectionError() {
         settingsRepository.setAuthToken(null)
     }
+
+    /**
+     * Resolves the next episode for a TV-show episode so the player can offer a
+     * "Next Episode" button near the end. Returns null for movies/books or the
+     * last episode of a series. Tries the next episode in the current season,
+     * then the first episode of the next non-empty season.
+     */
+    fun resolveNextEpisode(mediaId: Long, onResult: (NextEpisodeUi?) -> Unit) {
+        viewModelScope.launch {
+            val media = repository.getMediaDetails(mediaId).getOrNull()
+            val seriesName = media?.series_name
+            val season = media?.season_number
+            val episode = media?.episode_number
+            val isEpisode = media?.media_type == "episode" || (seriesName != null && episode != null)
+            if (media == null || !isEpisode || seriesName == null || season == null || episode == null) {
+                onResult(null); return@launch
+            }
+
+            fun toUi(e: org.knp.vortex.data.remote.EpisodeDto) =
+                NextEpisodeUi(e.id, e.title ?: "Episode ${e.episode_number}")
+
+            // 1. Next episode in the current season.
+            val nextInSeason = repository.getSeasonEpisodes(seriesName, season).getOrNull()
+                ?.sortedBy { it.episode_number }?.firstOrNull { it.episode_number > episode }
+            if (nextInSeason != null) { onResult(toUi(nextInSeason)); return@launch }
+
+            // 2. First episode of the next non-empty season.
+            val nextSeason = repository.getSeriesDetail(seriesName).getOrNull()?.seasons
+                ?.filter { it.season_number > season && it.episode_count > 0 }
+                ?.minByOrNull { it.season_number }
+            if (nextSeason == null) { onResult(null); return@launch }
+            val first = repository.getSeasonEpisodes(seriesName, nextSeason.season_number).getOrNull()
+                ?.sortedBy { it.episode_number }?.firstOrNull()
+            onResult(if (first != null) toUi(first) else null)
+        }
+    }
 }
+
+/** The resolved next episode for the next-episode prompt. */
+data class NextEpisodeUi(val id: Long, val title: String)
 
 enum class ScalingMode(val displayName: String) {
     BEST_FIT("Best Fit"),
@@ -131,6 +175,7 @@ enum class ScalingMode(val displayName: String) {
 fun PlayerScreen(
     mediaId: Long,
     onBack: () -> Unit,
+    onNextEpisode: (Long) -> Unit = {},
     viewModel: PlayerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -148,6 +193,9 @@ fun PlayerScreen(
     var brightnessLevel by remember { mutableStateOf(0f) }
     var showVolumeIndicator by remember { mutableStateOf(false) }
     var volumeLevel by remember { mutableStateOf(0f) }
+    var nextEpisode by remember { mutableStateOf<NextEpisodeUi?>(null) }
+    var creditsDismissed by remember { mutableStateOf(false) }
+    var showNextEpisode by remember { mutableStateOf(false) }
 
     LaunchedEffect(brightnessLevel, showBrightnessIndicator) {
         if (showBrightnessIndicator) {
@@ -164,6 +212,10 @@ fun PlayerScreen(
     }
 
     LaunchedEffect(mediaId) {
+        creditsDismissed = false
+        showNextEpisode = false
+        nextEpisode = null
+        viewModel.resolveNextEpisode(mediaId) { nextEpisode = it }
         viewModel.getPlayerSettings { json ->
             if (json != null) {
                 skipForwardMs = json.optInt("skipForwardTime", 10) * 1000L
@@ -268,6 +320,17 @@ fun PlayerScreen(
                  // DB expects seconds usually, Exo uses ms
                 viewModel.saveProgress(mediaId, exoPlayer.currentPosition / 1000, exoPlayer.duration / 1000)
             }
+        }
+    }
+
+    // Show the next-episode prompt in the last 45s of a TV episode.
+    LaunchedEffect(exoPlayer) {
+        while (true) {
+            val dur = exoPlayer.duration
+            val pos = exoPlayer.currentPosition
+            showNextEpisode = nextEpisode != null && !creditsDismissed &&
+                dur > 0 && pos > 0 && (dur - pos) in 1..45_000
+            delay(1000)
         }
     }
 
@@ -488,6 +551,52 @@ fun PlayerScreen(
     
     // UI Overlays
     Box(Modifier.fillMaxSize()) {
+        // Next-episode prompt (TV shows only), shown near the end of playback.
+        androidx.compose.animation.AnimatedVisibility(
+            visible = showNextEpisode,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(32.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(Color.White.copy(alpha = 0.15f))
+                        .clickable {
+                            creditsDismissed = true
+                            showNextEpisode = false
+                        }
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                ) {
+                    Text("Watch Credits", color = Color.White)
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(Color.White)
+                        .clickable {
+                            exoPlayer.pause()
+                            nextEpisode?.let { onNextEpisode(it.id) }
+                        }
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SkipNext,
+                        contentDescription = null,
+                        tint = Color.Black,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text("Next Episode", color = Color.Black, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+
         // Top Controls
         androidx.compose.material3.IconButton(
             modifier = Modifier
