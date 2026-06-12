@@ -122,16 +122,24 @@ build green (`npm run build`) and changes no runtime behavior.
       barrel `index.ts`. UI + feature hooks are vertical; **`services/` and
       `types/` stay central** (clean barrels, easy to find) and a feature owns
       its own `api.ts`/`types.ts` only if that reduces coupling.
-- [ ] **Phase 3 — Split god files** (`features/media/components/MediaDetail`,
-      `features/player/components/Player`, `features/reader/components/Reader`,
-      `features/settings/components/MetadataTab`) into hooks + components.
+- [~] **Phase 3 — God files split (partial).** Logic extracted into feature
+      hooks + presentational components:
+      `MediaDetail` (595→331; `useMediaDetail`, `CastRow`, `EpisodesSection`),
+      `BookSeriesDetail` (327→238; `useBookSeriesDetail`),
+      `MetadataTab` (381→74; `ConfigFieldInput`, `ProviderCard`, `useMetadataProviders`).
+      **Deferred on purpose:** `Player` (548) and `Reader` (441) are ref/timing/DOM
+      controllers (HLS, embedded mpv, pdf.js/epub.js). Splitting them blindly risks
+      playback/render regressions that can't be caught by `tsc`/lint — they need a
+      careful, manually-tested extraction. Left intact rather than risk it.
 - [x] **Phase 4 — Boundaries enforced** by ESLint (`eslint.config.js`, flat
       config). Plain `no-restricted-imports` on import strings (no resolver
       needed): deep feature imports and `shared/services/types → features`
       imports are errors. Wired into `npm run build` (`eslint src && tsc &&
       vite build`), so violations fail the build.
-- [ ] **Phase 5 — Polish** — move shell chrome (`components/layout`, `layouts`)
-      and `App.tsx`/`main.tsx` into an `app/` folder; per-feature README notes.
+- [x] **Phase 5 — Shell consolidated.** `App.tsx` + the layout chrome
+      (`Header`, `Sidebar`, `MainLayout`) now live under `app/`. `main.tsx` stays
+      as the Vite entry and imports `@/app/App`. Feature index of responsibilities
+      + public barrels: [features/README.md](./src/features/README.md).
 
 ---
 

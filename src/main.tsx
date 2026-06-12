@@ -1,5 +1,5 @@
 import ReactDOM from "react-dom/client";
-import App from "./App";
+import App from "@/app/App";
 
 // pdf.js v6 calls Promise.withResolvers (Chromium 119+). Older Android System
 // WebViews lack it, so the lazily-loaded PDF reader chunk throws on evaluation

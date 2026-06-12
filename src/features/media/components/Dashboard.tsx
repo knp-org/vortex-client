@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/layouts/MainLayout';
+import { MainLayout } from '@/app/layout/MainLayout';
 import { HeroCarousel } from './HeroCarousel';
 import { ContentRow, MediaItem } from './ContentRow';
 import { Library, Media } from '@/types';

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/layouts/MainLayout';
+import { MainLayout } from '@/app/layout/MainLayout';
 import { Film, Tv, Music, BookOpen, FileQuestion } from 'lucide-react';
 import { MediaCard } from '@/features/media';
 import { Library as ILibrary, Media } from '@/types';

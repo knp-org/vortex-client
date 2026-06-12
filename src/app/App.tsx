@@ -11,7 +11,7 @@ import { Player, MpvOverlay } from '@/features/player';
 // The reader pulls in heavy renderers (pdf.js / epub.js); load it on demand
 // so they stay out of the main bundle.
 const Reader = lazy(() => import('@/features/reader').then((m) => ({ default: m.Reader })));
-import './index.css';
+import '@/index.css';
 
 const RouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
