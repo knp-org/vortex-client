@@ -5,7 +5,6 @@ export * from './Card';
 export * from './ConfirmModal';
 export * from './Input';
 export * from './Logo';
-export * from './MediaCard';
 export * from './MultiDirectoryPicker';
 export * from './Select';
 export * from './Titlebar';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Logo } from '@/shared/ui/Logo';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/features/auth';
 import { Search, Film, Tv, X, LogOut, Settings } from 'lucide-react';
 import { resolveImageUrl, api } from '@/services';
 

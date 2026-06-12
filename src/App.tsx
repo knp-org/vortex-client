@@ -1,19 +1,16 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Titlebar } from './shared/ui/Titlebar';
-import { Login } from './pages/Login';
-import { Dashboard } from './pages/Dashboard';
-import { Settings } from './pages/settings';
-import { Library } from './pages/Library';
-import { MediaDetail } from './pages/MediaDetail';
-import { BookSeriesDetail } from './pages/BookSeriesDetail';
-import { Player } from './pages/Player';
+import { Titlebar } from '@/shared/ui';
+import { Login, AuthProvider, useAuth } from '@/features/auth';
+import { Dashboard, MediaDetail } from '@/features/media';
+import { Library } from '@/features/library';
+import { BookSeriesDetail } from '@/features/books';
+import { Settings } from '@/features/settings';
+import { Player, MpvOverlay } from '@/features/player';
 
 // The reader pulls in heavy renderers (pdf.js / epub.js); load it on demand
 // so they stay out of the main bundle.
-const Reader = lazy(() => import('./pages/Reader').then((m) => ({ default: m.Reader })));
-import { MpvOverlay } from './pages/MpvOverlay';
-import { AuthProvider, useAuth } from './context/AuthContext';
+const Reader = lazy(() => import('@/features/reader').then((m) => ({ default: m.Reader })));
 import './index.css';
 
 const RouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {

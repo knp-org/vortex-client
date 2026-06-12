@@ -13,41 +13,53 @@ The stack is React 19 + TypeScript + Vite, packaged for desktop with Tauri.
 Three layers with a **one-directional** dependency rule:
 
 ```
-pages  →  features  →  shared
+shell (App/routing)  →  features  →  shared
 ```
 
 A layer may import from layers to its right, never to its left. `shared` knows
-nothing about any feature. Features do not import each other's internals.
+nothing about any feature. Features never import each other's internals — only
+their public barrels.
 
 ```
 src/
-├── app/            # The shell: providers, router, app entry. Wires everything.
-├── shared/         # Feature-agnostic & reusable. Knows nothing about media/books/etc.
-│   ├── ui/         #   Button, Input, Select, Toggle, Modal, ConfirmModal, Spinner…
-│   ├── api/        #   http client, url helpers (resolveUrl, withAuthToken)
-│   ├── hooks/      #   generic hooks (usePlatform, useKeyboardShortcuts…)
-│   ├── lib/        #   pure utility functions
-│   ├── types/      #   cross-cutting types
-│   └── styles/     #   global css
-├── features/       # Vertical slices. Each owns its full stack and is self-contained.
-│   ├── auth/
-│   ├── library/
-│   ├── media/
-│   ├── books/
-│   ├── player/
-│   ├── reader/
-│   └── settings/
-└── pages/          # Thin route components. Compose features. No business logic.
+├── App.tsx, main.tsx   # The shell: providers + routing. Imports feature barrels.
+├── components/layout/  # Shell chrome: Header, Sidebar (used around feature screens).
+├── layouts/            # MainLayout — page scaffold.
+│
+├── shared/             # Feature-agnostic & reusable. Knows nothing about any feature.
+│   ├── ui/             #   Button, Input, Select, Toggle, ConfirmModal, MultiDirectoryPicker…
+│   ├── api/            #   http client + url helpers (resolveUrl, withAuthToken)
+│   ├── hooks/          #   generic hooks (usePlatform…)
+│   └── styles/         #   global css
+│
+├── features/           # Vertical slices. Each is self-contained behind a barrel.
+│   ├── auth/           #   AuthContext + Login screen
+│   ├── library/        #   library view + add/edit dialogs
+│   ├── media/          #   Dashboard, MediaDetail, MediaCard, carousels
+│   ├── books/          #   book/comic series detail
+│   ├── player/         #   video player + mpv backend + overlay
+│   ├── reader/         #   pdf/epub reader (lazy-loaded)
+│   └── settings/       #   settings screen + tabs
+│
+├── services/           # Central API layer: one module per domain (libraries, books…).
+├── types/              # Central type definitions (barrel: '@/types').
+├── constants/          # Shared constants.
+└── assets/             # Static assets.
 ```
+
+> **Pragmatic note:** `services/` and `types/` are kept central rather than split
+> into each feature. At this size they're small, barrel-exported, and trivially
+> discoverable (`@/services`, `@/types`). A feature should add its own local
+> `api.ts`/`types.ts` only when doing so clearly reduces coupling.
 
 ### Every feature folder has the same shape
 
 ```
 features/<name>/
-├── api.ts          # all server calls for this feature
-├── types.ts        # this feature's types
-├── hooks/          # data + logic hooks (useMediaDetail, useSeries…)
-├── components/     # feature-specific presentation
+├── components/     # feature-specific presentation (incl. the route screen)
+├── hooks/          # data + logic hooks (useMediaDetail, useProgress…)
+├── api.ts          # (optional) feature-local server calls — else use central @/services
+├── types.ts        # (optional) feature-local types — else use central @/types
 └── index.ts        # PUBLIC API barrel — the ONLY entry other code may import
 ```
 
@@ -59,14 +71,18 @@ features/<name>/
    `import { Button } from '@/shared/ui'` — not `'../../shared/ui'`.
    (`@` is mapped to `src/` in both `tsconfig.json` and `vite.config.ts`.)
 
-2. **Cross-feature imports go through the barrel only.**
-   `import { MediaCard } from '@/features/media'` ✅
-   `import { MediaCard } from '@/features/media/components/MediaCard'` ❌
-   A feature's internals are private; only its `index.ts` is public.
+2. **Cross-feature imports go through the barrel; intra-feature imports are relative.**
+   From another feature: `import { MediaCard } from '@/features/media'` ✅ —
+   never `'@/features/media/components/MediaCard'` ❌ (a feature's internals are
+   private; only its `index.ts` is public).
+   Inside the same feature, import siblings with a relative path:
+   `import { HeroCarousel } from './HeroCarousel'` ✅.
+   **This is enforced by ESLint** (`no-restricted-imports`) — a violation fails
+   `npm run lint` and `npm run build`.
 
-3. **Dependencies flow one way:** `pages → features → shared`.
-   If a feature needs another feature, that's a signal — lift the shared piece
-   up into `shared/`.
+3. **Dependencies flow one way:** `shell → features → shared`.
+   A feature importing another feature's internals is a signal — lift the shared
+   piece up into `shared/`, or import the other feature's public barrel.
 
 4. **One component per file; the filename equals the export name.**
    `MediaCard.tsx` exports `MediaCard`.
@@ -74,19 +90,20 @@ features/<name>/
 5. **Soft cap ~250 lines per file.** Past that, split: data/logic → `hooks/`,
    view → `components/`.
 
-6. **Pages are thin.** A page calls a feature hook for data and lays out feature
-   components. It contains no fetching or business logic.
+6. **Route screens are thin.** A screen calls a feature hook for data and lays
+   out feature components. Keep fetching/business logic in hooks, not the view.
 
 ### Where does new code go?
 
-| You're adding…                          | Put it in…                          |
-| --------------------------------------- | ----------------------------------- |
-| A reusable button/input/modal primitive | `shared/ui/`                        |
-| A generic, feature-agnostic hook        | `shared/hooks/`                     |
-| A server call for an existing feature   | that feature's `api.ts`             |
-| A screen-specific component             | that feature's `components/`        |
-| A whole new screen/domain               | a new `features/<name>/` slice      |
-| A new route                             | `app/router.tsx` + a thin `pages/`  |
+| You're adding…                          | Put it in…                              |
+| --------------------------------------- | --------------------------------------- |
+| A reusable button/input/modal primitive | `shared/ui/`                            |
+| A generic, feature-agnostic hook        | `shared/hooks/`                         |
+| A server call for an existing domain    | that domain's module in `services/`     |
+| A new shared type                       | `types/` (export via `@/types` barrel)  |
+| A screen-specific component             | that feature's `components/`            |
+| A whole new screen/domain               | a new `features/<name>/` slice + barrel |
+| A new route                             | a `<Route>` in `App.tsx` → feature barrel |
 
 ---
 
@@ -100,17 +117,21 @@ build green (`npm run build`) and changes no runtime behavior.
 - [x] **Phase 1 — `shared/` layer.** `components/common`→`shared/ui`,
       `services/api`→`shared/api`, `usePlatform`→`shared/hooks`, `glass.css`→
       `shared/styles`. Each has a barrel `index.ts`.
-- [ ] **Phase 2 — Carve features** one at a time:
-      auth → library → settings → books → media → player → reader.
-- [ ] **Phase 3 — Split god files** (MediaDetail, Player, Reader, MetadataTab)
-      into hooks + components.
-- [ ] **Phase 4 — Enforce boundaries** with ESLint (`import/no-restricted-paths`).
-- [ ] **Phase 5 — Docs** per feature + keep this file current.
-
-Until a slice is migrated, these pre-migration folders still apply:
-`components/{features,layout}`, `pages/`, `services/` (domain services only —
-the HTTP client now lives in `shared/api`), `types/`, `hooks/` (feature hooks
-only), `context/`, `player/`, `layouts/`, `constants/`.
+- [x] **Phase 2 — Features carved.** All 7 slices exist under `features/`
+      (auth, library, settings, books, media, player, reader), each with a
+      barrel `index.ts`. UI + feature hooks are vertical; **`services/` and
+      `types/` stay central** (clean barrels, easy to find) and a feature owns
+      its own `api.ts`/`types.ts` only if that reduces coupling.
+- [ ] **Phase 3 — Split god files** (`features/media/components/MediaDetail`,
+      `features/player/components/Player`, `features/reader/components/Reader`,
+      `features/settings/components/MetadataTab`) into hooks + components.
+- [x] **Phase 4 — Boundaries enforced** by ESLint (`eslint.config.js`, flat
+      config). Plain `no-restricted-imports` on import strings (no resolver
+      needed): deep feature imports and `shared/services/types → features`
+      imports are errors. Wired into `npm run build` (`eslint src && tsc &&
+      vite build`), so violations fail the build.
+- [ ] **Phase 5 — Polish** — move shell chrome (`components/layout`, `layouts`)
+      and `App.tsx`/`main.tsx` into an `app/` folder; per-feature README notes.
 
 ---
 
@@ -118,7 +139,8 @@ only), `context/`, `player/`, `layouts/`, `constants/`.
 
 ```bash
 npm run dev          # vite dev server (port 1420)
-npm run build        # tsc typecheck + vite production build — run before pushing
+npm run lint         # eslint — checks the architecture boundaries
+npm run build        # eslint + tsc typecheck + vite build — run before pushing
 npm run tauri dev    # desktop app
 ```
 
