@@ -1,9 +1,9 @@
 import React from 'react';
-import { CastMember } from '@/types';
+import { CreditDto } from '@/types';
 import { resolveImageUrl } from '@/services';
 
 /** Horizontal scroller of cast headshots on the media detail screen. */
-export const CastRow: React.FC<{ cast: CastMember[] }> = ({ cast }) => {
+export const CastRow: React.FC<{ cast: CreditDto[] }> = ({ cast }) => {
     if (cast.length === 0) return null;
 
     return (

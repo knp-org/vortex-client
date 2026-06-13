@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Play, Tv, Film, MoreVertical, RefreshCw, FileSearch, Info, Edit } from 'lucide-react';
-import { Media } from '@/types/media';
-import { api, resolveImageUrl } from '@/services';
+import { mediaService, resolveImageUrl } from '@/services';
 import { IdentifyModal } from './IdentifyModal';
 import { MediaInfoModal } from './MediaInfoModal';
 
@@ -32,53 +31,48 @@ export const MediaCard: React.FC<MediaCardProps> = ({
     const [showMenu, setShowMenu] = useState(false);
     const [showIdentify, setShowIdentify] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
-    const [mediaDetails, setMediaDetails] = useState<Media | null>(null);
+    const [mediaDetails, setMediaDetails] = useState<any>(null);
+
+    // For series cards the id is a series id; otherwise a media item id.
+    const isSeries = type === 'folder' || type === 'series';
 
     const handleAction = async (e: React.MouseEvent, action: string) => {
         e.stopPropagation();
         setShowMenu(false);
         if (!id) return;
-        const mediaId = typeof id === 'string' ? parseInt(id) : id;
+        const itemId = typeof id === 'string' ? parseInt(id) : id;
 
         if (action === 'refresh') {
             try {
-                if (type === 'folder' || type === 'series') {
-                    await api.post(`/series/${encodeURIComponent(title)}/refresh`);
-                } else {
-                    await api.post(`/media/${mediaId}/refresh`);
-                }
+                if (isSeries) await mediaService.refreshSeries(itemId);
+                else await mediaService.refreshMedia(itemId);
             } catch (err) {
                 console.error("Failed to refresh", err);
             }
         } else if (action === 'identify') {
             setShowIdentify(true);
         } else if (action === 'info') {
+            // Media Info is only offered for individual items (not series folders).
             try {
-                if (type === 'folder' || type === 'series') {
-                    const data = await api.get<any>(`/series/${encodeURIComponent(title)}`);
-                    setMediaDetails(data);
-                } else {
-                    const data = await api.get<Media>(`/media/${mediaId}`);
-                    setMediaDetails(data);
-                }
+                const info = await mediaService.mediaInfo(itemId);
+                setMediaDetails({ title, media_info: JSON.stringify(info) });
                 setShowInfo(true);
             } catch (err) {
-                console.error("Failed to fetch details", err);
+                console.error("Failed to fetch media info", err);
             }
         } else if (action === 'edit') {
             // Placeholder
-            console.log("Edit requested for", mediaId);
+            console.log("Edit requested for", itemId);
         }
     };
 
     const handleIdentify = async (providerId: string, mediaType: 'movie' | 'series', providerName?: string) => {
-        if (!id && !title) return;
+        if (!id) return;
+        const itemId = typeof id === 'string' ? parseInt(id) : id;
         try {
-            if (type === 'folder' || type === 'series') {
-                await api.post(`/series/${encodeURIComponent(title)}/identify`, { provider_id: providerId, media_type: mediaType, provider_name: providerName });
-            } else {
-                await api.post(`/media/${id}/identify`, { provider_id: providerId, media_type: mediaType, provider_name: providerName });
-            }
+            const body = { provider_id: providerId, media_type: mediaType, provider_name: providerName };
+            if (isSeries) await mediaService.identifySeries(itemId, body);
+            else await mediaService.identifyMedia(itemId, body);
             window.location.reload(); // Simple refresh to show new data
         } catch (error) {
             console.error(error);
@@ -151,7 +145,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
                         </button>
 
                         {showMenu && (
-                            <div className="mt-1 w-36 bg-surface/90 backdrop-blur-glass border border-t-[rgba(255,255,255,0.3)] border-l-[rgba(255,255,255,0.3)] border-b-[rgba(255,255,255,0.05)] border-r-[rgba(255,255,255,0.05)] rounded-lg shadow-[0_0_20px_rgba(255,255,255,0.1)] overflow-hidden animate-fade-in text-left">
+                            <div className="mt-1 w-36 bg-[#15151c]/95 backdrop-blur-glass border border-outline rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.6)] overflow-hidden animate-fade-in text-left">
                                 <button onClick={(e) => handleAction(e, 'refresh')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
                                     <RefreshCw size={12} /> Refresh Metadata
                                 </button>

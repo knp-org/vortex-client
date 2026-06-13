@@ -17,4 +17,13 @@ export const settingsService = {
     async updateTranscode(data: TranscodeSettingsRequest): Promise<TranscodeSettings> {
         return api.post<TranscodeSettings, TranscodeSettingsRequest>('/settings/transcode', data);
     },
+
+    // Per-user preferences (scoped to the authenticated caller).
+    async getUserSettings(): Promise<Setting[]> {
+        return api.get<Setting[]>('/me/settings');
+    },
+
+    async setUserSetting(key: string, value: string): Promise<void> {
+        return api.post<void, Setting>('/me/settings', { key, value });
+    },
 };

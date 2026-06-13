@@ -4,7 +4,6 @@ import { Titlebar } from '@/shared/ui';
 import { Login, AuthProvider, useAuth } from '@/features/auth';
 import { Dashboard, MediaDetail } from '@/features/media';
 import { Library } from '@/features/library';
-import { BookSeriesDetail } from '@/features/books';
 import { Settings } from '@/features/settings';
 import { Player, MpvOverlay } from '@/features/player';
 
@@ -57,8 +56,7 @@ function App() {
               <Route path="/" element={<RouteGuard><Dashboard /></RouteGuard>} />
               <Route path="/libraries/:id" element={<RouteGuard><Library /></RouteGuard>} />
               <Route path="/media/:id" element={<RouteGuard><MediaDetail /></RouteGuard>} />
-              <Route path="/series/:name" element={<RouteGuard><MediaDetail /></RouteGuard>} />
-              <Route path="/book-series/:name" element={<RouteGuard><BookSeriesDetail /></RouteGuard>} />
+              <Route path="/series/:seriesId" element={<RouteGuard><MediaDetail /></RouteGuard>} />
               <Route path="/player/:id" element={<RouteGuard><Player /></RouteGuard>} />
               <Route path="/reader/:id" element={
                 <RouteGuard>

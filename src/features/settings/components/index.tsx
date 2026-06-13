@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MainLayout } from '@/app/layout/MainLayout';
 import { SettingsTab } from '@/types/settings';
+import { useAuth } from '@/features/auth';
 import { LibrariesTab } from './LibrariesTab';
 import { AccountTab } from './AccountTab';
+import { UsersTab } from './UsersTab';
 import { MetadataTab } from './MetadataTab';
 import { TranscodingTab } from './TranscodingTab';
 import { SystemTab } from './SystemTab';
@@ -11,6 +13,8 @@ import { PlayerTab } from './PlayerTab';
 
 export const Settings: React.FC = () => {
     const location = useLocation();
+    const { user } = useAuth();
+    const isAdmin = user?.role === 'admin';
     const initialTab = (location.state as any)?.tab as SettingsTab || 'libraries';
     const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
 
@@ -41,6 +45,7 @@ export const Settings: React.FC = () => {
                         <h2 className="text-xl font-bold text-primary mb-4 px-2 font-heading">Settings</h2>
                         {renderTabButton('libraries', 'Library Management')}
                         {renderTabButton('account', 'Account Settings')}
+                        {isAdmin && renderTabButton('users', 'User Management')}
                         {renderTabButton('metadata', 'Metadata')}
                         {renderTabButton('transcoding', 'Transcoding')}
                         {renderTabButton('player', 'Player')}
@@ -53,6 +58,7 @@ export const Settings: React.FC = () => {
                     <div className="glass-panel min-h-full py-6 px-8">
                         {activeTab === 'libraries' && <LibrariesTab />}
                         {activeTab === 'account' && <AccountTab />}
+                        {activeTab === 'users' && isAdmin && <UsersTab />}
                         {activeTab === 'metadata' && <MetadataTab />}
                         {activeTab === 'transcoding' && <TranscodingTab />}
                         {activeTab === 'player' && <PlayerTab />}

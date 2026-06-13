@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
 import { Cpu, Server, Eye, EyeOff } from 'lucide-react';
 import { usePlatform } from '@/shared/hooks/usePlatform';
-import { api, ApiError } from '@/shared/api';
+import { ApiError } from '@/shared/api';
+import { authService } from '@/services';
 import { Logo } from '@/shared/ui/Logo';
 
 export const Login: React.FC = () => {
     const { login } = useAuth();
     const { isTauri } = usePlatform();
-    const [isRegistering, setIsRegistering] = useState(false);
+    // First run: no users exist yet, so this screen creates the initial admin.
+    const [needsSetup, setNeedsSetup] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +25,13 @@ export const Login: React.FC = () => {
         }
     }, [isTauri]);
 
+    // Ask the server whether it still needs its first (admin) user.
+    useEffect(() => {
+        authService.setupStatus()
+            .then((s) => setNeedsSetup(s.needs_setup))
+            .catch(() => setNeedsSetup(false));
+    }, [serverUrl]);
+
     const handleServerUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setServerUrl(val);
@@ -34,21 +43,15 @@ export const Login: React.FC = () => {
         setError('');
         setLoading(true);
 
-        const endpoint = isRegistering ? '/auth/register' : '/auth/login';
-
         try {
-            if (isRegistering) {
-                await api.post(endpoint, { username, password });
-                setIsRegistering(false);
-                setError('Registration successful! Please login.');
-                setPassword('');
-            } else {
-                const user = await api.post<{ token?: string }>(endpoint, { username, password });
-                if (user.token) {
-                    localStorage.setItem('auth_token', user.token);
-                }
-                login(user as any);
+            // Setup creates the first admin; both setup and login return the user + token.
+            const user = needsSetup
+                ? await authService.setup(username, password)
+                : await authService.login(username, password);
+            if (user.token) {
+                localStorage.setItem('auth_token', user.token);
             }
+            login(user as any);
         } catch (err) {
             if (err instanceof ApiError) {
                 setError(err.message || 'Authentication failed');
@@ -74,7 +77,7 @@ export const Login: React.FC = () => {
                     <h1 className="text-3xl font-bold font-heading text-primary mb-2">Vortex</h1>
                     <div className="flex items-center justify-center gap-2 text-outline-variant text-xs font-semibold tracking-wider uppercase font-label">
                         <Cpu size={14} />
-                        <span>Secure Streaming</span>
+                        <span>{needsSetup ? 'First-Run Setup' : 'Secure Streaming'}</span>
                     </div>
                 </div>
 
@@ -141,18 +144,16 @@ export const Login: React.FC = () => {
                         disabled={loading}
                         className="w-full bg-primary hover:bg-gray-200 text-on-primary font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.2)] transform transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed font-heading text-lg"
                     >
-                        {loading ? 'Processing...' : (isRegistering ? 'Create Account' : 'Sign In')}
+                        {loading ? 'Processing...' : (needsSetup ? 'Create Admin Account' : 'Sign In')}
                     </button>
                 </form>
 
-                <div className="mt-6 text-center">
-                    <button
-                        onClick={() => { setIsRegistering(!isRegistering); setError(''); }}
-                        className="text-sm text-gray-400 hover:text-white transition-colors font-label hover:drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]"
-                    >
-                        {isRegistering ? 'Already have an account? Sign In' : "Don't have an account? Register"}
-                    </button>
-                </div>
+                {needsSetup && (
+                    <p className="mt-6 text-center text-xs text-outline-variant font-label">
+                        No users exist yet — this creates the administrator account.
+                        New users are added later from Settings.
+                    </p>
+                )}
             </div>
         </div>
     );

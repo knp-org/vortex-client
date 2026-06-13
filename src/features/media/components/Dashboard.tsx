@@ -3,14 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/app/layout/MainLayout';
 import { HeroCarousel } from './HeroCarousel';
 import { ContentRow, MediaItem } from './ContentRow';
-import { Library, Media } from '@/types';
-import { libraryService, api } from '@/services';
+import { Library } from '@/types';
+import { libraryService, mediaService } from '@/services';
 
-interface ContinueWatchingMedia extends Media {
-    progress?: number;
-    total_duration?: number;
-    library_type?: string;
-}
+/** Navigate to the right detail screen for a card's kind. */
+export const navigateForCard = (
+    navigate: (to: string) => void,
+    item: { id: string; kind?: string },
+) => {
+    if (item.kind === 'series') navigate(`/series/${item.id}`);
+    else navigate(`/media/${item.id}`);
+};
 
 const LibraryRow: React.FC<{ library: Library }> = React.memo(({ library }) => {
     const [media, setMedia] = useState<MediaItem[]>([]);
@@ -19,70 +22,31 @@ const LibraryRow: React.FC<{ library: Library }> = React.memo(({ library }) => {
     useEffect(() => {
         const fetchMedia = async () => {
             try {
-                const data = await api.get<Media[]>(`/libraries/${library.id}/media`);
-                if (data) {
-
-                    let processedData = data;
-
-                    // Group if TV Shows or Books
-                    if (library.library_type === 'tv_shows' || library.library_type === 'books') {
-                        const seriesMap = new Map<string, Media>();
-                        const looseItems: Media[] = [];
-
-                        data.forEach(item => {
-                            if (item.series_name) {
-                                if (!seriesMap.has(item.series_name)) {
-                                    const seriesItem = { ...item, title: item.series_name }; // Use series name as title
-                                    seriesMap.set(item.series_name, seriesItem);
-                                }
-                            } else {
-                                looseItems.push(item);
-                            }
-                        });
-                        processedData = [...Array.from(seriesMap.values()), ...looseItems];
-                        processedData.sort((a, b) => a.title.localeCompare(b.title));
-                    }
-
-                    // Map to MediaItem and limit to 15
-                    const items: MediaItem[] = processedData.map(m => ({
-                        id: m.id.toString(),
-                        title: m.title,
-                        posterUrl: m.poster_url || '',
-                        subtitle: undefined,
-                        isSeries: !!m.series_name,
-                        seriesName: m.series_name
-                    })).slice(0, 15);
-
-                    setMedia(items);
-                }
+                // The server already returns ready-to-render cards (series collapsed).
+                const cards = await mediaService.libraryItems(library.id);
+                const items: MediaItem[] = cards.slice(0, 15).map(c => ({
+                    id: c.id.toString(),
+                    title: c.title || '',
+                    posterUrl: c.poster_url || '',
+                    kind: c.kind,
+                }));
+                setMedia(items);
             } catch (error) {
                 console.error(`Failed to fetch media for library ${library.id}`, error);
             }
         };
 
         fetchMedia();
-    }, [library.id, library.library_type]);
+    }, [library.id]);
 
     if (media.length === 0) return null;
-
-    const handleItemClick = (item: MediaItem) => {
-        if (item.isSeries && item.seriesName) {
-            if (library.library_type === 'books') {
-                navigate(`/book-series/${encodeURIComponent(item.seriesName)}`);
-            } else {
-                navigate(`/series/${encodeURIComponent(item.seriesName)}`);
-            }
-        } else {
-            navigate(`/media/${item.id}`);
-        }
-    };
 
     return (
         <ContentRow
             title={library.name}
             items={media}
             onViewAll={() => navigate(`/libraries/${library.id}`)}
-            onItemClick={handleItemClick}
+            onItemClick={(item) => navigateForCard(navigate, item)}
         />
     );
 });
@@ -99,21 +63,17 @@ export const Dashboard: React.FC = () => {
                 const libData = await libraryService.getAll();
                 setLibraries(libData);
 
-                // Fetch continue watching
-                const continueData = await api.get<ContinueWatchingMedia[]>('/continue');
+                // Fetch continue watching (per-user)
+                const continueData = await mediaService.continueWatching();
                 if (continueData && continueData.length > 0) {
                     const items: MediaItem[] = continueData.map(m => ({
                         id: m.id.toString(),
-                        title: m.series_name
-                            ? `${m.series_name} S${m.season_number || 1}E${m.episode_number || 1}`
-                            : m.title,
-                        posterUrl: m.poster_url || m.still_url || '',
-                        progress: m.progress && (m.total_duration || m.runtime)
-                            ? Math.min(100, Math.floor((m.progress / (m.total_duration || (m.runtime! * 60))) * 100))
+                        title: m.title || '',
+                        posterUrl: m.poster_url || '',
+                        progress: m.total_duration > 0
+                            ? Math.min(100, Math.floor((m.position / m.total_duration) * 100))
                             : undefined,
-                        subtitle: m.series_name ? m.title : undefined,
-                        isSeries: !!m.series_name,
-                        seriesName: m.series_name
+                        kind: m.kind,
                     }));
                     setContinueWatching(items);
                 }

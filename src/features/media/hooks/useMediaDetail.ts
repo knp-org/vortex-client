@@ -1,20 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Media, SeriesDetail, CastMember, Episode } from '@/types';
-import { api } from '@/services';
+import { SeriesDetail, CreditDto, Episode } from '@/types';
+import { mediaService, bookService } from '@/services';
+import type { BookInfo } from '@/services';
 
 /**
  * All data, state, and actions for the media/series detail screen. The screen
  * component ([MediaDetail]) is purely presentational on top of this hook.
+ *
+ * Routes: `/media/:id` (movie | book | episode — discriminated by `kind`) and
+ * `/series/:seriesId` (a TV show).
  */
 export function useMediaDetail() {
-    const { id, name } = useParams<{ id?: string; name?: string }>();
+    const { id, seriesId } = useParams<{ id?: string; seriesId?: string }>();
     const navigate = useNavigate();
-    const isSeries = !!name;
+    const isSeries = !!seriesId;
 
-    const [media, setMedia] = useState<Media | null>(null);
+    // For a single item this is a MovieDetail | BookDetail | Episode (+ `kind`).
+    const [media, setMedia] = useState<any>(null);
     const [series, setSeries] = useState<SeriesDetail | null>(null);
-    const [bookInfo, setBookInfo] = useState<{ page_count?: number | null } | null>(null);
+    const [bookInfo, setBookInfo] = useState<BookInfo | null>(null);
+    const [isBook, setIsBook] = useState(false);
+    const [isFavorite, setIsFavorite] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     // Series-specific state
@@ -27,101 +34,107 @@ export function useMediaDetail() {
     const [isIdentifyOpen, setIsIdentifyOpen] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // Cast data lives on either the series or the movie record.
-    const castData = media?.cast || series?.cast;
-    const parsedCast = useMemo<CastMember[]>(() => {
-        if (!castData) return [];
-        try {
-            const parsed = JSON.parse(castData);
-            return Array.isArray(parsed) ? (parsed as CastMember[]) : [];
-        } catch (e) {
-            console.error("Failed to parse cast data", e);
-            return [];
-        }
-    }, [castData]);
+    // Cast is already structured on the movie/series detail.
+    const parsedCast = useMemo<CreditDto[]>(
+        () => ((isSeries ? series?.cast : media?.cast) ?? []),
+        [isSeries, series, media],
+    );
 
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
             setError(null);
+            setIsBook(false);
             try {
-                if (isSeries && name) {
-                    const encodedName = encodeURIComponent(name);
-                    const data = await api.get<SeriesDetail>(`/series/${encodedName}/detail`);
+                if (isSeries && seriesId) {
+                    const data = await mediaService.series(seriesId);
                     setSeries(data);
                     if (data.seasons.length > 0) {
-                        if (!selectedSeason) setSelectedSeason(data.seasons[0].season_number);
+                        setSelectedSeason(data.seasons[0].season_number);
                     }
                 } else if (id) {
-                    const data = await api.get<Media>(`/media/${id}`);
+                    // `/media/:id` is polymorphic; `kind` discriminates the shape.
+                    const data: any = await mediaService.movie(id);
                     setMedia(data);
-                    // Book-specific fields (page count) aren't on the generic media
-                    // record; pull them from the dedicated book endpoint.
-                    if (data.media_type === 'book') {
+                    if (data?.kind === 'book') {
+                        setIsBook(true);
                         try {
-                            setBookInfo(await api.get(`/books/${id}/info`));
+                            setBookInfo(await bookService.info(id));
                         } catch (e) {
-                            console.error("Failed to fetch book info", e);
+                            console.error('Failed to fetch book info', e);
                             setBookInfo(null);
                         }
-                    } else {
-                        setBookInfo(null);
                     }
                 } else {
-                    setError("Invalid URL parameters");
+                    setError('Invalid URL parameters');
                 }
-            } catch (error: any) {
-                console.error("Failed to fetch details", error);
-                setError(error.message || "Failed to load content");
+            } catch (err: any) {
+                console.error('Failed to fetch details', err);
+                setError(err.message || 'Failed to load content');
             } finally {
                 setIsLoading(false);
             }
         };
         fetchData();
-    }, [id, name, isSeries]);
+    }, [id, seriesId, isSeries]);
 
     // Fetch episodes when the selected season changes.
     useEffect(() => {
         const fetchEpisodes = async () => {
-            if (!isSeries || !name || !selectedSeason) return;
+            if (!isSeries || !seriesId || !selectedSeason) return;
             setIsEpisodesLoading(true);
             try {
-                const encodedName = encodeURIComponent(name);
-                const data = await api.get<Episode[]>(`/series/${encodedName}/season/${selectedSeason}`);
-                setEpisodes(data);
+                setEpisodes(await mediaService.seasonEpisodes(seriesId, selectedSeason));
             } catch (error) {
-                console.error("Failed to fetch episodes", error);
+                console.error('Failed to fetch episodes', error);
             } finally {
                 setIsEpisodesLoading(false);
             }
         };
         fetchEpisodes();
-    }, [isSeries, name, selectedSeason]);
+    }, [isSeries, seriesId, selectedSeason]);
+
+    // Favorites apply to individual items (movie/book/episode), not whole series.
+    useEffect(() => {
+        if (isSeries || !id) { setIsFavorite(false); return; }
+        mediaService.favorites()
+            .then(favs => setIsFavorite(favs.some(c => String(c.id) === id)))
+            .catch(() => {});
+    }, [id, isSeries]);
+
+    const toggleFavorite = async () => {
+        if (isSeries || !id) return;
+        try {
+            if (isFavorite) await mediaService.removeFavorite(id);
+            else await mediaService.addFavorite(id);
+            setIsFavorite(v => !v);
+        } catch (e) {
+            console.error('Failed to toggle favorite', e);
+        }
+    };
 
     const refreshData = async () => {
-        if (isSeries && name) {
-            const encodedName = encodeURIComponent(name);
-            setSeries(await api.get<SeriesDetail>(`/series/${encodedName}/detail`));
+        if (isSeries && seriesId) {
+            setSeries(await mediaService.series(seriesId));
         } else if (id) {
-            setMedia(await api.get<Media>(`/media/${id}`));
+            setMedia(await mediaService.movie(id));
         }
     };
 
     const handleIdentify = async (providerId: string, mediaType: 'movie' | 'series', providerName?: string) => {
         try {
             const body = { provider_id: providerId, media_type: mediaType, provider_name: providerName };
-            if (isSeries && name) {
-                const encodedName = encodeURIComponent(name);
-                await api.post(`/series/${encodedName}/identify`, body);
+            if (isSeries && seriesId) {
+                await mediaService.identifySeries(seriesId, body);
             } else if (id) {
-                await api.post(`/media/${id}/identify`, body);
+                await mediaService.identifyMedia(id, body);
             } else {
                 return;
             }
             await refreshData();
             setIsIdentifyOpen(false);
         } catch (error) {
-            console.error("Identify error", error);
+            console.error('Identify error', error);
         }
     };
 
@@ -129,21 +142,18 @@ export function useMediaDetail() {
         setIsMenuOpen(false);
         setIsLoading(true);
         try {
-            if (isSeries && name) {
-                const encodedName = encodeURIComponent(name);
-                await api.post(`/series/${encodedName}/refresh`);
+            if (isSeries && seriesId) {
+                await mediaService.refreshSeries(seriesId);
             } else if (id) {
-                await api.post(`/media/${id}/refresh`);
+                await mediaService.refreshMedia(id);
             }
             // Reload to force image cache clear and a fresh data fetch.
             window.location.reload();
         } catch (error) {
-            console.error("Refresh failed", error);
+            console.error('Refresh failed', error);
             setIsLoading(false);
         }
     };
-
-    const isBook = media?.media_type === 'book';
 
     const handlePlay = (mediaId?: number) => {
         if (isBook && (mediaId || media?.id)) {
@@ -155,11 +165,7 @@ export function useMediaDetail() {
         } else if (media?.id) {
             navigate(`/player/${media.id}`);
         } else if (episodes.length > 0) {
-            if (isBook) {
-                navigate(`/reader/${episodes[0].id}`);
-            } else {
-                navigate(`/player/${episodes[0].id}`);
-            }
+            navigate(`/player/${episodes[0].id}`);
         }
     };
 
@@ -170,5 +176,6 @@ export function useMediaDetail() {
         isSeasonOpen, setIsSeasonOpen,
         isIdentifyOpen, setIsIdentifyOpen, isMenuOpen, setIsMenuOpen,
         parsedCast, handleIdentify, handleRefresh, handlePlay,
+        isFavorite, toggleFavorite,
     };
 }

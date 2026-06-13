@@ -1,15 +1,15 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/app/layout/MainLayout';
-import { Film, Tv, Music, BookOpen, FileQuestion } from 'lucide-react';
+import { Film, Tv, Music, BookOpen, Image, FileQuestion } from 'lucide-react';
 import { MediaCard } from '@/features/media';
-import { Library as ILibrary, Media } from '@/types';
-import { libraryService, api } from '@/services';
+import { Library as ILibrary, Card } from '@/types';
+import { libraryService, mediaService } from '@/services';
 
 export const Library: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [media, setMedia] = useState<Media[]>([]);
+    const [items, setItems] = useState<Card[]>([]);
     const [library, setLibrary] = useState<ILibrary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -24,8 +24,8 @@ export const Library: React.FC = () => {
                 const currentLib = libs.find(l => l.id === parseInt(id));
                 if (currentLib) setLibrary(currentLib);
 
-                const data = await api.get<Media[]>(`/libraries/${id}/media`);
-                setMedia(data);
+                // The server returns ready-to-render cards (series already collapsed).
+                setItems(await mediaService.libraryItems(id));
             } catch (err) {
                 console.error("Failed to fetch library data", err);
                 setError("Failed to connect to server. Please check your connection.");
@@ -41,50 +41,17 @@ export const Library: React.FC = () => {
         switch (type) {
             case 'movies': return <Film size={32} className="text-primary" />;
             case 'tv_shows': return <Tv size={32} className="text-primary" />;
+            case 'music':
             case 'music_videos': return <Music size={32} className="text-primary" />;
             case 'books': return <BookOpen size={32} className="text-primary" />;
+            case 'images': return <Image size={32} className="text-primary" />;
             default: return <FileQuestion size={32} className="text-primary" />;
         }
     };
 
-    // Grouping Logic
-    const displayedItems = useMemo(() => {
-        if (library?.library_type !== 'tv_shows' && library?.library_type !== 'books') return media;
-
-        // Show unique series
-        const seriesMap = new Map<string, Media>();
-        const looseItems: Media[] = [];
-
-        media.forEach(item => {
-            if (item.series_name) {
-                if (!seriesMap.has(item.series_name)) {
-                    seriesMap.set(item.series_name, item);
-                }
-            } else {
-                looseItems.push(item);
-            }
-        });
-
-        // Convert grouped series to items but override title for display
-        const seriesItems = Array.from(seriesMap.values()).map(item => ({
-            ...item,
-            title: item.series_name!, // Display series name as title
-            is_series_folder: true
-        }));
-
-        return [...seriesItems, ...looseItems].sort((a, b) => a.title.localeCompare(b.title));
-    }, [media, library]);
-
-    const handleItemClick = (item: Media & { is_series_folder?: boolean }) => {
-        if (item.is_series_folder) {
-            if (library?.library_type === 'books') {
-                navigate(`/book-series/${encodeURIComponent(item.series_name!)}`);
-            } else {
-                navigate(`/series/${encodeURIComponent(item.series_name!)}`);
-            }
-        } else {
-            navigate(`/media/${item.id}`);
-        }
+    const handleItemClick = (card: Card) => {
+        if (card.kind === 'series') navigate(`/series/${card.id}`);
+        else navigate(`/media/${card.id}`);
     };
 
     return (
@@ -97,7 +64,7 @@ export const Library: React.FC = () => {
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold text-primary font-heading">{library?.name || 'Library'}</h1>
-                        <p className="text-outline-variant text-sm font-label">{media.length} items</p>
+                        <p className="text-outline-variant text-sm font-label">{items.length} items</p>
                     </div>
                 </div>
 
@@ -113,23 +80,20 @@ export const Library: React.FC = () => {
                         <p className="text-xl text-error mb-2 font-heading">Connection Error</p>
                         <p className="text-outline-variant font-body">{error}</p>
                     </div>
-                ) : displayedItems.length === 0 ? (
+                ) : items.length === 0 ? (
                     <div className="text-center py-20">
                         <p className="text-xl text-outline-variant font-heading">No media found.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 md:gap-6">
-                        {displayedItems.map((item: any) => (
-                            <div
-                                key={item.id} // Note: for series folder, key is first ep id
-                                className="group cursor-pointer space-y-2"
-                            >
+                        {items.map((card) => (
+                            <div key={`${card.kind}-${card.id}`} className="group cursor-pointer space-y-2">
                                 <MediaCard
-                                    id={item.id}
-                                    title={item.title}
-                                    posterUrl={item.poster_url}
-                                    type={item.is_series_folder ? 'folder' : 'movie'}
-                                    onClick={() => handleItemClick(item)}
+                                    id={card.id}
+                                    title={card.title || ''}
+                                    posterUrl={card.poster_url}
+                                    type={card.kind === 'series' ? 'folder' : 'movie'}
+                                    onClick={() => handleItemClick(card)}
                                 />
                             </div>
                         ))}

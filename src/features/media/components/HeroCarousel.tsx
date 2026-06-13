@@ -1,18 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/shared/ui/Button';
 import { useNavigate } from 'react-router-dom';
-import { resolveImageUrl, api } from '@/services';
+import { resolveImageUrl, mediaService } from '@/services';
+import type { Card } from '@/types';
 
-interface HeroItem {
-    id: number;
-    title: string;
-    plot?: string;
-    backdrop_url?: string;
-    year?: number;
-    genre?: string; // API returns "Action, Drama" string usually
-    series_name?: string;
-    media_type?: string;
-}
+type HeroItem = Card & { backdrop_url?: string; plot?: string };
 
 export const HeroCarousel: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -22,8 +14,19 @@ export const HeroCarousel: React.FC = () => {
     useEffect(() => {
         const fetchRecent = async () => {
             try {
-                const data = await api.get<HeroItem[]>('/recent');
-                setItems(data.slice(0, 5)); // Top 5
+                const cards = (await mediaService.recent()).slice(0, 5);
+                // Cards carry no backdrop/plot; enrich the few hero items from their detail.
+                const enriched = await Promise.all(cards.map(async (c): Promise<HeroItem> => {
+                    try {
+                        const d: any = c.kind === 'series'
+                            ? await mediaService.series(c.id)
+                            : await mediaService.movie(c.id);
+                        return { ...c, backdrop_url: d?.backdrop_url, plot: d?.plot };
+                    } catch {
+                        return { ...c };
+                    }
+                }));
+                setItems(enriched);
             } catch (error) {
                 console.error("Failed to fetch carousel items", error);
             }
@@ -39,6 +42,8 @@ export const HeroCarousel: React.FC = () => {
         }, 8000);
         return () => clearInterval(interval);
     }, [items.length]);
+
+    const open = (card: Card) => navigate(card.kind === 'series' ? `/series/${card.id}` : `/media/${card.id}`);
 
     if (items.length === 0) {
         return (
@@ -61,10 +66,10 @@ export const HeroCarousel: React.FC = () => {
                         className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${isVisible ? 'opacity-100' : 'opacity-0'}`}
                         aria-hidden={!isVisible}
                     >
-                        {data.backdrop_url ? (
+                        {(data.backdrop_url || data.poster_url) ? (
                             <img
-                                src={resolveImageUrl(data.backdrop_url)}
-                                alt={data.title}
+                                src={resolveImageUrl(data.backdrop_url || data.poster_url)}
+                                alt={data.title || ''}
                                 className="w-full h-full object-cover"
                                 loading={index === 0 ? 'eager' : 'lazy'}
                                 decoding="async"
@@ -85,14 +90,12 @@ export const HeroCarousel: React.FC = () => {
                 <div className="max-w-2xl space-y-2 sm:space-y-3 md:space-y-4 animate-fade-in">
                     {/* Meta Info */}
                     <div className="flex items-center flex-wrap gap-2 text-xs sm:text-sm md:text-base text-outline-variant font-label">
-                        {item.media_type && (
+                        {item.kind && (
                             <span className="bg-surface backdrop-blur-surface px-2 py-0.5 sm:py-1 rounded border border-outline uppercase text-[10px] sm:text-xs tracking-wider">
-                                {item.media_type}
+                                {item.kind}
                             </span>
                         )}
                         {item.year && <span>{item.year}</span>}
-                        {(item.year || item.media_type) && item.genre && <span>•</span>}
-                        {item.genre && <span className="truncate max-w-[200px] sm:max-w-none">{item.genre}</span>}
                     </div>
 
                     {/* Title */}
@@ -112,7 +115,7 @@ export const HeroCarousel: React.FC = () => {
                         <Button
                             size="lg"
                             className="px-6 sm:px-8 bg-primary text-on-primary shadow-[0_0_20px_rgba(255,255,255,0.2)] font-heading rounded-xl"
-                            onClick={() => navigate(item.series_name ? `/series/${item.series_name}` : `/media/${item.id}`)}
+                            onClick={() => open(item)}
                         >
                             Play Now
                         </Button>
@@ -120,7 +123,7 @@ export const HeroCarousel: React.FC = () => {
                             size="lg"
                             variant="secondary"
                             className="bg-surface backdrop-blur-surface border border-outline text-primary hover:bg-white/10 shadow-inner font-heading rounded-xl"
-                            onClick={() => navigate(item.series_name ? `/series/${item.series_name}` : `/media/${item.id}`)}
+                            onClick={() => open(item)}
                         >
                             More Info
                         </Button>

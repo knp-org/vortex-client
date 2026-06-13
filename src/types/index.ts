@@ -6,9 +6,15 @@ export type { Library, LibraryType, ReadingMode, CreateLibraryRequest, UpdateLib
 
 // Media Types
 export type {
-    Media,
+    Card,
+    CreditDto,
+    MovieDetail,
+    BookDetail,
+    ContinueItem,
     MediaType,
-    CastMember,
+    MediaInfo,
+    AudioStream,
+    VideoStream,
     SeriesDetail,
     Season,
     Episode,

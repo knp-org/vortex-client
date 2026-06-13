@@ -69,8 +69,8 @@ export const EpisodesSection: React.FC<EpisodesSectionProps> = ({
                                 onClick={() => onPlay(Number(episode.id))}
                             >
                                 <div className="relative aspect-video rounded-lg overflow-hidden mb-3">
-                                    {episode.poster_url ? (
-                                        <img src={resolveImageUrl(episode.poster_url)} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                    {episode.still_url ? (
+                                        <img src={resolveImageUrl(episode.still_url)} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                     ) : (
                                         <div className="w-full h-full bg-surface/50 border border-outline flex items-center justify-center text-outline-variant font-body">No Image</div>
                                     )}

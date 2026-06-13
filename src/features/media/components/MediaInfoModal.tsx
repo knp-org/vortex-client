@@ -1,12 +1,24 @@
 import React, { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, FileVideo, Music, Copy, Monitor } from 'lucide-react';
-import { Media, MediaInfo } from '@/types/media';
+import { MediaInfo } from '@/types/media';
+
+/**
+ * Minimal shape this modal needs. `media_info` is an ffprobe JSON blob; with the
+ * per-type API it is no longer returned on the detail record, so the stream sections
+ * degrade to "No info" until rewired to `/stream/:id/info`.
+ */
+interface MediaInfoData {
+    title?: string;
+    file_path?: string;
+    runtime?: number;
+    media_info?: string;
+}
 
 interface MediaInfoModalProps {
     isOpen: boolean;
     onClose: () => void;
-    media: Media;
+    media: MediaInfoData;
 }
 
 export const MediaInfoModal: React.FC<MediaInfoModalProps> = ({

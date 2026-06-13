@@ -7,8 +7,8 @@ export interface MediaItem {
     posterUrl: string;
     progress?: number; // 0-100
     subtitle?: string;
-    isSeries?: boolean;
-    seriesName?: string;
+    /** Server card kind: movie | series | episode | book | music_video. */
+    kind?: string;
 }
 
 interface ContentRowProps {
@@ -76,7 +76,7 @@ export const ContentRow: React.FC<ContentRowProps> = ({ title, items, isContinue
                             posterUrl={item.posterUrl}
                             subtitle={item.subtitle}
                             progress={isContinueWatching ? item.progress : undefined}
-                            type={item.isSeries ? 'series' : 'movie'}
+                            type={item.kind === 'series' ? 'series' : item.kind === 'book' ? 'movie' : 'movie'}
                             onClick={() => onItemClick && onItemClick(item)}
                         />
                     </div>

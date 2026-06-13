@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Settings2, Subtitles, MonitorPlay, Save } from 'lucide-react';
+import { Settings2, Subtitles, MonitorPlay, Save } from 'lucide-react';
 import { Select } from '@/shared/ui/Select';
 import { Toggle } from '@/shared/ui/Toggle';
 import { Button } from '@/shared/ui/Button';
@@ -58,11 +58,8 @@ export const PlayerTab: React.FC = () => {
     return (
         <div className="space-y-8 animate-fade-in">
             <div>
-                <h3 className="text-2xl font-bold text-primary mb-2 font-heading flex items-center gap-2">
-                    <Play size={24} />
-                    Player Settings
-                </h3>
-                <p className="text-outline-variant font-body">
+                <h3 className="text-2xl font-bold text-primary font-heading">Player Settings</h3>
+                <p className="text-outline-variant text-sm mt-1 font-body">
                     Configure your viewing experience and playback preferences.
                 </p>
             </div>
@@ -75,8 +72,8 @@ export const PlayerTab: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Playback Configuration */}
-                <div className="bg-surface/50 border border-outline rounded-2xl p-6 shadow-inner space-y-6">
-                    <h4 className="text-lg font-bold text-primary border-b border-outline pb-2 flex items-center gap-2 font-heading">
+                <div className="bg-surface/50 backdrop-blur-surface border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] rounded-3xl p-6 space-y-6">
+                    <h4 className="text-lg font-bold text-primary flex items-center gap-2 font-heading">
                         <Settings2 size={18} />
                         Playback
                     </h4>
@@ -140,8 +137,8 @@ export const PlayerTab: React.FC = () => {
                 </div>
 
                 {/* Subtitles & Display */}
-                <div className="bg-surface/50 border border-outline rounded-2xl p-6 shadow-inner space-y-6">
-                    <h4 className="text-lg font-bold text-primary border-b border-outline pb-2 flex items-center gap-2 font-heading">
+                <div className="bg-surface/50 backdrop-blur-surface border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] rounded-3xl p-6 space-y-6">
+                    <h4 className="text-lg font-bold text-primary flex items-center gap-2 font-heading">
                         <Subtitles size={18} />
                         Subtitles & Display
                     </h4>
@@ -184,9 +181,7 @@ export const PlayerTab: React.FC = () => {
                     onClick={handleSave}
                     disabled={isSaving}
                     variant="primary"
-                    size="lg"
                     icon={Save}
-                    className="font-bold rounded-full"
                 >
                     {isSaving ? 'Saving...' : 'Save Player Settings'}
                 </Button>

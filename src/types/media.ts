@@ -1,40 +1,117 @@
-// Media Types
+// Media Types — aligned with the server's per-type catalog API.
 
-export interface Media {
+/**
+ * A lightweight card returned by listing/recent/search endpoints. `kind` tells you
+ * which detail view to open and how to read `id`:
+ *  - movie | episode | book | music_video -> id is a media item id (`/media/:id`)
+ *  - series -> id is a series id (`/series/:id/detail`)
+ */
+export interface Card {
     id: number;
-    title: string;
-    file_path?: string;
+    kind: 'movie' | 'series' | 'episode' | 'book' | 'music_video' | string;
+    title?: string;
+    poster_url?: string;
+    year?: number;
+    stream_url?: string;
+}
+
+export interface CreditDto {
+    name: string;
+    character?: string;
+    role?: string;
+    profile_url?: string;
+    ord?: number;
+}
+
+export interface MovieDetail {
+    id: number;
+    title?: string;
+    year?: number;
+    plot?: string;
+    tagline?: string;
+    runtime?: number;
+    rating?: number;
+    age_rating?: string;
+    studio?: string;
+    collection_name?: string;
+    origin_country?: string;
+    creator?: string;
+    poster_url?: string;
+    backdrop_url?: string;
+    trailer_url?: string;
+    provider_ids?: string; // JSON string from the server
+    genres: string[];
+    cast: CreditDto[];
+    stream_url: string;
+}
+
+export interface Season {
+    id: number;
+    season_number: number;
+    episode_count: number;
+    poster_url?: string;
+}
+
+export interface SeriesDetail {
+    id: number;
+    name: string;
+    year?: number;
     plot?: string;
     poster_url?: string;
     backdrop_url?: string;
-    still_url?: string;
-    runtime?: number;
-    stream_url?: string;
-    year?: string;
-    genres?: string[];
-    media_type?: MediaType;
-    provider_ids?: Record<string, string | number>;
-    cast?: string;
-    director?: string;
-    series_name?: string;
-    season_number?: number;
-    episode_number?: number;
-    season_count?: number;
-    media_info?: string; // JSON string from backend
-    // Books
-    page_count?: number;
-    reading_mode?: string;
-    
-    // Extended Metadata
+    rating?: number;
     age_rating?: string;
     studio?: string;
     trailer_url?: string;
-    origin_country?: string;
     collection_name?: string;
+    origin_country?: string;
     creator?: string;
-    tags?: string;
+    provider_ids?: string;
+    genres: string[];
+    tags: string[];
+    cast: CreditDto[];
+    seasons: Season[];
 }
 
+export interface Episode {
+    id: number;
+    series_id?: number;
+    series_name?: string;
+    season_number?: number;
+    episode_number?: number;
+    title?: string;
+    plot?: string;
+    still_url?: string;
+    runtime?: number;
+    air_date?: string;
+    stream_url?: string;
+}
+
+export interface BookDetail {
+    id: number;
+    title?: string;
+    plot?: string;
+    poster_url?: string;
+    page_count?: number;
+    reading_mode?: string;
+    publisher?: string;
+    published_date?: string;
+    isbn?: string;
+}
+
+/** Per-user "continue watching" entry. */
+export interface ContinueItem {
+    id: number;
+    kind: string;
+    title?: string;
+    poster_url?: string;
+    position: number;
+    total_duration: number;
+    reading_style?: string;
+    stream_url: string;
+}
+
+// Detailed media info produced by the server's ffprobe path (transcode endpoints).
 export interface MediaInfo {
     container?: string;
     size?: number;
@@ -74,56 +151,15 @@ export interface AudioStream {
     forced: boolean;
 }
 
-export type MediaType = 'movie' | 'episode' | 'series' | 'book';
+export type MediaType = 'movie' | 'episode' | 'series' | 'book' | 'music_video';
 
-export interface CastMember {
-    name: string;
-    character: string;
-    role: string;
-    profile_url?: string;
-    order: number;
-}
-
-export interface SeriesDetail {
-    name: string;
-    poster_url?: string;
-    backdrop_url?: string;
-    plot?: string;
-    year?: string;
-    genres?: string[];
-    cast?: string;
-    director?: string;
-    age_rating?: string;
-    studio?: string;
-    trailer_url?: string;
-    origin_country?: string;
-    collection_name?: string;
-    creator?: string;
-    tags?: string;
-    seasons: Season[];
-}
-
-export interface Season {
-    season_number: number;
-    episode_count: number;
-    poster_url?: string;
-}
-
-export interface Episode {
-    id: number;
-    title: string;
-    episode_number: number;
-    poster_url?: string;
-    plot?: string;
-    file_path: string;
-}
-
-// Used in ContentRow and Dashboard
+// UI card model used by ContentRow / Dashboard carousels.
 export interface MediaItem {
     id: string;
     title: string;
     posterUrl: string;
+    progress?: number; // 0-100
     subtitle?: string;
-    isSeries?: boolean;
-    seriesName?: string;
+    /** kind from the server card, so click handlers know where to navigate. */
+    kind?: string;
 }

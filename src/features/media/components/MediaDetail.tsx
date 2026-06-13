@@ -4,7 +4,7 @@ import { Button } from '@/shared/ui/Button';
 import { IdentifyModal } from './IdentifyModal';
 import { CastRow } from './CastRow';
 import { EpisodesSection } from './EpisodesSection';
-import { ArrowLeft, Play, BookOpen, Search, PlusCircle, Heart, MoreVertical, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Play, BookOpen, Search, Heart, MoreVertical, RefreshCw } from 'lucide-react';
 import { resolveImageUrl } from '@/services';
 import { useMediaDetail } from '../hooks/useMediaDetail';
 
@@ -16,6 +16,7 @@ export const MediaDetail: React.FC = () => {
         isSeasonOpen, setIsSeasonOpen,
         isIdentifyOpen, setIsIdentifyOpen, isMenuOpen, setIsMenuOpen,
         parsedCast, handleIdentify, handleRefresh, handlePlay,
+        isFavorite, toggleFavorite,
     } = useMediaDetail();
 
     if (isLoading) {
@@ -65,8 +66,10 @@ export const MediaDetail: React.FC = () => {
     const rawGenres = isSeries ? series?.genres : media?.genres;
     const genres = parseGenres(rawGenres);
 
-    const rawDirector = isSeries ? series?.director : media?.director;
-    const director = parseGenres(rawDirector); // Reuse parseGenres logic as it handles JSON/Strings/Arrays similarly
+    // Directors come from the structured credits (role = "Director").
+    const director = parsedCast
+        .filter(c => (c.role || '').toLowerCase() === 'director')
+        .map(c => c.name);
 
     const ageRating = isSeries ? series?.age_rating : media?.age_rating;
     const studio = isSeries ? series?.studio : media?.studio;
@@ -76,10 +79,8 @@ export const MediaDetail: React.FC = () => {
     const creatorRaw = isSeries ? series?.creator : media?.creator;
     const creator = parseGenres(creatorRaw);
 
-    // Book-specific display values.
-    const bookFormat = isBook
-        ? media?.file_path?.split('.').pop()?.toUpperCase() || undefined
-        : undefined;
+    // Book-specific display values (format/pages come from the book info endpoint).
+    const bookFormat = isBook ? bookInfo?.format?.toUpperCase() : undefined;
     const pageCount = bookInfo?.page_count ?? media?.page_count;
 
 
@@ -221,15 +222,22 @@ export const MediaDetail: React.FC = () => {
                                     </button>
                                 )}
 
-                                {/* Extra Actions (Visual only for now matching design) */}
-                                <div className="flex items-center gap-2 ml-auto md:ml-0">
-                                    <button className="p-2 rounded-full hover:bg-surface/50 backdrop-blur-surface border border-transparent hover:border-outline transition-colors text-outline-variant hover:text-primary">
-                                        <PlusCircle size={20} />
-                                    </button>
-                                    <button className="p-2 rounded-full hover:bg-surface/50 backdrop-blur-surface border border-transparent hover:border-outline transition-colors text-outline-variant hover:text-primary">
-                                        <Heart size={20} />
-                                    </button>
-                                </div>
+                                {/* Extra Actions */}
+                                {!isSeries && (
+                                    <div className="flex items-center gap-2 ml-auto md:ml-0">
+                                        <button
+                                            onClick={toggleFavorite}
+                                            title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                            className={`p-2 rounded-full hover:bg-surface/50 backdrop-blur-surface border transition-colors ${
+                                                isFavorite
+                                                    ? 'text-red-400 border-red-400/30'
+                                                    : 'text-outline-variant hover:text-primary border-transparent hover:border-outline'
+                                            }`}
+                                        >
+                                            <Heart size={20} className={isFavorite ? 'fill-current' : ''} />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Details/File Info Grid */}
