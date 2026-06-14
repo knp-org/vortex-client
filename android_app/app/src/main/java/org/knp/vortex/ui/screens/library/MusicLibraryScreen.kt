@@ -38,6 +38,7 @@ import org.knp.vortex.data.remote.PlaylistDto
 import org.knp.vortex.data.remote.TrackDto
 import org.knp.vortex.data.repository.MediaRepository
 import org.knp.vortex.ui.components.ModernMediaCard
+import org.knp.vortex.ui.theme.DeepBackground
 import javax.inject.Inject
 
 // Music libraries can be browsed as Artists (grid), a flat Songs list, or the user's Playlists.
@@ -136,16 +137,21 @@ fun MusicLibraryScreen(
 
     LaunchedEffect(libraryId) { viewModel.load(libraryId) }
 
-    // Track whose "+" icon was tapped; non-null shows the add-to-playlist bottom sheet.
-    var addToPlaylistTrackId by remember { mutableStateOf<Long?>(null) }
+    // Tracks queued for the add-to-playlist bottom sheet; non-null/non-empty shows it.
+    // Holds a single id for a row's "+" tap, or many ids for a multi-select bulk add.
+    var addToPlaylistTrackIds by remember { mutableStateOf<List<Long>?>(null) }
+    // Multi-select state for the Songs list.
+    var selectionMode by remember { mutableStateOf(false) }
+    var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    val exitSelection = { selectionMode = false; selectedIds = emptySet() }
     // Whether the "create playlist" dialog is open (Playlists tab).
     var showCreatePlaylist by remember { mutableStateOf(false) }
     var newPlaylistName by remember { mutableStateOf("") }
 
     val dialogs: @Composable () -> Unit = {
         AddToPlaylistAndCreateDialogs(
-            addToPlaylistTrackId = addToPlaylistTrackId,
-            onDismissSheet = { addToPlaylistTrackId = null },
+            addToPlaylistTrackIds = addToPlaylistTrackIds,
+            onDismissSheet = { addToPlaylistTrackIds = null; if (selectionMode) exitSelection() },
             showCreatePlaylist = showCreatePlaylist,
             newPlaylistName = newPlaylistName,
             onNameChange = { newPlaylistName = it },
@@ -171,20 +177,41 @@ fun MusicLibraryScreen(
                     uiState.songsLoading -> LibraryLoading()
                     uiState.tracks.isEmpty() -> LibraryEmpty("No songs in this library.")
                     else -> {
-                        LazyColumn(
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            itemsIndexed(uiState.tracks) { index, track ->
-                                SongRow(
-                                    track = track,
-                                    serverUrl = uiState.serverUrl,
-                                    onClick = {
-                                        viewModel.playSong(index, displayTitle)
-                                        onPlaySong()
-                                    },
-                                    onAddToPlaylist = { addToPlaylistTrackId = track.id }
-                                )
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            org.knp.vortex.ui.components.TrackSelectionBar(
+                                selectionMode = selectionMode,
+                                selectedCount = selectedIds.size,
+                                allSelected = selectedIds.size == uiState.tracks.size && uiState.tracks.isNotEmpty(),
+                                onEnterSelection = { selectionMode = true },
+                                onToggleAll = {
+                                    selectedIds = if (selectedIds.size == uiState.tracks.size) emptySet()
+                                    else uiState.tracks.map { it.id }.toSet()
+                                },
+                                onAdd = { addToPlaylistTrackIds = selectedIds.toList() },
+                                onCancel = exitSelection
+                            )
+                            LazyColumn(
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                itemsIndexed(uiState.tracks) { index, track ->
+                                    SongRow(
+                                        track = track,
+                                        serverUrl = uiState.serverUrl,
+                                        selectionMode = selectionMode,
+                                        selected = track.id in selectedIds,
+                                        onClick = {
+                                            if (selectionMode) {
+                                                selectedIds = if (track.id in selectedIds) selectedIds - track.id
+                                                else selectedIds + track.id
+                                            } else {
+                                                viewModel.playSong(index, displayTitle)
+                                                onPlaySong()
+                                            }
+                                        },
+                                        onAddToPlaylist = { addToPlaylistTrackIds = listOf(track.id) }
+                                    )
+                                }
                             }
                         }
                     }
@@ -288,6 +315,8 @@ private fun MusicViewTab(label: String, active: Boolean, onClick: () -> Unit) {
 private fun SongRow(
     track: TrackDto,
     serverUrl: String,
+    selectionMode: Boolean,
+    selected: Boolean,
     onClick: () -> Unit,
     onAddToPlaylist: () -> Unit
 ) {
@@ -299,6 +328,18 @@ private fun SongRow(
             .padding(vertical = 8.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (selectionMode) {
+            Checkbox(
+                checked = selected,
+                onCheckedChange = { onClick() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = Color.White,
+                    uncheckedColor = Color.White.copy(alpha = 0.5f),
+                    checkmarkColor = DeepBackground
+                )
+            )
+            Spacer(Modifier.width(4.dp))
+        }
         val cover = org.knp.vortex.utils.formatImageUrl(track.cover_url, serverUrl)
         Box(
             modifier = Modifier
@@ -348,12 +389,14 @@ private fun SongRow(
             Spacer(Modifier.width(8.dp))
             Text(dur, color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.labelSmall)
         }
-        IconButton(onClick = onAddToPlaylist) {
-            Icon(
-                Icons.AutoMirrored.Filled.PlaylistAdd,
-                contentDescription = "Add to playlist",
-                tint = Color.White.copy(alpha = 0.7f)
-            )
+        if (!selectionMode) {
+            IconButton(onClick = onAddToPlaylist) {
+                Icon(
+                    Icons.AutoMirrored.Filled.PlaylistAdd,
+                    contentDescription = "Add to playlist",
+                    tint = Color.White.copy(alpha = 0.7f)
+                )
+            }
         }
     }
 }
@@ -406,7 +449,7 @@ private fun PlaylistRow(
 /** Shared rendering of the add-to-playlist bottom sheet and the create-playlist dialog. */
 @Composable
 private fun AddToPlaylistAndCreateDialogs(
-    addToPlaylistTrackId: Long?,
+    addToPlaylistTrackIds: List<Long>?,
     onDismissSheet: () -> Unit,
     showCreatePlaylist: Boolean,
     newPlaylistName: String,
@@ -414,9 +457,9 @@ private fun AddToPlaylistAndCreateDialogs(
     onCancelCreate: () -> Unit,
     onConfirmCreate: () -> Unit
 ) {
-    if (addToPlaylistTrackId != null) {
+    if (!addToPlaylistTrackIds.isNullOrEmpty()) {
         org.knp.vortex.ui.components.AddToPlaylistSheet(
-            trackId = addToPlaylistTrackId,
+            trackIds = addToPlaylistTrackIds,
             onDismiss = onDismissSheet
         )
     }

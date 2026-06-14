@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,23 +51,33 @@ class AddToPlaylistViewModel @Inject constructor(
         }
     }
 
-    /** Adds [trackId] to [playlistId]; invokes [onDone] on success. */
-    fun addToPlaylist(playlistId: Long, trackId: Long, onDone: () -> Unit) {
+    /** Adds every track in [trackIds] to [playlistId]; invokes [onDone] on success. */
+    fun addToPlaylist(playlistId: Long, trackIds: List<Long>, onDone: () -> Unit) {
         viewModelScope.launch {
-            repository.addTrackToPlaylist(playlistId, trackId)
-                .onSuccess { onDone() }
-                .onFailure { _uiState.value = _uiState.value.copy(error = it.message) }
+            for (trackId in trackIds) {
+                val result = repository.addTrackToPlaylist(playlistId, trackId)
+                if (result.isFailure) {
+                    _uiState.value = _uiState.value.copy(error = result.exceptionOrNull()?.message)
+                    return@launch
+                }
+            }
+            onDone()
         }
     }
 
-    /** Creates a playlist, adds [trackId] to it, then invokes [onDone]. */
-    fun createAndAdd(name: String, trackId: Long, onDone: () -> Unit) {
+    /** Creates a playlist, adds every track in [trackIds] to it, then invokes [onDone]. */
+    fun createAndAdd(name: String, trackIds: List<Long>, onDone: () -> Unit) {
         viewModelScope.launch {
             repository.createPlaylist(name)
                 .onSuccess { playlist ->
-                    repository.addTrackToPlaylist(playlist.id, trackId)
-                        .onSuccess { onDone() }
-                        .onFailure { _uiState.value = _uiState.value.copy(error = it.message) }
+                    for (trackId in trackIds) {
+                        val result = repository.addTrackToPlaylist(playlist.id, trackId)
+                        if (result.isFailure) {
+                            _uiState.value = _uiState.value.copy(error = result.exceptionOrNull()?.message)
+                            return@onSuccess
+                        }
+                    }
+                    onDone()
                 }
                 .onFailure { _uiState.value = _uiState.value.copy(error = it.message) }
         }
@@ -73,13 +85,14 @@ class AddToPlaylistViewModel @Inject constructor(
 }
 
 /**
- * Bottom sheet that lets the user add [trackId] to one of their playlists, or create a new
- * playlist on the spot. Shared by every track row (Songs list, album detail) and the music player.
+ * Bottom sheet that lets the user add one or more [trackIds] to one of their playlists, or create a
+ * new playlist on the spot. Shared by every track row (Songs list, album detail), the multi-select
+ * action bar, and the music player.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddToPlaylistSheet(
-    trackId: Long,
+    trackIds: List<Long>,
     onDismiss: () -> Unit,
     viewModel: AddToPlaylistViewModel = hiltViewModel()
 ) {
@@ -102,7 +115,7 @@ fun AddToPlaylistSheet(
                 .padding(bottom = 24.dp)
         ) {
             Text(
-                "Add to playlist",
+                if (trackIds.size > 1) "Add ${trackIds.size} tracks to playlist" else "Add to playlist",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleLarge,
@@ -125,7 +138,7 @@ fun AddToPlaylistSheet(
                     Spacer(Modifier.width(8.dp))
                     TextButton(
                         enabled = newName.isNotBlank(),
-                        onClick = { viewModel.createAndAdd(newName.trim(), trackId, onDismiss) }
+                        onClick = { viewModel.createAndAdd(newName.trim(), trackIds, onDismiss) }
                     ) {
                         Text("Create & add", color = if (newName.isNotBlank()) Color.White else Color.White.copy(alpha = 0.4f))
                     }
@@ -172,7 +185,7 @@ fun AddToPlaylistSheet(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { viewModel.addToPlaylist(playlist.id, trackId, onDismiss) }
+                                    .clickable { viewModel.addToPlaylist(playlist.id, trackIds, onDismiss) }
                                     .padding(vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -198,6 +211,62 @@ fun AddToPlaylistSheet(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Toolbar shown above a track list. Out of selection mode it offers a "Select" entry point; while
+ * selecting it shows the count and drives select-all / bulk add / cancel. Shared by the Songs list
+ * and album detail so multi-select behaves identically everywhere.
+ */
+@Composable
+fun TrackSelectionBar(
+    selectionMode: Boolean,
+    selectedCount: Int,
+    allSelected: Boolean,
+    onEnterSelection: () -> Unit,
+    onToggleAll: () -> Unit,
+    onAdd: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (!selectionMode) {
+            Spacer(Modifier.weight(1f))
+            TextButton(onClick = onEnterSelection) {
+                Icon(Icons.Filled.Checklist, contentDescription = null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Select", color = Color.White.copy(alpha = 0.8f))
+            }
+        } else {
+            TextButton(onClick = onToggleAll) {
+                Text(if (allSelected) "Clear" else "All", color = Color.White.copy(alpha = 0.8f))
+            }
+            Text(
+                "$selectedCount selected",
+                color = Color.White.copy(alpha = 0.7f),
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(Modifier.weight(1f))
+            TextButton(enabled = selectedCount > 0, onClick = onAdd) {
+                Icon(
+                    Icons.AutoMirrored.Filled.PlaylistAdd,
+                    contentDescription = null,
+                    tint = if (selectedCount > 0) Color.White else Color.White.copy(alpha = 0.4f),
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text("Add", color = if (selectedCount > 0) Color.White else Color.White.copy(alpha = 0.4f))
+            }
+            IconButton(onClick = onCancel) {
+                Icon(Icons.Filled.Close, contentDescription = "Cancel", tint = Color.White.copy(alpha = 0.8f))
             }
         }
     }

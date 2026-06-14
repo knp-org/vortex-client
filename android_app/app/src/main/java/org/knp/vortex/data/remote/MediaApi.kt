@@ -50,6 +50,14 @@ interface MediaApi {
     @POST("$API_VERSION/scan")
     suspend fun scanLibraries()
 
+    // Scan a single library for new files (only fetches metadata not fetched before).
+    @POST("$API_VERSION/libraries/{id}/scan")
+    suspend fun scanLibrary(@Path("id") id: Long)
+
+    // Force-refresh metadata for every item in a single library.
+    @POST("$API_VERSION/libraries/{id}/refresh")
+    suspend fun refreshLibrary(@Path("id") id: Long)
+
     @retrofit2.http.DELETE("$API_VERSION/libraries/{id}")
     suspend fun deleteLibrary(@Path("id") id: Long): retrofit2.Response<Unit>
 

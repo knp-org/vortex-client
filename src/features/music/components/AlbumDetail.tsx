@@ -79,6 +79,7 @@ export const AlbumDetail: React.FC = () => {
                         isPlaying={player.isPlaying}
                         onPlay={(i) => player.playQueue(album.tracks, i)}
                         onAdd={(itemId) => setAddItems([itemId])}
+                        onAddMany={setAddItems}
                     />
                 </div>
             </div>

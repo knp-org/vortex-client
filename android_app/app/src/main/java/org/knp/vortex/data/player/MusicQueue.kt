@@ -19,9 +19,19 @@ class MusicQueue @Inject constructor() {
     var title: String = "Now Playing"
         private set
 
+    /**
+     * Bumped on every [set] so the player can tell an explicit "play this track"
+     * request apart from a re-attach (config-change recomposition). Lets it honor
+     * the chosen [startIndex] even when the track list is unchanged — e.g. tapping
+     * a different song in the same library "Songs" list or album.
+     */
+    var requestId: Long = 0L
+        private set
+
     fun set(tracks: List<TrackDto>, startIndex: Int, title: String = "Now Playing") {
         this.tracks = tracks
         this.startIndex = startIndex.coerceIn(0, (tracks.size - 1).coerceAtLeast(0))
         this.title = title
+        requestId++
     }
 }

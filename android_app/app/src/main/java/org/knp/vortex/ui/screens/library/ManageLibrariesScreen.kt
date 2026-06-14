@@ -32,6 +32,7 @@ fun ManageLibrariesScreen(
     onBack: () -> Unit,
     onAddLibrary: () -> Unit,
     onEditLibrary: (Long) -> Unit,
+    onOpenLibrary: (Long, String) -> Unit,
     viewModel: ManageLibrariesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -136,8 +137,9 @@ fun ManageLibrariesScreen(
                             name = lib.name,
                             path = lib.paths.joinToString(", "),
                             type = lib.library_type,
+                            onClick = { onOpenLibrary(lib.id, lib.name) },
                             onEdit = { onEditLibrary(lib.id) },
-                            onDelete = { 
+                            onDelete = {
                                 libraryToDeleteId = lib.id
                                 libraryToDeleteName = lib.name
                             }
@@ -212,10 +214,12 @@ fun LibraryItem(
     name: String,
     path: String,
     type: String,
+    onClick: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     GlassyCard(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
     ) {

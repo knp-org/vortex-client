@@ -84,10 +84,11 @@ fun LibraryEmpty(message: String) {
 fun PosterGrid(
     modifier: Modifier = Modifier,
     minCellSize: androidx.compose.ui.unit.Dp = 120.dp,
+    fixedColumns: Int? = null,
     content: LazyGridScope.() -> Unit
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = minCellSize),
+        columns = if (fixedColumns != null) GridCells.Fixed(fixedColumns) else GridCells.Adaptive(minSize = minCellSize),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),

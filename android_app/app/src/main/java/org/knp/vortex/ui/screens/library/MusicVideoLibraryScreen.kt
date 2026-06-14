@@ -8,7 +8,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -62,8 +61,8 @@ fun MusicVideoLibraryScreen(
             uiState.isLoading -> LibraryLoading()
             uiState.error != null -> LibraryError(uiState.error)
             else -> {
-                // Music videos are landscape, so use wider columns and 16:9 cards.
-                PosterGrid(minCellSize = 200.dp) {
+                // Music videos are landscape, so use a fixed 2-column grid with 16:9 cards.
+                PosterGrid(fixedColumns = 2) {
                     items(uiState.cards) { card ->
                         ModernMediaCard(
                             title = card.title,

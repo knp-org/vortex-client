@@ -125,6 +125,10 @@ class MediaRepository @Inject constructor(
 
     suspend fun scanLibraries() = runCatching { api.scanLibraries() }
 
+    suspend fun scanLibrary(id: Long) = runCatching { api.scanLibrary(id) }
+
+    suspend fun refreshLibrary(id: Long) = runCatching { api.refreshLibrary(id) }
+
     suspend fun deleteLibrary(id: Long) = runCatching { 
         val response = api.deleteLibrary(id)
         if (!response.isSuccessful) throw Exception("Delete failed: ${response.code()}")

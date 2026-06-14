@@ -47,8 +47,9 @@ export const MusicPlayerBar: React.FC = () => {
             {/* Controls + progress */}
             <div className="flex-1 flex flex-col items-center gap-1 min-w-0">
                 <div className="flex items-center gap-3 text-outline-variant">
-                    <button onClick={p.toggleShuffle} title="Shuffle" className={`p-1.5 rounded-full hover:text-primary transition-colors ${p.shuffle ? 'text-primary' : ''}`}>
+                    <button onClick={p.toggleShuffle} title="Shuffle" className={`relative p-1.5 rounded-full transition-colors ${p.shuffle ? 'text-primary bg-primary/15' : 'hover:text-primary'}`}>
                         <Shuffle size={16} />
+                        {p.shuffle && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />}
                     </button>
                     <button onClick={p.prev} title="Previous" className="p-1.5 rounded-full hover:text-primary transition-colors">
                         <SkipBack size={18} className="fill-current" />
@@ -66,8 +67,9 @@ export const MusicPlayerBar: React.FC = () => {
                     <button onClick={p.next} title="Next" className="p-1.5 rounded-full hover:text-primary transition-colors">
                         <SkipForward size={18} className="fill-current" />
                     </button>
-                    <button onClick={p.cycleRepeat} title={`Repeat: ${p.repeat}`} className={`p-1.5 rounded-full hover:text-primary transition-colors ${p.repeat !== 'off' ? 'text-primary' : ''}`}>
+                    <button onClick={p.cycleRepeat} title={`Repeat: ${p.repeat}`} className={`relative p-1.5 rounded-full transition-colors ${p.repeat !== 'off' ? 'text-primary bg-primary/15' : 'hover:text-primary'}`}>
                         {p.repeat === 'one' ? <Repeat1 size={16} /> : <Repeat size={16} />}
+                        {p.repeat !== 'off' && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />}
                     </button>
                 </div>
 

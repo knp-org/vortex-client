@@ -20,9 +20,10 @@ import androidx.navigation.navArgument
 import org.knp.vortex.ui.theme.MediaServerTheme
 import org.knp.vortex.ui.screens.home.HomeScreen
 import org.knp.vortex.ui.screens.library.ManageLibrariesScreen
+import org.knp.vortex.ui.screens.library.ManageLibraryScreen
 import org.knp.vortex.ui.screens.library.CreateLibraryScreen
 import org.knp.vortex.ui.screens.library.LibraryScreen
-import org.knp.vortex.ui.screens.settings.SettingsScreen
+import org.knp.vortex.ui.screens.settings.ProfileScreen
 import org.knp.vortex.ui.screens.settings.PlayerSettingsScreen
 import org.knp.vortex.ui.screens.settings.ServerConfigScreen
 import org.knp.vortex.ui.screens.settings.LibrarySettingsScreen
@@ -186,7 +187,7 @@ fun AppNavigation() {
                          icon = androidx.compose.material.icons.Icons.Default.Search,
                          label = "Search"
                      )
-                      org.knp.vortex.ui.components.GlassyBottomNavItem(
+                     org.knp.vortex.ui.components.GlassyBottomNavItem(
                          selected = currentDestination?.route == "settings",
                          onClick = { navController.navigate("settings") { 
                             popUpTo(navController.graph.startDestinationId) { saveState = true }
@@ -266,7 +267,7 @@ fun AppNavigation() {
             )
         }
         composable("settings") {
-            SettingsScreen(
+            ProfileScreen(
                 onBack = { navController.popBackStack() },
                 onNavigateToServerConfig = { navController.navigate("settings/server") },
                 onNavigateToLibrarySettings = { navController.navigate("manage_libraries") },
@@ -302,7 +303,27 @@ fun AppNavigation() {
             ManageLibrariesScreen(
                 onBack = { navController.popBackStack() },
                 onAddLibrary = { navController.navigate("create_library") },
-                onEditLibrary = { id -> navController.navigate("create_library?libraryId=$id") }
+                onEditLibrary = { id -> navController.navigate("create_library?libraryId=$id") },
+                onOpenLibrary = { id, name ->
+                    val encodedName = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
+                    navController.navigate("manage_library/$id/$encodedName")
+                }
+            )
+        }
+
+        composable(
+            route = "manage_library/{libId}/{libName}",
+            arguments = listOf(
+                navArgument("libId") { type = NavType.LongType },
+                navArgument("libName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val libId = backStackEntry.arguments?.getLong("libId") ?: return@composable
+            val libName = URLDecoder.decode(backStackEntry.arguments?.getString("libName") ?: "", StandardCharsets.UTF_8.toString())
+            ManageLibraryScreen(
+                libraryId = libId,
+                libraryName = libName,
+                onBack = { navController.popBackStack() }
             )
         }
 

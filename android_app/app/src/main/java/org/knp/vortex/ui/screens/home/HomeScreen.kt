@@ -212,10 +212,22 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
                         item {
-                            // Only typed items (MediaItemDto carries library_type) so the
-                            // carousel always routes to the right detail screen and TV
-                            // shows / Books never get confused for one another.
-                            val rawItems = uiState.recentlyAdded.take(10)
+                            // Hero carousel features Movies and TV shows only. The recent
+                            // feed can be dominated by other types (e.g. music videos), so
+                            // source from the movie libraries and TV-show series directly.
+                            // Typed items (MediaItemDto / SeriesDto) keep the carousel routing
+                            // correct so movies and shows never get confused for one another.
+                            val movieItems = uiState.libraries
+                                .filter { it.library_type == "movies" }
+                                .flatMap { uiState.libraryContent[it.id].orEmpty() }
+                                .filter { it.media_type == "movie" }
+                            val seriesItems = uiState.libraries
+                                .filter { it.library_type == "tv_shows" }
+                                .flatMap { uiState.librarySeries[it.id].orEmpty() }
+                            val rawItems: List<Any> = buildList {
+                                addAll(movieItems)
+                                addAll(seriesItems)
+                            }.take(10)
                             val featuredItems = rawItems
                                 .distinctBy { item: Any ->
                                     val name = when(item) {

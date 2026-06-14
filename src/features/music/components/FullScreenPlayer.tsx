@@ -98,8 +98,9 @@ export const FullScreenPlayer: React.FC = () => {
                     {/* Transport */}
                     <div className="flex items-center gap-4 text-outline-variant">
                         <button onClick={p.toggleShuffle} title="Shuffle"
-                            className={`p-2 rounded-full hover:text-primary transition-colors ${p.shuffle ? 'text-primary' : ''}`}>
+                            className={`relative p-2 rounded-full transition-colors ${p.shuffle ? 'text-primary bg-primary/15' : 'hover:text-primary'}`}>
                             <Shuffle size={20} />
+                            {p.shuffle && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary" />}
                         </button>
                         <button onClick={() => p.skip(-10)} title="Back 10s" className="p-2 rounded-full hover:text-primary transition-colors">
                             <Rewind size={20} />
@@ -118,8 +119,9 @@ export const FullScreenPlayer: React.FC = () => {
                             <FastForward size={20} />
                         </button>
                         <button onClick={p.cycleRepeat} title={`Repeat: ${p.repeat}`}
-                            className={`p-2 rounded-full hover:text-primary transition-colors ${p.repeat !== 'off' ? 'text-primary' : ''}`}>
+                            className={`relative p-2 rounded-full transition-colors ${p.repeat !== 'off' ? 'text-primary bg-primary/15' : 'hover:text-primary'}`}>
                             {p.repeat === 'one' ? <Repeat1 size={20} /> : <Repeat size={20} />}
+                            {p.repeat !== 'off' && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary" />}
                         </button>
                     </div>
 

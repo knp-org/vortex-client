@@ -12,6 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,8 +34,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.knp.vortex.data.remote.AlbumDetailDto
 import org.knp.vortex.data.repository.MediaRepository
+import org.knp.vortex.ui.components.AddToPlaylistSheet
 import org.knp.vortex.ui.components.AppHeader
 import org.knp.vortex.ui.components.GlassyBackground
+import org.knp.vortex.ui.components.TrackSelectionBar
+import org.knp.vortex.ui.theme.DeepBackground
 import org.knp.vortex.utils.formatImageUrl
 import javax.inject.Inject
 
@@ -109,66 +115,117 @@ fun AlbumDetailScreen(
                 }
                 else -> {
                     val album = state.album
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxSize().padding(padding)
-                    ) {
-                        if (album != null) {
-                            item {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                                    val cover = formatImageUrl(album.cover_url, state.serverUrl)
-                                    if (cover != null) {
-                                        AsyncImage(
-                                            model = cover,
-                                            contentDescription = album.title,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier.size(200.dp).clip(RoundedCornerShape(12.dp))
-                                        )
-                                        Spacer(Modifier.height(12.dp))
-                                    }
-                                    Text(album.title, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
-                                    val subtitle = listOfNotNull(album.artist, album.year?.toString()).joinToString(" • ")
-                                    if (subtitle.isNotBlank()) {
-                                        Text(subtitle, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.bodyMedium)
-                                    }
-                                    Spacer(Modifier.height(16.dp))
-                                }
-                            }
-                            itemsIndexed(album.tracks) { index, track ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .clickable { viewModel.playTrack(index); onPlayTrack() }
-                                        .padding(vertical = 10.dp, horizontal = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(modifier = Modifier.width(28.dp), contentAlignment = Alignment.Center) {
-                                        val number = track.track_number?.toString()
-                                        if (number != null) {
-                                            Text(number, color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.bodyMedium)
-                                        } else {
-                                            Icon(Icons.Filled.MusicNote, contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
+                    var selectionMode by remember { mutableStateOf(false) }
+                    var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+                    var addIds by remember { mutableStateOf<List<Long>?>(null) }
+                    val exitSelection = { selectionMode = false; selectedIds = emptySet() }
+                    val tracks = album?.tracks ?: emptyList()
+
+                    Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                        if (tracks.isNotEmpty()) {
+                            TrackSelectionBar(
+                                selectionMode = selectionMode,
+                                selectedCount = selectedIds.size,
+                                allSelected = selectedIds.size == tracks.size,
+                                onEnterSelection = { selectionMode = true },
+                                onToggleAll = {
+                                    selectedIds = if (selectedIds.size == tracks.size) emptySet()
+                                    else tracks.map { it.id }.toSet()
+                                },
+                                onAdd = { addIds = selectedIds.toList() },
+                                onCancel = exitSelection
+                            )
+                        }
+                        LazyColumn(
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            if (album != null) {
+                                item {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                                        val cover = formatImageUrl(album.cover_url, state.serverUrl)
+                                        if (cover != null) {
+                                            AsyncImage(
+                                                model = cover,
+                                                contentDescription = album.title,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.size(200.dp).clip(RoundedCornerShape(12.dp))
+                                            )
+                                            Spacer(Modifier.height(12.dp))
                                         }
+                                        Text(album.title, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                                        val subtitle = listOfNotNull(album.artist, album.year?.toString()).joinToString(" • ")
+                                        if (subtitle.isNotBlank()) {
+                                            Text(subtitle, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.bodyMedium)
+                                        }
+                                        Spacer(Modifier.height(16.dp))
                                     }
-                                    Spacer(Modifier.width(12.dp))
-                                    Text(
-                                        text = track.title ?: "Unknown",
-                                        color = Color.White,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    val dur = formatDuration(track.duration)
-                                    if (dur.isNotBlank()) {
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(dur, color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.bodySmall)
+                                }
+                                itemsIndexed(album.tracks) { index, track ->
+                                    val selected = track.id in selectedIds
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                if (selectionMode) {
+                                                    selectedIds = if (selected) selectedIds - track.id else selectedIds + track.id
+                                                } else {
+                                                    viewModel.playTrack(index); onPlayTrack()
+                                                }
+                                            }
+                                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        if (selectionMode) {
+                                            Checkbox(
+                                                checked = selected,
+                                                onCheckedChange = {
+                                                    selectedIds = if (selected) selectedIds - track.id else selectedIds + track.id
+                                                },
+                                                colors = CheckboxDefaults.colors(
+                                                    checkedColor = Color.White,
+                                                    uncheckedColor = Color.White.copy(alpha = 0.5f),
+                                                    checkmarkColor = DeepBackground
+                                                )
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                        } else {
+                                            Box(modifier = Modifier.width(28.dp), contentAlignment = Alignment.Center) {
+                                                val number = track.track_number?.toString()
+                                                if (number != null) {
+                                                    Text(number, color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.bodyMedium)
+                                                } else {
+                                                    Icon(Icons.Filled.MusicNote, contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
+                                                }
+                                            }
+                                            Spacer(Modifier.width(12.dp))
+                                        }
+                                        Text(
+                                            text = track.title ?: "Unknown",
+                                            color = Color.White,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        val dur = formatDuration(track.duration)
+                                        if (dur.isNotBlank()) {
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(dur, color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.bodySmall)
+                                        }
                                     }
                                 }
                             }
                         }
+                    }
+
+                    if (!addIds.isNullOrEmpty()) {
+                        AddToPlaylistSheet(
+                            trackIds = addIds!!,
+                            onDismiss = { addIds = null; if (selectionMode) exitSelection() }
+                        )
                     }
                 }
             }

@@ -26,6 +26,7 @@ export const Library: React.FC = () => {
     const [addItems, setAddItems] = useState<number[] | null>(null);
 
     const isMusic = library?.library_type === 'music';
+    const isMusicVideos = library?.library_type === 'music_videos';
 
     useEffect(() => {
         const fetchData = async () => {
@@ -79,8 +80,12 @@ export const Library: React.FC = () => {
         else navigate(`/media/${card.id}`);
     };
 
+    const gridCols = isMusicVideos
+        ? 'grid-cols-1 sm:grid-cols-2'
+        : 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8';
+
     const grid = (cards: Card[]) => (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 md:gap-6">
+        <div className={`grid ${gridCols} gap-4 md:gap-6`}>
             {cards.map((card) => (
                 <div key={`${card.kind}-${card.id}`} className="group cursor-pointer space-y-2">
                     <MediaCard
@@ -96,7 +101,7 @@ export const Library: React.FC = () => {
     );
 
     const skeleton = (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 md:gap-6">
+        <div className={`grid ${gridCols} gap-4 md:gap-6`}>
             {[...Array(12)].map((_, i) => (
                 <div key={i} className="aspect-[2/3] bg-surface/50 rounded-xl animate-pulse backdrop-blur-surface border border-white/5" />
             ))}
@@ -132,6 +137,7 @@ export const Library: React.FC = () => {
                             isPlaying={player.isPlaying}
                             onPlay={(i) => player.playQueue(tracks, i)}
                             onAdd={(itemId) => setAddItems([itemId])}
+                            onAddMany={setAddItems}
                         />
                     </div>
                 );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/shared/ui/Button';
 import { useNavigate } from 'react-router-dom';
-import { resolveImageUrl, mediaService } from '@/services';
+import { resolveImageUrl, mediaService, libraryService } from '@/services';
 import type { Card } from '@/types';
 
 type HeroItem = Card & { backdrop_url?: string; plot?: string };
@@ -14,7 +14,23 @@ export const HeroCarousel: React.FC = () => {
     useEffect(() => {
         const fetchRecent = async () => {
             try {
-                const cards = (await mediaService.recent()).slice(0, 5);
+                // Hero carousel features Movies and TV shows only. The /recent feed can be
+                // dominated by other types (e.g. music videos), so pull movies from their
+                // libraries and series directly rather than filtering recent.
+                const libraries = await libraryService.getAll();
+                const movieLibs = libraries.filter(l => l.library_type === 'movies');
+                const [movieCards, seriesCards] = await Promise.all([
+                    Promise.all(movieLibs.map(l => mediaService.libraryItems(l.id).catch(() => [])))
+                        .then(lists => lists.flat().filter(c => c.kind === 'movie')),
+                    mediaService.seriesList().catch(() => []),
+                ]);
+                // Randomly draw a few from the combined movie + series pool.
+                const pool = [...movieCards, ...seriesCards];
+                for (let i = pool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [pool[i], pool[j]] = [pool[j], pool[i]];
+                }
+                const cards = pool.slice(0, 5);
                 // Cards carry no backdrop/plot; enrich the few hero items from their detail.
                 const enriched = await Promise.all(cards.map(async (c): Promise<HeroItem> => {
                     try {

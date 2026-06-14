@@ -95,6 +95,20 @@ class MusicPlayerViewModel @Inject constructor(
     val startIndex: Int get() = queue.startIndex
     val queueTitle: String get() = queue.title
 
+    private var handledRequestId: Long = -1L
+
+    /**
+     * True the first time it's called for the current play request, then false on
+     * later calls until a new track is picked. Survives config-change recomposition
+     * because the ViewModel outlives it — so rotating the device re-attaches to the
+     * running track instead of restarting it.
+     */
+    fun consumePlayRequest(): Boolean {
+        if (handledRequestId == queue.requestId) return false
+        handledRequestId = queue.requestId
+        return true
+    }
+
     private val _lyrics = MutableStateFlow<LyricsDto?>(null)
     val lyrics: StateFlow<LyricsDto?> = _lyrics.asStateFlow()
 
@@ -160,17 +174,29 @@ fun MusicPlayerScreen(
 
             val desiredIds = tracks.map { it.id.toString() }
             val currentIds = (0 until c.mediaItemCount).map { c.getMediaItemAt(it).mediaId }
-            if (desiredIds.isNotEmpty() && desiredIds != currentIds) {
-                // New queue requested — load and start it.
-                val items = buildMediaItems(tracks, viewModel.getServerUrl(), viewModel.getToken())
-                val start = viewModel.startIndex.coerceIn(0, items.size - 1)
-                c.setMediaItems(items, start, 0L)
-                c.prepare()
-                c.playWhenReady = true
-                currentIndex = start
-            } else {
-                // Re-attaching to playback already in progress.
-                currentIndex = c.currentMediaItemIndex
+            val freshRequest = viewModel.consumePlayRequest()
+            when {
+                desiredIds.isNotEmpty() && desiredIds != currentIds -> {
+                    // New queue requested — load and start it.
+                    val items = buildMediaItems(tracks, viewModel.getServerUrl(), viewModel.getToken())
+                    val start = viewModel.startIndex.coerceIn(0, items.size - 1)
+                    c.setMediaItems(items, start, 0L)
+                    c.prepare()
+                    c.playWhenReady = true
+                    currentIndex = start
+                }
+                freshRequest && desiredIds.isNotEmpty() -> {
+                    // Same queue already loaded, but the user explicitly tapped a
+                    // (possibly different) track — jump to it and play.
+                    val start = viewModel.startIndex.coerceIn(0, desiredIds.size - 1)
+                    c.seekTo(start, 0L)
+                    c.playWhenReady = true
+                    currentIndex = start
+                }
+                else -> {
+                    // Re-attaching to playback already in progress (e.g. config change).
+                    currentIndex = c.currentMediaItemIndex
+                }
             }
             isPlaying = c.isPlaying
             shuffle = c.shuffleModeEnabled
@@ -406,9 +432,9 @@ fun MusicPlayerScreen(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
                     ) {
-                        PlayerActionButton(Icons.Filled.Lyrics, "Lyrics") { showLyrics = true }
-                        PlayerActionButton(Icons.AutoMirrored.Filled.QueueMusic, "Up Next") { showQueue = true }
-                        PlayerActionButton(Icons.AutoMirrored.Filled.PlaylistAdd, "Add to Playlist") { showAddToPlaylist = true }
+                        PlayerActionButton(Icons.Filled.Lyrics, "Lyrics", Modifier.weight(1f)) { showLyrics = true }
+                        PlayerActionButton(Icons.AutoMirrored.Filled.QueueMusic, "Up Next", Modifier.weight(1f)) { showQueue = true }
+                        PlayerActionButton(Icons.AutoMirrored.Filled.PlaylistAdd, "Add to Playlist", Modifier.weight(1f)) { showAddToPlaylist = true }
                     }
 
                     Spacer(Modifier.height(20.dp))
@@ -455,7 +481,7 @@ fun MusicPlayerScreen(
                 val trackId = track?.id
                 if (trackId != null) {
                     org.knp.vortex.ui.components.AddToPlaylistSheet(
-                        trackId = trackId,
+                        trackIds = listOf(trackId),
                         onDismiss = { showAddToPlaylist = false }
                     )
                 } else {
@@ -538,18 +564,24 @@ private fun LiquidSlider(
 
 /** Glassy pill action button (icon + label). */
 @Composable
-private fun PlayerActionButton(icon: ImageVector, label: String, onClick: () -> Unit) {
+private fun PlayerActionButton(icon: ImageVector, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(24.dp))
             .background(Color.White.copy(alpha = 0.08f))
             .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 10.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
     ) {
         Icon(icon, contentDescription = label, tint = Color.White, modifier = Modifier.size(18.dp))
-        Text(label, color = Color.White, style = MaterialTheme.typography.labelLarge)
+        Text(
+            label,
+            color = Color.White,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

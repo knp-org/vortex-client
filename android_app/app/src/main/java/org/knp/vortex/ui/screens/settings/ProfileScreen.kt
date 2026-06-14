@@ -39,7 +39,7 @@ import org.knp.vortex.ui.components.GlassyTopBar
 import org.knp.vortex.ui.theme.GrayText
 
 @Composable
-fun SettingsScreen(
+fun ProfileScreen(
     onBack: () -> Unit,
     onNavigateToServerConfig: () -> Unit,
     onNavigateToLibrarySettings: () -> Unit,
@@ -56,15 +56,21 @@ fun SettingsScreen(
         Scaffold(
             containerColor = Color.Transparent
         ) { padding ->
-            Column(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(start = 24.dp, end = 24.dp, bottom = 120.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(24.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(min = maxHeight)
+                    .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 120.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
                 // Profile Avatar Section matching the mockup exactly
                 Box(
@@ -175,17 +181,15 @@ fun SettingsScreen(
                         )
                     }
                 }
+                Spacer(modifier = Modifier.height(24.dp))
+                }
 
-                Spacer(modifier = Modifier.height(36.dp))
-
-                // Premium Outlined Sign Out button matching mockup dusty rose tint
                 // Premium Outlined Sign Out button using the 'error' color from DESIGN.md
                 val signOutTint = Color(0xFFFFB4AB)
                 OutlinedButton(
                     onClick = { viewModel.logout() },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 32.dp),
+                        .fillMaxWidth(),
                     border = BorderStroke(
                         1.dp,
                         signOutTint.copy(alpha = 0.3f) // Pronounced rim lighting
@@ -217,6 +221,7 @@ fun SettingsScreen(
                         )
                     }
                 }
+            }
             }
         }
     }
