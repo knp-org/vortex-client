@@ -9,12 +9,7 @@ val Liquid3 = Color(0xFF1A1A2E)
 
 val DeepBackground = Liquid1
 val SurfaceColor = Liquid2
-val PrimaryBlue = Color(0xFF4D72F5)
-val CyanAccent = Color(0xFF00D7FF)
+// "Liquid Glass" is monochromatic: accent & active states are pure white (see DESIGN.md).
 val WhiteText = Color(0xFFFFFFFF)
 val GrayText = Color(0xFFB0B3C6)
 val ErrorRed = Color(0xFFFF5252)
-
-// Gradients
-val PrimaryGradientStart = Color(0xFF651FFF)
-val PrimaryGradientEnd = Color(0xFF00E5FF)

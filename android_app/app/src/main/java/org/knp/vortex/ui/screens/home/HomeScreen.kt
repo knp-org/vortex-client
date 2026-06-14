@@ -55,6 +55,7 @@ fun HomeScreen(
     onPlayMedia: (Long, String?) -> Unit,
     onOpenSeries: (Long, String) -> Unit,  // seriesId, libraryType
     onOpenLibrary: (Long, String, String) -> Unit,  // id, name, type
+    onOpenCard: (Long, String) -> Unit,  // id, kind (artist/album/music_video) — mirrors LibraryScreen
     onQuickPlay: (Long) -> Unit, // New callback for direct playback
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -241,10 +242,10 @@ fun HomeScreen(
                                         when (item) {
                                             is SeriesDto -> onOpenSeries(item.id, "")
                                             is MediaItemDto -> {
-                                                if (item.media_type == "series") {
-                                                    onOpenSeries(item.id, item.library_type ?: "")
-                                                } else {
-                                                    onPlayMedia(item.id, item.library_type)
+                                                when (val kind = item.media_type) {
+                                                    "series" -> onOpenSeries(item.id, item.library_type ?: "")
+                                                    "artist", "album", "music_video" -> onOpenCard(item.id, kind)
+                                                    else -> onPlayMedia(item.id, item.library_type)
                                                 }
                                             }
                                         }
@@ -325,10 +326,10 @@ fun HomeScreen(
                                                     posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl) ?: "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail",
                                                     year = item.year,
                                                     onClick = {
-                                                        if (item.media_type == "series") {
-                                                            onOpenSeries(item.id, library.library_type)
-                                                        } else {
-                                                            onPlayMedia(item.id, library.library_type)
+                                                        when (val kind = item.media_type) {
+                                                            "series" -> onOpenSeries(item.id, library.library_type)
+                                                            "artist", "album", "music_video" -> onOpenCard(item.id, kind)
+                                                            else -> onPlayMedia(item.id, library.library_type)
                                                         }
                                                     },
                                                     modifier = Modifier.width(120.dp)
@@ -352,10 +353,10 @@ fun HomeScreen(
                                             posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl),
                                             year = item.year,
                                             onClick = {
-                                                if (item.media_type == "series") {
-                                                    onOpenSeries(item.id, item.library_type ?: "")
-                                                } else {
-                                                    onPlayMedia(item.id, item.library_type)
+                                                when (val kind = item.media_type) {
+                                                    "series" -> onOpenSeries(item.id, item.library_type ?: "")
+                                                    "artist", "album", "music_video" -> onOpenCard(item.id, kind)
+                                                    else -> onPlayMedia(item.id, item.library_type)
                                                 }
                                             },
                                             modifier = Modifier.width(120.dp)

@@ -22,7 +22,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import org.knp.vortex.data.remote.MetadataSearchResultDto
 import org.knp.vortex.ui.theme.DeepBackground
-import org.knp.vortex.ui.theme.PrimaryBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

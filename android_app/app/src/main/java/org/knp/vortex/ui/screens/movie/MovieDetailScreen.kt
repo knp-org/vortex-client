@@ -37,7 +37,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import org.knp.vortex.ui.components.GlassyTopBar
 import org.knp.vortex.ui.theme.DeepBackground
-import org.knp.vortex.ui.theme.PrimaryBlue
 import org.knp.vortex.ui.theme.SurfaceColor
 import org.knp.vortex.ui.theme.GrayText
 

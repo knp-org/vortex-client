@@ -161,7 +161,8 @@ fun ModernMediaCard(
     year: Long? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    videoUrl: String? = null
+    videoUrl: String? = null,
+    aspectRatio: Float = 0.67f // portrait poster by default; pass 16f/9f for landscape (e.g. music videos)
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val imageRequest = androidx.compose.runtime.remember(posterUrl, videoUrl) {
@@ -181,7 +182,7 @@ fun ModernMediaCard(
 
     GlassyCard(
         modifier = modifier
-            .aspectRatio(0.67f)
+            .aspectRatio(aspectRatio)
             .bounceClick(onClick = onClick), // Apply bounce click
         shape = RoundedCornerShape(16.dp)
         // Note: onClick handled by bounceClick now, so we don't pass it to Surface inside GlassyCard or we refactor GlassyCard.

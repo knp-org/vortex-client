@@ -1,5 +1,9 @@
 package org.knp.vortex.ui.screens.music
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,13 +13,18 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Replay10
@@ -31,6 +40,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import org.knp.vortex.ui.theme.DeepBackground
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -41,9 +52,15 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.ComponentName
+import android.net.Uri
+import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import org.knp.vortex.data.player.PlaybackService
 import coil.compose.AsyncImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -59,7 +76,6 @@ import org.knp.vortex.data.remote.TrackDto
 import org.knp.vortex.data.repository.MediaRepository
 import org.knp.vortex.data.repository.SettingsRepository
 import org.knp.vortex.ui.components.GlassyBackground
-import org.knp.vortex.ui.theme.PrimaryBlue
 import org.knp.vortex.utils.formatImageUrl
 import javax.inject.Inject
 
@@ -82,15 +98,13 @@ class MusicPlayerViewModel @Inject constructor(
     private val _lyrics = MutableStateFlow<LyricsDto?>(null)
     val lyrics: StateFlow<LyricsDto?> = _lyrics.asStateFlow()
 
-    fun loadLyrics(trackId: Long) {
+    fun loadLyrics(trackId: Long, force: Boolean = false) {
         _lyrics.value = null
         viewModelScope.launch {
-            repository.getTrackLyrics(trackId).onSuccess { _lyrics.value = it }
+            repository.getTrackLyrics(trackId, force).onSuccess { _lyrics.value = it }
         }
     }
 }
-
-private enum class PlayerTab { LYRICS, QUEUE }
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
@@ -102,17 +116,11 @@ fun MusicPlayerScreen(
     val lyrics by viewModel.lyrics.collectAsState()
     val tracks = remember { viewModel.tracks }
 
-    val exoPlayer = remember {
-        val dataSourceFactory = androidx.media3.datasource.DefaultDataSource.Factory(
-            context,
-            androidx.media3.datasource.okhttp.OkHttpDataSource.Factory(viewModel.callFactory)
-        )
-        ExoPlayer.Builder(context)
-            .setMediaSourceFactory(
-                androidx.media3.exoplayer.source.DefaultMediaSourceFactory(dataSourceFactory)
-            )
-            .build()
-    }
+    // The player lives in PlaybackService (a foreground MediaSessionService), so
+    // audio keeps playing when we leave this screen or background the app. We
+    // attach to it through a MediaController and release only the controller on
+    // dispose — never the session/player.
+    var controller by remember { mutableStateOf<MediaController?>(null) }
 
     var currentIndex by remember { mutableStateOf(viewModel.startIndex) }
     var isPlaying by remember { mutableStateOf(false) }
@@ -122,78 +130,83 @@ fun MusicPlayerScreen(
     var repeatMode by remember { mutableStateOf(Player.REPEAT_MODE_OFF) }
     var volume by remember { mutableStateOf(1f) }
     var muted by remember { mutableStateOf(false) }
-    var tab by remember { mutableStateOf(PlayerTab.LYRICS) }
 
-    // Build the playback queue once.
-    LaunchedEffect(Unit) {
-        if (tracks.isEmpty()) return@LaunchedEffect
-        val base = viewModel.getServerUrl().trimEnd('/')
-        val token = viewModel.getToken()
-        val tq = if (token != null) "?token=$token" else ""
-        val items = tracks.map { track ->
-            MediaItem.Builder()
-                .setUri("$base/api/v1/stream/${track.id}$tq")
-                .setMediaId(track.id.toString())
-                .build()
-        }
-        val start = viewModel.startIndex.coerceIn(0, items.size - 1)
-        exoPlayer.setMediaItems(items, start, 0L)
-        exoPlayer.prepare()
-        exoPlayer.playWhenReady = true
-        currentIndex = start
-        viewModel.loadLyrics(tracks[start].id)
-    }
+    // Full-screen overlays (kept in-composition so playback continues).
+    var showLyrics by remember { mutableStateOf(false) }
+    var showQueue by remember { mutableStateOf(false) }
+    var showAddToPlaylist by remember { mutableStateOf(false) }
 
-    // Track index / playback state changes.
-    DisposableEffect(exoPlayer) {
-        val listener = object : Player.Listener {
+    val listener = remember {
+        object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                val idx = exoPlayer.currentMediaItemIndex
+                val c = controller ?: return
+                val idx = c.currentMediaItemIndex
                 currentIndex = idx
                 tracks.getOrNull(idx)?.let { viewModel.loadLyrics(it.id) }
             }
             override fun onIsPlayingChanged(playing: Boolean) { isPlaying = playing }
         }
-        exoPlayer.addListener(listener)
-        onDispose { exoPlayer.removeListener(listener) }
+    }
+
+    // Connect to the playback service, then either start the requested queue or,
+    // if that same queue is already playing, just attach to it.
+    DisposableEffect(Unit) {
+        val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
+        val future = MediaController.Builder(context, token).buildAsync()
+        future.addListener({
+            val c = try { future.get() } catch (e: Exception) { null } ?: return@addListener
+            controller = c
+            c.addListener(listener)
+
+            val desiredIds = tracks.map { it.id.toString() }
+            val currentIds = (0 until c.mediaItemCount).map { c.getMediaItemAt(it).mediaId }
+            if (desiredIds.isNotEmpty() && desiredIds != currentIds) {
+                // New queue requested — load and start it.
+                val items = buildMediaItems(tracks, viewModel.getServerUrl(), viewModel.getToken())
+                val start = viewModel.startIndex.coerceIn(0, items.size - 1)
+                c.setMediaItems(items, start, 0L)
+                c.prepare()
+                c.playWhenReady = true
+                currentIndex = start
+            } else {
+                // Re-attaching to playback already in progress.
+                currentIndex = c.currentMediaItemIndex
+            }
+            isPlaying = c.isPlaying
+            shuffle = c.shuffleModeEnabled
+            repeatMode = c.repeatMode
+            volume = c.volume
+            tracks.getOrNull(currentIndex)?.let { viewModel.loadLyrics(it.id) }
+        }, ContextCompat.getMainExecutor(context))
+
+        onDispose {
+            controller?.removeListener(listener)
+            MediaController.releaseFuture(future)
+            controller = null
+        }
     }
 
     // Poll position/duration for the seek bar.
-    LaunchedEffect(exoPlayer) {
+    LaunchedEffect(controller) {
+        val c = controller ?: return@LaunchedEffect
         while (true) {
-            position = exoPlayer.currentPosition.coerceAtLeast(0L)
-            duration = exoPlayer.duration.let { if (it > 0) it else 0L }
+            position = c.currentPosition.coerceAtLeast(0L)
+            duration = c.duration.let { if (it > 0) it else 0L }
             delay(500)
         }
     }
 
-    DisposableEffect(Unit) {
-        onDispose { exoPlayer.release() }
+    // System back closes any open overlay before leaving the player.
+    BackHandler(enabled = showLyrics || showQueue) {
+        showLyrics = false
+        showQueue = false
     }
 
     val track = tracks.getOrNull(currentIndex)
+    val cover = formatImageUrl(track?.cover_url, viewModel.getServerUrl())
 
     GlassyBackground {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Blurred album-art backdrop.
-            val cover = formatImageUrl(track?.cover_url, viewModel.getServerUrl())
-            if (cover != null) {
-                AsyncImage(
-                    model = cover,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    alpha = 0.35f,
-                    modifier = Modifier.fillMaxSize().blur(60.dp)
-                )
-            }
-            Box(
-                modifier = Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
-                        listOf(Color.Black.copy(alpha = 0.4f), Color.Black.copy(alpha = 0.6f), Color.Black.copy(alpha = 0.92f))
-                    )
-                )
-            )
-
+        PlayerBackdrop(cover = cover, modifier = Modifier.fillMaxSize()) {
             Scaffold(containerColor = Color.Transparent) { padding ->
                 Column(
                     modifier = Modifier.fillMaxSize().padding(padding),
@@ -218,31 +231,32 @@ fun MusicPlayerScreen(
                         Spacer(Modifier.width(48.dp))
                     }
 
-                    Spacer(Modifier.height(8.dp))
-
-                    // Album art
+                    // Album art (fills available space, stays square)
                     Box(
-                        modifier = Modifier
-                            .size(260.dp)
-                            .shadow(24.dp, RoundedCornerShape(16.dp))
-                            .clip(RoundedCornerShape(16.dp)),
+                        modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 28.dp, vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (cover != null) {
-                            AsyncImage(
-                                model = cover,
-                                contentDescription = track?.title,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Box(Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.06f)), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.82f)
+                                .aspectRatio(1f)
+                                .shadow(28.dp, RoundedCornerShape(20.dp))
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Color.White.copy(alpha = 0.06f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (cover != null) {
+                                AsyncImage(
+                                    model = cover,
+                                    contentDescription = track?.title,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
                                 Icon(Icons.Filled.MusicNote, contentDescription = null, tint = Color.White.copy(alpha = 0.4f), modifier = Modifier.size(72.dp))
                             }
                         }
                     }
-
-                    Spacer(Modifier.height(20.dp))
 
                     // Track info
                     Text(
@@ -272,22 +286,26 @@ fun MusicPlayerScreen(
                         )
                     }
 
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(18.dp))
 
-                    // Seek bar
+                    // Seek bar (thin) with drag-to-seek reconcile
                     val safeDuration = if (duration > 0) duration else 0L
-                    Slider(
-                        value = if (safeDuration > 0) position.coerceIn(0, safeDuration).toFloat() else 0f,
-                        onValueChange = { exoPlayer.seekTo(it.toLong()) },
-                        valueRange = 0f..(if (safeDuration > 0) safeDuration.toFloat() else 1f),
-                        colors = SliderDefaults.colors(
-                            thumbColor = PrimaryBlue,
-                            activeTrackColor = PrimaryBlue
-                        ),
+                    val maxF = if (safeDuration > 0) safeDuration.toFloat() else 1f
+                    var seeking by remember { mutableStateOf(false) }
+                    var seekValue by remember { mutableStateOf(0f) }
+                    val seekDisplay = if (seeking) seekValue else position.coerceIn(0, safeDuration).toFloat()
+                    LiquidSlider(
+                        value = seekDisplay.coerceIn(0f, maxF),
+                        valueRange = 0f..maxF,
+                        onValueChange = { seeking = true; seekValue = it },
+                        onValueChangeFinished = {
+                            controller?.seekTo(seekValue.toLong())
+                            seeking = false
+                        },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
                     )
-                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(formatMs(position), color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall)
+                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 26.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(formatMs(if (seeking) seekValue.toLong() else position), color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall)
                         Text(formatMs(safeDuration), color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall)
                     }
 
@@ -295,43 +313,43 @@ fun MusicPlayerScreen(
 
                     // Transport controls
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         IconButton(onClick = {
                             shuffle = !shuffle
-                            exoPlayer.shuffleModeEnabled = shuffle
+                            controller?.shuffleModeEnabled = shuffle
                         }) {
-                            Icon(Icons.Filled.Shuffle, contentDescription = "Shuffle", tint = if (shuffle) PrimaryBlue else Color.White.copy(alpha = 0.8f))
+                            Icon(Icons.Filled.Shuffle, contentDescription = "Shuffle", tint = if (shuffle) Color.White else Color.White.copy(alpha = 0.8f))
                         }
-                        IconButton(onClick = { exoPlayer.seekTo((exoPlayer.currentPosition - 10_000).coerceAtLeast(0)) }) {
+                        IconButton(onClick = { controller?.let { it.seekTo((it.currentPosition - 10_000).coerceAtLeast(0)) } }) {
                             Icon(Icons.Filled.Replay10, contentDescription = "Back 10s", tint = Color.White.copy(alpha = 0.8f))
                         }
-                        IconButton(onClick = { exoPlayer.seekToPreviousMediaItem() }) {
+                        IconButton(onClick = { controller?.seekToPreviousMediaItem() }) {
                             Icon(Icons.Filled.SkipPrevious, contentDescription = "Previous", tint = Color.White, modifier = Modifier.size(36.dp))
                         }
                         Box(
                             modifier = Modifier
-                                .size(64.dp)
+                                .size(62.dp)
                                 .clip(CircleShape)
-                                .background(PrimaryBlue)
-                                .clickable { if (exoPlayer.isPlaying) exoPlayer.pause() else exoPlayer.play() },
+                                .background(Color.White)
+                                .clickable { controller?.let { if (it.isPlaying) it.pause() else it.play() } },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                                 contentDescription = "Play/Pause",
-                                tint = Color.White,
-                                modifier = Modifier.size(36.dp)
+                                tint = DeepBackground,
+                                modifier = Modifier.size(34.dp)
                             )
                         }
-                        IconButton(onClick = { exoPlayer.seekToNextMediaItem() }) {
+                        IconButton(onClick = { controller?.seekToNextMediaItem() }) {
                             Icon(Icons.Filled.SkipNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(36.dp))
                         }
                         IconButton(onClick = {
                             val d = if (duration > 0) duration else Long.MAX_VALUE
-                            exoPlayer.seekTo((exoPlayer.currentPosition + 10_000).coerceAtMost(d))
+                            controller?.let { it.seekTo((it.currentPosition + 10_000).coerceAtMost(d)) }
                         }) {
                             Icon(Icons.Filled.Forward10, contentDescription = "Forward 10s", tint = Color.White.copy(alpha = 0.8f))
                         }
@@ -341,17 +359,17 @@ fun MusicPlayerScreen(
                                 Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
                                 else -> Player.REPEAT_MODE_OFF
                             }
-                            exoPlayer.repeatMode = repeatMode
+                            controller?.repeatMode = repeatMode
                         }) {
                             Icon(
                                 if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
                                 contentDescription = "Repeat",
-                                tint = if (repeatMode != Player.REPEAT_MODE_OFF) PrimaryBlue else Color.White.copy(alpha = 0.8f)
+                                tint = if (repeatMode != Player.REPEAT_MODE_OFF) Color.White else Color.White.copy(alpha = 0.8f)
                             )
                         }
                     }
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(6.dp))
 
                     // Volume
                     Row(
@@ -361,7 +379,7 @@ fun MusicPlayerScreen(
                     ) {
                         IconButton(onClick = {
                             muted = !muted
-                            exoPlayer.volume = if (muted) 0f else volume
+                            controller?.volume = if (muted) 0f else volume
                         }) {
                             Icon(
                                 if (muted || volume == 0f) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
@@ -369,72 +387,247 @@ fun MusicPlayerScreen(
                                 tint = Color.White.copy(alpha = 0.8f)
                             )
                         }
-                        Slider(
+                        LiquidSlider(
                             value = if (muted) 0f else volume,
+                            valueRange = 0f..1f,
                             onValueChange = {
                                 volume = it
                                 muted = false
-                                exoPlayer.volume = it
+                                controller?.volume = it
                             },
-                            valueRange = 0f..1f,
-                            colors = SliderDefaults.colors(
-                                thumbColor = PrimaryBlue,
-                                activeTrackColor = PrimaryBlue
-                            ),
-                            modifier = Modifier.width(160.dp)
+                            modifier = Modifier.width(150.dp)
                         )
                     }
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(14.dp))
 
-                    // Lyrics / Up Next tabs
+                    // Secondary actions: Lyrics + Up Next open full-screen panels
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
                     ) {
-                        PlayerTabButton("Lyrics", tab == PlayerTab.LYRICS) { tab = PlayerTab.LYRICS }
-                        PlayerTabButton("Up Next", tab == PlayerTab.QUEUE) { tab = PlayerTab.QUEUE }
+                        PlayerActionButton(Icons.Filled.Lyrics, "Lyrics") { showLyrics = true }
+                        PlayerActionButton(Icons.AutoMirrored.Filled.QueueMusic, "Up Next") { showQueue = true }
+                        PlayerActionButton(Icons.AutoMirrored.Filled.PlaylistAdd, "Add to Playlist") { showAddToPlaylist = true }
                     }
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(20.dp))
+                }
+            }
 
-                    when (tab) {
-                        PlayerTab.LYRICS -> LyricsPane(
-                            lyrics = lyrics,
-                            positionMs = position,
-                            modifier = Modifier.fillMaxWidth().weight(1f)
-                        )
-                        PlayerTab.QUEUE -> QueuePane(
-                            tracks = tracks,
-                            currentIndex = currentIndex,
-                            onJumpTo = { idx ->
-                                exoPlayer.seekTo(idx, 0L)
-                                exoPlayer.play()
-                            },
-                            modifier = Modifier.fillMaxWidth().weight(1f)
-                        )
+            // ── Full-screen Lyrics overlay ───────────────────────────────────
+            AnimatedVisibility(visible = showLyrics, enter = fadeIn(), exit = fadeOut()) {
+                val trackId = track?.id
+                LyricsScreen(
+                    title = track?.title,
+                    artist = track?.artist,
+                    cover = cover,
+                    lyrics = lyrics,
+                    positionMs = position,
+                    onClose = { showLyrics = false },
+                    onReDownload = {
+                        if (trackId != null) {
+                            viewModel.loadLyrics(trackId, force = true)
+                        }
                     }
+                )
+            }
+
+            // ── Full-screen Up-Next overlay ──────────────────────────────────
+            AnimatedVisibility(visible = showQueue, enter = fadeIn(), exit = fadeOut()) {
+                QueueScreen(
+                    cover = cover,
+                    tracks = tracks,
+                    currentIndex = currentIndex,
+                    onJumpTo = { idx ->
+                        controller?.let {
+                            it.seekTo(idx, 0L)
+                            it.play()
+                        }
+                        showQueue = false
+                    },
+                    onClose = { showQueue = false }
+                )
+            }
+
+            // ── Add-to-playlist bottom sheet for the current track ───────────
+            if (showAddToPlaylist) {
+                val trackId = track?.id
+                if (trackId != null) {
+                    org.knp.vortex.ui.components.AddToPlaylistSheet(
+                        trackId = trackId,
+                        onDismiss = { showAddToPlaylist = false }
+                    )
+                } else {
+                    showAddToPlaylist = false
                 }
             }
         }
     }
 }
 
+/** Blurred album-art backdrop with darkening gradient over a solid base. */
 @Composable
-private fun PlayerTabButton(label: String, active: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (active) PrimaryBlue.copy(alpha = 0.18f) else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Text(
-            label,
-            color = if (active) PrimaryBlue else Color.White.copy(alpha = 0.7f),
-            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
-            style = MaterialTheme.typography.labelLarge
+private fun PlayerBackdrop(cover: String?, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
+    Box(modifier = modifier.background(DeepBackground)) {
+        if (cover != null) {
+            AsyncImage(
+                model = cover,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alpha = 0.35f,
+                modifier = Modifier.fillMaxSize().blur(60.dp)
+            )
+        }
+        Box(
+            modifier = Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    listOf(Color.Black.copy(alpha = 0.4f), Color.Black.copy(alpha = 0.6f), Color.Black.copy(alpha = 0.92f))
+                )
+            )
         )
+        content()
+    }
+}
+
+/** Thin, monochromatic slider: 4dp track + small white thumb (Liquid Glass). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LiquidSlider(
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    onValueChangeFinished: (() -> Unit)? = null,
+) {
+    val span = valueRange.endInclusive - valueRange.start
+    val fraction = if (span > 0f) ((value - valueRange.start) / span).coerceIn(0f, 1f) else 0f
+    Slider(
+        value = value,
+        onValueChange = onValueChange,
+        onValueChangeFinished = onValueChangeFinished,
+        valueRange = valueRange,
+        modifier = modifier,
+        thumb = {
+            Box(
+                Modifier
+                    .size(13.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+            )
+        },
+        track = {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.22f))
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(fraction)
+                        .fillMaxHeight()
+                        .clip(CircleShape)
+                        .background(Color.White)
+                )
+            }
+        }
+    )
+}
+
+/** Glassy pill action button (icon + label). */
+@Composable
+private fun PlayerActionButton(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color.White.copy(alpha = 0.08f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(icon, contentDescription = label, tint = Color.White, modifier = Modifier.size(18.dp))
+        Text(label, color = Color.White, style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+/** Header used by the full-screen overlays: back arrow + title/subtitle. */
+@Composable
+private fun OverlayHeader(title: String, subtitle: String?, onClose: () -> Unit, actionIcon: ImageVector? = null, onAction: (() -> Unit)? = null) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onClose) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White, modifier = Modifier.size(26.dp))
+        }
+        Spacer(Modifier.width(4.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+            if (!subtitle.isNullOrBlank()) {
+                Text(subtitle, color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        if (actionIcon != null && onAction != null) {
+            IconButton(onClick = onAction) {
+                Icon(actionIcon, contentDescription = "Action", tint = Color.White, modifier = Modifier.size(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun LyricsScreen(
+    title: String?,
+    artist: String?,
+    cover: String?,
+    lyrics: LyricsDto?,
+    positionMs: Long,
+    onClose: () -> Unit,
+    onReDownload: () -> Unit
+) {
+    PlayerBackdrop(cover = cover, modifier = Modifier.fillMaxSize()) {
+        Scaffold(containerColor = Color.Transparent) { padding ->
+            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                OverlayHeader(
+                    title = "Lyrics",
+                    subtitle = listOfNotNull(title, artist).joinToString(" · ").ifBlank { null },
+                    onClose = onClose,
+                    actionIcon = Icons.Filled.Refresh,
+                    onAction = onReDownload
+                )
+                LyricsPane(
+                    lyrics = lyrics,
+                    positionMs = positionMs,
+                    modifier = Modifier.fillMaxWidth().weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun QueueScreen(
+    cover: String?,
+    tracks: List<TrackDto>,
+    currentIndex: Int,
+    onJumpTo: (Int) -> Unit,
+    onClose: () -> Unit
+) {
+    PlayerBackdrop(cover = cover, modifier = Modifier.fillMaxSize()) {
+        Scaffold(containerColor = Color.Transparent) { padding ->
+            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                OverlayHeader("Up Next", "${tracks.size} tracks", onClose)
+                QueuePane(
+                    tracks = tracks,
+                    currentIndex = currentIndex,
+                    onJumpTo = onJumpTo,
+                    modifier = Modifier.fillMaxWidth().weight(1f)
+                )
+            }
+        }
     }
 }
 
@@ -468,7 +661,7 @@ private fun QueuePane(
             ) {
                 Box(modifier = Modifier.width(24.dp), contentAlignment = Alignment.Center) {
                     if (current) {
-                        Icon(Icons.Filled.MusicNote, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Filled.MusicNote, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                     } else {
                         Text("${index + 1}", color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.labelMedium)
                     }
@@ -477,7 +670,7 @@ private fun QueuePane(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         track.title ?: "Unknown",
-                        color = if (current) PrimaryBlue else Color.White,
+                        color = if (current) Color.White else Color.White.copy(alpha = 0.7f),
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -529,20 +722,52 @@ private fun LyricsPane(lyrics: LyricsDto?, positionMs: Long, modifier: Modifier 
     LazyColumn(
         state = listState,
         modifier = modifier,
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        contentPadding = PaddingValues(horizontal = 28.dp, vertical = 48.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         itemsIndexed(lines) { index, line ->
             val isActive = synced && index == activeIndex
             Text(
                 text = line.text.ifBlank { "♪" },
-                color = if (isActive) PrimaryBlue else Color.White.copy(alpha = 0.55f),
+                color = if (isActive) Color.White else Color.White.copy(alpha = 0.5f),
                 fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-                fontSize = if (isActive) 18.sp else 16.sp,
+                fontSize = if (isActive) 24.sp else 18.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
         }
+        if (lyrics.source == "lrclib") {
+            item {
+                Text(
+                    "Lyrics via lrclib.net",
+                    color = Color.White.copy(alpha = 0.35f),
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                )
+            }
+        }
+    }
+}
+
+/** Builds the playback queue with metadata so the media notification shows
+ *  title/artist/artwork. Artwork loads through the service's authenticated client. */
+private fun buildMediaItems(tracks: List<TrackDto>, serverUrl: String, token: String?): List<MediaItem> {
+    val base = serverUrl.trimEnd('/')
+    val tq = if (token != null) "?token=$token" else ""
+    return tracks.map { track ->
+        val artwork = formatImageUrl(track.cover_url, serverUrl)
+        val metadata = MediaMetadata.Builder()
+            .setTitle(track.title)
+            .setArtist(track.artist)
+            .setAlbumTitle(track.album)
+            .apply { artwork?.let { setArtworkUri(Uri.parse(it)) } }
+            .build()
+        MediaItem.Builder()
+            .setUri("$base/api/v1/stream/${track.id}$tq")
+            .setMediaId(track.id.toString())
+            .setMediaMetadata(metadata)
+            .build()
     }
 }
 

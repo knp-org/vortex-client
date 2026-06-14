@@ -145,7 +145,30 @@ class MediaRepository @Inject constructor(
 
     suspend fun getLibraryCards(id: Long) = runCatching { api.getLibraryCards(id) }
 
-    suspend fun getTrackLyrics(id: Long) = runCatching { api.getTrackLyrics(id) }
+    suspend fun getTrackLyrics(id: Long, force: Boolean = false) = runCatching { api.getTrackLyrics(id, force) }
+
+    // Per-user playlists. DTOs are already in UI shape, so no mappers needed.
+    suspend fun getPlaylists() = runCatching { api.getPlaylists() }
+
+    suspend fun createPlaylist(name: String) = runCatching {
+        api.createPlaylist(org.knp.vortex.data.remote.CreatePlaylistRequest(name))
+    }
+
+    suspend fun getPlaylistDetail(id: Long) = runCatching { api.getPlaylistDetail(id) }
+
+    suspend fun deletePlaylist(id: Long) = runCatching {
+        val response = api.deletePlaylist(id)
+        if (!response.isSuccessful) throw Exception("Delete failed: ${response.code()}")
+    }
+
+    suspend fun addTrackToPlaylist(playlistId: Long, itemId: Long) = runCatching {
+        api.addPlaylistTrack(playlistId, org.knp.vortex.data.remote.AddTrackRequest(itemId))
+    }
+
+    suspend fun removeTrackFromPlaylist(playlistId: Long, itemId: Long) = runCatching {
+        val response = api.removePlaylistTrack(playlistId, itemId)
+        if (!response.isSuccessful) throw Exception("Remove failed: ${response.code()}")
+    }
 
     suspend fun getContinueWatching() = runCatching { api.getContinueWatching().map { it.toMediaItem() } }
 

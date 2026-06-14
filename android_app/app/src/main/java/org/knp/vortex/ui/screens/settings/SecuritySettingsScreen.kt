@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.knp.vortex.ui.components.GlassyBackground
 import org.knp.vortex.ui.components.GlassyTopBar
-import org.knp.vortex.ui.theme.PrimaryBlue
 
 @Composable
 fun SecuritySettingsScreen(

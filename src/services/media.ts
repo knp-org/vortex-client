@@ -47,7 +47,7 @@ export const mediaService = {
     artists: (libraryId?: number) =>
         api.get<Card[]>(libraryId != null ? `/artists?library_id=${libraryId}` : '/artists'),
     artist: (id: number | string) => api.get<ArtistDetail>(`/artists/${id}`),
-    lyrics: (id: number | string) => api.get<Lyrics>(`/media/${id}/lyrics`),
+    lyrics: (id: number | string, force?: boolean) => api.get<Lyrics>(`/media/${id}/lyrics${force ? '?force=true' : ''}`),
 
     // Favorites (per-user)
     favorites: () => api.get<Card[]>('/favorites'),

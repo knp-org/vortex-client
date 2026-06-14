@@ -135,7 +135,26 @@ interface MediaApi {
     suspend fun getLibraryCards(@Path("id") id: Long): List<CardDto>
 
     @GET("$API_VERSION/media/{id}/lyrics")
-    suspend fun getTrackLyrics(@Path("id") id: Long): LyricsDto
+    suspend fun getTrackLyrics(@Path("id") id: Long, @Query("force") force: Boolean = false): LyricsDto
+
+    // Per-user music playlists (server routes under /me/playlists).
+    @GET("$API_VERSION/me/playlists")
+    suspend fun getPlaylists(): List<PlaylistDto>
+
+    @POST("$API_VERSION/me/playlists")
+    suspend fun createPlaylist(@Body request: CreatePlaylistRequest): PlaylistDto
+
+    @GET("$API_VERSION/me/playlists/{id}")
+    suspend fun getPlaylistDetail(@Path("id") id: Long): PlaylistDetailDto
+
+    @retrofit2.http.DELETE("$API_VERSION/me/playlists/{id}")
+    suspend fun deletePlaylist(@Path("id") id: Long): retrofit2.Response<Unit>
+
+    @POST("$API_VERSION/me/playlists/{id}/tracks")
+    suspend fun addPlaylistTrack(@Path("id") id: Long, @Body request: AddTrackRequest)
+
+    @retrofit2.http.DELETE("$API_VERSION/me/playlists/{id}/tracks/{itemId}")
+    suspend fun removePlaylistTrack(@Path("id") id: Long, @Path("itemId") itemId: Long): retrofit2.Response<Unit>
 }
 
 // A lightweight card for grid/listing views. `kind` (artist | album | music_video |
@@ -286,6 +305,30 @@ data class TrackDto(
     val cover_url: String?,
     val duration: Long?, // seconds
     val stream_url: String
+)
+
+// Per-user playlist summary (server `PlaylistDto`).
+data class PlaylistDto(
+    val id: Long,
+    val name: String,
+    val track_count: Long,
+    val created_at: String?
+)
+
+// Playlist with its ordered tracks (server `PlaylistDetail`).
+data class PlaylistDetailDto(
+    val id: Long,
+    val name: String,
+    val tracks: List<TrackDto>
+)
+
+data class CreatePlaylistRequest(
+    val name: String
+)
+
+// Server expects `item_id` (the media_items.id of the track).
+data class AddTrackRequest(
+    val item_id: Long
 )
 
 data class LyricsDto(

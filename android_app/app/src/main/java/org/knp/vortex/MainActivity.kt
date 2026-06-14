@@ -67,9 +67,20 @@ class MainActivity : FragmentActivity() {
     
     private val viewModel: MainViewModel by viewModels()
 
+    private val requestNotificationPermission =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
+        // Needed (Android 13+) so the media-playback foreground service can post
+        // its now-playing notification with transport controls.
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+            != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestNotificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+
         // Initial Check if enabled
         if (viewModel.isBiometricEnabled() && !viewModel.isBiometricUnlocked.value) {
              authenticate()
@@ -221,8 +232,16 @@ fun AppNavigation() {
                     val encodedName = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
                     navController.navigate("library/$id/$encodedName/$type")
                 },
+                onOpenCard = { id, kind ->
+                    when (kind) {
+                        "artist" -> navController.navigate("artist/$id")
+                        "album" -> navController.navigate("album/$id")
+                        "music_video" -> navController.navigate("player/$id")
+                        else -> navController.navigate("movie/$id")
+                    }
+                },
 
-                onQuickPlay = { id -> 
+                onQuickPlay = { id ->
                     // Direct Playback
                     navController.navigate("player/$id") 
                 }
@@ -374,6 +393,7 @@ fun AppNavigation() {
                     }
                 },
                 onPlaySong = { navController.navigate("music_player") },
+                onOpenPlaylist = { playlistId -> navController.navigate("playlist/$playlistId") },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -404,6 +424,18 @@ fun AppNavigation() {
 
         composable("music_player") {
             MusicPlayerScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = "playlist/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getLong("id") ?: return@composable
+            org.knp.vortex.ui.screens.music.PlaylistDetailScreen(
+                playlistId = id,
+                onPlayTrack = { navController.navigate("music_player") },
                 onBack = { navController.popBackStack() }
             )
         }

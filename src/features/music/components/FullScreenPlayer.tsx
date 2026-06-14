@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Play, Pause, SkipBack, SkipForward, Rewind, FastForward,
     Shuffle, Repeat, Repeat1, Volume2, Volume1, VolumeX,
-    ChevronDown, Music, ListMusic, Mic2, Plus,
+    ChevronDown, Music, ListMusic, Mic2, Plus, RefreshCw
 } from 'lucide-react';
 import { resolveImageUrl, mediaService } from '@/services';
 import type { Lyrics } from '@/types';
@@ -179,6 +179,7 @@ const LyricsPanel: React.FC<{ trackId: number; position: number; onSeek: (s: num
     ({ trackId, position, onSeek }) => {
         const [lyrics, setLyrics] = useState<Lyrics | null>(null);
         const [loading, setLoading] = useState(true);
+        const [forceRefresh, setForceRefresh] = useState(0);
         const activeRef = useRef<HTMLParagraphElement | null>(null);
         const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -186,12 +187,12 @@ const LyricsPanel: React.FC<{ trackId: number; position: number; onSeek: (s: num
             let cancelled = false;
             setLoading(true);
             setLyrics(null);
-            mediaService.lyrics(trackId)
+            mediaService.lyrics(trackId, forceRefresh > 0)
                 .then(l => { if (!cancelled) setLyrics(l); })
                 .catch(() => { if (!cancelled) setLyrics(null); })
                 .finally(() => { if (!cancelled) setLoading(false); });
             return () => { cancelled = true; };
-        }, [trackId]);
+        }, [trackId, forceRefresh]);
 
         // Index of the current line for synced lyrics: last line whose time <= position.
         const activeIndex = useMemo(() => {
@@ -220,36 +221,57 @@ const LyricsPanel: React.FC<{ trackId: number; position: number; onSeek: (s: num
             return <Centered><div className="w-6 h-6 border-2 border-current rounded-full animate-spin border-t-transparent text-outline-variant" /></Centered>;
         }
         if (!lyrics || lyrics.lines.length === 0) {
-            return <Centered><span className="text-outline-variant text-sm font-body">No lyrics found for this track.</span></Centered>;
+            return (
+                <Centered>
+                    <div className="flex flex-col items-center gap-4">
+                        <span className="text-outline-variant text-sm font-body">No lyrics found for this track.</span>
+                        <button
+                            onClick={() => setForceRefresh(f => f + 1)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 text-outline-variant hover:text-primary transition-colors text-sm font-label"
+                        >
+                            <RefreshCw size={16} /> Retry Download
+                        </button>
+                    </div>
+                </Centered>
+            );
         }
 
         return (
-            <div ref={scrollRef} className="relative h-full overflow-y-auto pr-2 space-y-1 scroll-smooth lyrics-scroll">
-                {lyrics.lines.map((line, i) => {
-                    const active = i === activeIndex;
-                    const clickable = lyrics.synced && line.time != null;
-                    return (
-                        <p
-                            key={i}
-                            ref={active ? activeRef : undefined}
-                            onClick={clickable ? () => onSeek(line.time as number) : undefined}
-                            className={`font-heading leading-snug py-1 transition-colors ${
-                                clickable ? 'cursor-pointer' : ''
-                            } ${
-                                active
-                                    ? 'text-primary text-xl font-semibold'
-                                    : lyrics.synced
-                                        ? 'text-outline-variant/60 text-lg hover:text-outline-variant'
-                                        : 'text-on-surface text-base'
-                            }`}
-                        >
-                            {line.text || ' '}
-                        </p>
-                    );
-                })}
-                {lyrics.source === 'lrclib' && (
-                    <p className="text-[10px] text-outline-variant/50 font-label pt-4">Lyrics via lrclib.net</p>
-                )}
+            <div className="relative h-full flex flex-col">
+                <button
+                    onClick={() => setForceRefresh(f => f + 1)}
+                    className="absolute top-0 right-2 p-2 rounded-full text-outline-variant hover:text-primary hover:bg-white/10 transition-colors z-10"
+                    title="Re-download lyrics"
+                >
+                    <RefreshCw size={16} />
+                </button>
+                <div ref={scrollRef} className="relative h-full overflow-y-auto pr-2 space-y-1 scroll-smooth lyrics-scroll pt-2">
+                    {lyrics.lines.map((line, i) => {
+                        const active = i === activeIndex;
+                        const clickable = lyrics.synced && line.time != null;
+                        return (
+                            <p
+                                key={i}
+                                ref={active ? activeRef : undefined}
+                                onClick={clickable ? () => onSeek(line.time as number) : undefined}
+                                className={`font-heading leading-snug py-1 transition-colors ${
+                                    clickable ? 'cursor-pointer' : ''
+                                } ${
+                                    active
+                                        ? 'text-primary text-xl font-semibold'
+                                        : lyrics.synced
+                                            ? 'text-outline-variant/60 text-lg hover:text-outline-variant'
+                                            : 'text-on-surface text-base'
+                                }`}
+                            >
+                                {line.text || ' '}
+                            </p>
+                        );
+                    })}
+                    {lyrics.source === 'lrclib' && (
+                        <p className="text-[10px] text-outline-variant/50 font-label pt-4">Lyrics via lrclib.net</p>
+                    )}
+                </div>
             </div>
         );
     };
