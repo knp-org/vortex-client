@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Play, Tv, Film, MoreVertical, RefreshCw, FileSearch, Info, Edit } from 'lucide-react';
+import { Play, Tv, Film, MoreVertical, RefreshCw, FileSearch, Info, Edit, ListPlus } from 'lucide-react';
 import { mediaService, resolveImageUrl } from '@/services';
 import { IdentifyModal } from './IdentifyModal';
 import { MediaInfoModal } from './MediaInfoModal';
+import { AddToPlaylistModal } from '@/features/music';
 
 interface MediaCardProps {
     id?: number | string;
@@ -11,7 +12,7 @@ interface MediaCardProps {
     onClick?: () => void;
     subtitle?: string;
     progress?: number;
-    type?: 'movie' | 'series' | 'episode' | 'folder';
+    type?: 'movie' | 'series' | 'episode' | 'folder' | 'album';
     aspectRatio?: 'poster' | 'video'; // poster = 2/3, video = 16/9
     className?: string;
 }
@@ -32,9 +33,12 @@ export const MediaCard: React.FC<MediaCardProps> = ({
     const [showIdentify, setShowIdentify] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
     const [mediaDetails, setMediaDetails] = useState<any>(null);
+    const [playlistItems, setPlaylistItems] = useState<number[] | null>(null);
 
     // For series cards the id is a series id; otherwise a media item id.
     const isSeries = type === 'folder' || type === 'series';
+    // Music library cards represent albums (the id is an album id).
+    const isAlbum = type === 'album';
 
     const handleAction = async (e: React.MouseEvent, action: string) => {
         e.stopPropagation();
@@ -63,6 +67,14 @@ export const MediaCard: React.FC<MediaCardProps> = ({
         } else if (action === 'edit') {
             // Placeholder
             console.log("Edit requested for", itemId);
+        } else if (action === 'playlist') {
+            // Album cards: gather the album's track item-ids for the playlist modal.
+            try {
+                const album = await mediaService.album(itemId);
+                setPlaylistItems(album.tracks.map(t => t.id));
+            } catch (err) {
+                console.error("Failed to load album tracks", err);
+            }
         }
     };
 
@@ -146,19 +158,27 @@ export const MediaCard: React.FC<MediaCardProps> = ({
 
                         {showMenu && (
                             <div className="mt-1 w-36 bg-[#15151c]/95 backdrop-blur-glass border border-outline rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.6)] overflow-hidden animate-fade-in text-left">
-                                <button onClick={(e) => handleAction(e, 'refresh')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
-                                    <RefreshCw size={12} /> Refresh Metadata
-                                </button>
-                                <button onClick={(e) => handleAction(e, 'edit')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
-                                    <Edit size={12} /> Edit Metadata
-                                </button>
-                                <button onClick={(e) => handleAction(e, 'identify')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
-                                    <FileSearch size={12} /> Identity
-                                </button>
-                                {(type !== 'folder' && type !== 'series') && (
-                                    <button onClick={(e) => handleAction(e, 'info')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 border-t border-white/5 font-label">
-                                        <Info size={12} /> Media Info
+                                {isAlbum ? (
+                                    <button onClick={(e) => handleAction(e, 'playlist')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
+                                        <ListPlus size={12} /> Add to Playlist
                                     </button>
+                                ) : (
+                                    <>
+                                        <button onClick={(e) => handleAction(e, 'refresh')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
+                                            <RefreshCw size={12} /> Refresh Metadata
+                                        </button>
+                                        <button onClick={(e) => handleAction(e, 'edit')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
+                                            <Edit size={12} /> Edit Metadata
+                                        </button>
+                                        <button onClick={(e) => handleAction(e, 'identify')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
+                                            <FileSearch size={12} /> Identity
+                                        </button>
+                                        {(type !== 'folder' && type !== 'series') && (
+                                            <button onClick={(e) => handleAction(e, 'info')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 border-t border-white/5 font-label">
+                                                <Info size={12} /> Media Info
+                                            </button>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         )}
@@ -181,6 +201,10 @@ export const MediaCard: React.FC<MediaCardProps> = ({
                     onClose={() => setShowInfo(false)}
                     media={mediaDetails}
                 />
+            )}
+
+            {playlistItems && (
+                <AddToPlaylistModal itemIds={playlistItems} onClose={() => setPlaylistItems(null)} />
             )}
         </>
     );

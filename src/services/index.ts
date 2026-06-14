@@ -5,6 +5,7 @@ export { bookService } from './books';
 export type { BookInfo, BookFormat } from './books';
 export { mediaService } from './media';
 export type { IdentifyBody } from './media';
+export { playlistService } from './playlists';
 export { authService } from './auth';
 export type { AuthUser, SetupStatus, CreateUserBody } from './auth';
 export { settingsService } from './settings';

@@ -19,7 +19,7 @@ import org.knp.vortex.ui.theme.*
 @Composable
 fun SearchScreen(
     onPlayMedia: (Long, String?) -> Unit,
-    onOpenSeries: (String) -> Unit,
+    onOpenSeries: (Long) -> Unit,
     viewModel: SearchViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -79,7 +79,7 @@ fun SearchScreen(
                                     ModernMediaCard(
                                         title = series.name,
                                         posterUrl = org.knp.vortex.utils.formatImageUrl(series.poster_url, uiState.serverUrl),
-                                        onClick = { onOpenSeries(series.name) },
+                                        onClick = { onOpenSeries(series.id) },
                                         modifier = Modifier.width(120.dp)
                                     )
                                 }

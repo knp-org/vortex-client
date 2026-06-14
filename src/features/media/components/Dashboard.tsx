@@ -12,6 +12,8 @@ export const navigateForCard = (
     item: { id: string; kind?: string },
 ) => {
     if (item.kind === 'series') navigate(`/series/${item.id}`);
+    else if (item.kind === 'album') navigate(`/albums/${item.id}`);
+    else if (item.kind === 'artist') navigate(`/artists/${item.id}`);
     else navigate(`/media/${item.id}`);
 };
 

@@ -130,11 +130,11 @@ class PlayerViewModel @Inject constructor(
     fun resolveNextEpisode(mediaId: Long, onResult: (NextEpisodeUi?) -> Unit) {
         viewModelScope.launch {
             val media = repository.getMediaDetails(mediaId).getOrNull()
-            val seriesName = media?.series_name
+            val seriesId = media?.series_id
             val season = media?.season_number
             val episode = media?.episode_number
-            val isEpisode = media?.media_type == "episode" || (seriesName != null && episode != null)
-            if (media == null || !isEpisode || seriesName == null || season == null || episode == null) {
+            val isEpisode = media?.media_type == "episode" || (seriesId != null && episode != null)
+            if (media == null || !isEpisode || seriesId == null || season == null || episode == null) {
                 onResult(null); return@launch
             }
 
@@ -142,16 +142,16 @@ class PlayerViewModel @Inject constructor(
                 NextEpisodeUi(e.id, e.title ?: "Episode ${e.episode_number}")
 
             // 1. Next episode in the current season.
-            val nextInSeason = repository.getSeasonEpisodes(seriesName, season).getOrNull()
+            val nextInSeason = repository.getSeasonEpisodes(seriesId, season).getOrNull()
                 ?.sortedBy { it.episode_number }?.firstOrNull { it.episode_number > episode }
             if (nextInSeason != null) { onResult(toUi(nextInSeason)); return@launch }
 
             // 2. First episode of the next non-empty season.
-            val nextSeason = repository.getSeriesDetail(seriesName).getOrNull()?.seasons
+            val nextSeason = repository.getSeriesDetail(seriesId).getOrNull()?.seasons
                 ?.filter { it.season_number > season && it.episode_count > 0 }
                 ?.minByOrNull { it.season_number }
             if (nextSeason == null) { onResult(null); return@launch }
-            val first = repository.getSeasonEpisodes(seriesName, nextSeason.season_number).getOrNull()
+            val first = repository.getSeasonEpisodes(seriesId, nextSeason.season_number).getOrNull()
                 ?.sortedBy { it.episode_number }?.firstOrNull()
             onResult(if (first != null) toUi(first) else null)
         }

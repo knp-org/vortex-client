@@ -12,8 +12,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 
 enum class ComicSortOrder {
     NUMBER_ASC, NUMBER_DESC, NAME_ASC, NAME_DESC
@@ -38,12 +36,7 @@ class ComicSeriesViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ComicSeriesUiState(serverUrl = settingsRepository.getServerUrl()))
     val uiState: StateFlow<ComicSeriesUiState> = _uiState.asStateFlow()
 
-    private val rawSeriesName: String = savedStateHandle.get<String>("seriesName") ?: ""
-    val seriesName: String = try {
-        URLDecoder.decode(rawSeriesName, StandardCharsets.UTF_8.toString())
-    } catch (e: Exception) {
-        rawSeriesName
-    }
+    private val seriesId: Long = savedStateHandle.get<Long>("seriesId") ?: 0L
 
     init {
         loadSeriesDetail()
@@ -52,10 +45,10 @@ class ComicSeriesViewModel @Inject constructor(
     fun loadSeriesDetail() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            repository.getSeriesDetail(seriesName)
+            repository.getSeriesDetail(seriesId)
                 .onSuccess { detail ->
                     // For comics, chapters are usually returned as episodes under season 1
-                    repository.getSeasonEpisodes(seriesName, 1)
+                    repository.getSeasonEpisodes(seriesId, 1)
                         .onSuccess { eps ->
                             _uiState.value = _uiState.value.copy(
                                 seriesDetail = detail,

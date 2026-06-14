@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SeriesDetailScreen(
     onBack: () -> Unit,
-    onIdentify: (String) -> Unit,
+    onIdentify: (Long, String) -> Unit,
     onPlayEpisode: (Long, String) -> Unit,
     viewModel: SeriesDetailViewModel = hiltViewModel()
 ) {
@@ -268,7 +268,7 @@ fun SeriesDetailScreen(
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                                     contentPadding = PaddingValues(horizontal = 24.dp)
                                 ) {
-                                    items(uiState.episodes) { episode ->
+                                    items(uiState.episodes, key = { it.id }) { episode ->
                                         SleekEpisodeItem(episode, uiState.serverUrl, onClick = { onPlayEpisode(episode.id, episode.file_path) })
                                     }
                                 }
@@ -313,7 +313,7 @@ fun SeriesDetailScreen(
                                 DropdownMenuItem(
                                     text = { Text("Identify", color = Color.White) },
                                     onClick = {
-                                        onIdentify(viewModel.seriesName)
+                                        uiState.seriesDetail?.let { onIdentify(it.id, it.name) }
                                         showMenu = false
                                     }
                                 )
@@ -349,7 +349,7 @@ fun SleekEpisodeItem(episode: EpisodeDto, serverUrl: String, onClick: () -> Unit
                     .size(512)
                     .build()
             }
-            var isError by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            var isError by androidx.compose.runtime.remember(episode.poster_url) { androidx.compose.runtime.mutableStateOf(false) }
 
             if (!isError) {
                 AsyncImage(

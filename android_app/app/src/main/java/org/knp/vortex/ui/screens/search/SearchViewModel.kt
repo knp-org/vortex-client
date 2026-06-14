@@ -62,7 +62,7 @@ class SearchViewModel @Inject constructor(
         // The server tags grouped series rows with media_type == "series".
         val series = results
             .filter { it.media_type == "series" }
-            .map { SeriesDto(name = it.series_name ?: it.title ?: "", poster_url = it.poster_url, season_count = 0) }
+            .map { SeriesDto(id = it.id, name = it.series_name ?: it.title ?: "", poster_url = it.poster_url, season_count = 0) }
         val movies = results.filter { it.media_type != "series" }
 
         _uiState.update { it.copy(movies = movies, series = series, isLoading = false) }

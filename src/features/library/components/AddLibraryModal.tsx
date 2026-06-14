@@ -6,7 +6,7 @@ import { Input } from '@/shared/ui/Input';
 import { Select } from '@/shared/ui/Select';
 import { MultiDirectoryPicker } from '@/shared/ui/MultiDirectoryPicker';
 import { libraryService } from '@/services';
-import { Film, Tv, Music, FileQuestion, BookOpen } from 'lucide-react';
+import { Film, Tv, Music, Video, FileQuestion, BookOpen } from 'lucide-react';
 import { READING_MODE_OPTIONS } from '@/constants/reading';
 
 interface AddLibraryModalProps {
@@ -18,7 +18,8 @@ interface AddLibraryModalProps {
 const LIBRARY_TYPES = [
     { id: 'movies', label: 'Movies', icon: Film },
     { id: 'tv_shows', label: 'TV Shows', icon: Tv },
-    { id: 'music_videos', label: 'Music', icon: Music },
+    { id: 'music', label: 'Music', icon: Music },
+    { id: 'music_videos', label: 'Music Videos', icon: Video },
     { id: 'books', label: 'Books', icon: BookOpen },
     { id: 'other', label: 'Other', icon: FileQuestion },
 ];

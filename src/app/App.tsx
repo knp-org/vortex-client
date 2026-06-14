@@ -6,6 +6,7 @@ import { Dashboard, MediaDetail } from '@/features/media';
 import { Library } from '@/features/library';
 import { Settings } from '@/features/settings';
 import { Player, MpvOverlay } from '@/features/player';
+import { MusicPlayerProvider, MusicPlayerBar, FullScreenPlayer, AlbumDetail, ArtistDetail, Playlists } from '@/features/music';
 
 // The reader pulls in heavy renderers (pdf.js / epub.js); load it on demand
 // so they stay out of the main bundle.
@@ -46,6 +47,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <MusicPlayerProvider>
         <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#0a0a0f]">
           <Titlebar />
           <div className="flex-1 overflow-hidden relative">
@@ -57,6 +59,10 @@ function App() {
               <Route path="/libraries/:id" element={<RouteGuard><Library /></RouteGuard>} />
               <Route path="/media/:id" element={<RouteGuard><MediaDetail /></RouteGuard>} />
               <Route path="/series/:seriesId" element={<RouteGuard><MediaDetail /></RouteGuard>} />
+              <Route path="/albums/:id" element={<RouteGuard><AlbumDetail /></RouteGuard>} />
+              <Route path="/artists/:id" element={<RouteGuard><ArtistDetail /></RouteGuard>} />
+              <Route path="/playlists" element={<RouteGuard><Playlists /></RouteGuard>} />
+              <Route path="/playlists/:id" element={<RouteGuard><Playlists /></RouteGuard>} />
               <Route path="/player/:id" element={<RouteGuard><Player /></RouteGuard>} />
               <Route path="/reader/:id" element={
                 <RouteGuard>
@@ -75,7 +81,12 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
+          {/* Persistent music player bar (renders only when a track is loaded). */}
+          <MusicPlayerBar />
+          {/* Full-screen player overlay (renders only when expanded). */}
+          <FullScreenPlayer />
         </div>
+        </MusicPlayerProvider>
       </AuthProvider>
     </BrowserRouter>
   );

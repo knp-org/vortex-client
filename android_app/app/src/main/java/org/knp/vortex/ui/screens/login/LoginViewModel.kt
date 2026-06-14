@@ -39,21 +39,15 @@ class LoginViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, isRegistrationSuccess = false)
             try {
                 if (isRegistering) {
+                    // /auth/setup creates the first admin and logs them straight in.
                     val response = authApi.register(AuthRequest(username, password))
-                    if (response.isSuccessful) {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = "Registration successful! Please login.",
-                            isRegistrationSuccess = true
-                        )
+                    if (response.token != null) {
+                        settingsRepository.setAuthToken(response.token)
+                        settingsRepository.setUsername(username)
+                        settingsRepository.addSavedUrl(serverUrl.value)
+                        onSuccess()
                     } else {
-                        val errorBody = response.errorBody()?.string()
-                        val errorMessage = try {
-                            org.json.JSONObject(errorBody ?: "").getString("message")
-                        } catch (e: Exception) {
-                            "Registration failed: ${response.code()}"
-                        }
-                        _uiState.value = _uiState.value.copy(isLoading = false, error = errorMessage)
+                        _uiState.value = _uiState.value.copy(isLoading = false, error = "Registration failed: No token received.")
                     }
                 } else {
                     val response = authApi.login(AuthRequest(username, password))

@@ -32,6 +32,9 @@ import org.knp.vortex.ui.screens.settings.AccountSettingsScreen
 import org.knp.vortex.ui.screens.reader.ReaderScreen
 import org.knp.vortex.ui.screens.player.PlayerScreen
 import org.knp.vortex.ui.screens.movie.MovieDetailScreen
+import org.knp.vortex.ui.screens.music.ArtistDetailScreen
+import org.knp.vortex.ui.screens.music.AlbumDetailScreen
+import org.knp.vortex.ui.screens.music.MusicPlayerScreen
 import org.knp.vortex.ui.screens.identify.IdentifyScreen
 import org.knp.vortex.ui.screens.series.SeriesDetailScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -207,16 +210,14 @@ fun AppNavigation() {
                         navController.navigate("movie/$id")
                     }
                 },
-                onOpenSeries = { name, type -> 
-                    // Forced recompile comment
-                    val encoded = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
+                onOpenSeries = { seriesId, type ->
                     if (type.lowercase() == "books") {
-                        navController.navigate("comicseries/$encoded")
+                        navController.navigate("comicseries/$seriesId")
                     } else {
-                        navController.navigate("series/$encoded/detail")
+                        navController.navigate("series/$seriesId/detail")
                     }
                 },
-                onOpenLibrary = { id, name, type -> 
+                onOpenLibrary = { id, name, type ->
                     val encodedName = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
                     navController.navigate("library/$id/$encodedName/$type")
                 },
@@ -240,9 +241,8 @@ fun AppNavigation() {
                         navController.navigate("movie/$id")
                     }
                 },
-                onOpenSeries = { name -> 
-                    val encoded = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
-                    navController.navigate("series/$encoded/detail")
+                onOpenSeries = { seriesId ->
+                    navController.navigate("series/$seriesId/detail")
                 }
             )
         }
@@ -358,14 +358,52 @@ fun AppNavigation() {
                         navController.navigate("movie/$id")
                     }
                 },
-                onOpenSeries = { seriesName, libType ->
-                    val encoded = URLEncoder.encode(seriesName, StandardCharsets.UTF_8.toString())
+                onOpenSeries = { seriesId, libType ->
                     if (libType.lowercase() == "books") {
-                        navController.navigate("comicseries/$encoded")
+                        navController.navigate("comicseries/$seriesId")
                     } else {
-                        navController.navigate("series/$encoded/detail")
+                        navController.navigate("series/$seriesId/detail")
                     }
                 },
+                onOpenCard = { card ->
+                    when (card.kind) {
+                        "artist" -> navController.navigate("artist/${card.id}")
+                        "album" -> navController.navigate("album/${card.id}")
+                        "music_video" -> navController.navigate("player/${card.id}")
+                        else -> navController.navigate("movie/${card.id}")
+                    }
+                },
+                onPlaySong = { navController.navigate("music_player") },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = "artist/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getLong("id") ?: return@composable
+            ArtistDetailScreen(
+                artistId = id,
+                onOpenAlbum = { albumId -> navController.navigate("album/$albumId") },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = "album/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getLong("id") ?: return@composable
+            AlbumDetailScreen(
+                albumId = id,
+                onPlayTrack = { navController.navigate("music_player") },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("music_player") {
+            MusicPlayerScreen(
                 onBack = { navController.popBackStack() }
             )
         }
@@ -417,23 +455,21 @@ fun AppNavigation() {
         }
 
         composable(
-            route = "series/{seriesName}/detail",
-            arguments = listOf(navArgument("seriesName") { type = NavType.StringType })
+            route = "series/{seriesId}/detail",
+            arguments = listOf(navArgument("seriesId") { type = NavType.LongType })
         ) { _ ->
-            // Unused val encodedName = backStackEntry.arguments?.getString("seriesName") ?: ""
-            // Unused: val seriesName = URLDecoder.decode(encodedName, StandardCharsets.UTF_8.toString())
             SeriesDetailScreen(
                 onBack = { navController.popBackStack() },
-                onIdentify = { name ->
+                onIdentify = { seriesId, name ->
                     val encodedTitle = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
-                    navController.navigate("identify/0/$encodedTitle/series?seriesName=$encodedTitle")
+                    navController.navigate("identify/$seriesId/$encodedTitle/series")
                 },
-                onPlayEpisode = { id, filePath -> 
+                onPlayEpisode = { id, filePath ->
                     val ext = filePath.substringAfterLast('.', "").lowercase()
                     if (ext == "cbz" || ext == "epub" || ext == "pdf") {
                         navController.navigate("reader/$id")
                     } else {
-                        navController.navigate("player/$id") 
+                        navController.navigate("player/$id")
                     }
                 }
             )
@@ -452,13 +488,9 @@ fun AppNavigation() {
         }
         
         composable(
-            route = "comicseries/{seriesName}",
-            arguments = listOf(navArgument("seriesName") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val seriesName = URLDecoder.decode(
-                backStackEntry.arguments?.getString("seriesName") ?: "",
-                StandardCharsets.UTF_8.toString()
-            )
+            route = "comicseries/{seriesId}",
+            arguments = listOf(navArgument("seriesId") { type = NavType.LongType })
+        ) { _ ->
             org.knp.vortex.ui.screens.comic.ComicSeriesDetailScreen(
                 onBack = { navController.popBackStack() },
                 onReadChapter = { id -> navController.navigate("reader/$id") }

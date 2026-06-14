@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Film, Tv, Music, Settings, FileQuestion, BookOpen } from 'lucide-react';
+import { Home, Film, Tv, Music, Settings, FileQuestion, BookOpen, Image, ListMusic } from 'lucide-react';
 import { api } from '@/services';
 
 interface LibraryData {
@@ -37,8 +37,10 @@ export const Sidebar: React.FC = () => {
         switch (type) {
             case 'movies': return Film;
             case 'tv_shows': return Tv;
+            case 'music': return Music;
             case 'music_videos': return Music;
             case 'books': return BookOpen;
+            case 'images': return Image;
             default: return FileQuestion;
         }
     };
@@ -83,7 +85,17 @@ export const Sidebar: React.FC = () => {
                     })}
                 </nav>
 
-                <div className="pt-4 border-t border-white/10 mt-2">
+                <div className="pt-4 border-t border-white/10 mt-2 space-y-1">
+                    <div
+                        onClick={() => navigate('/playlists')}
+                        className={`flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer ${location.pathname.startsWith('/playlists')
+                            ? 'bg-white/10 text-primary border border-white/20 shadow-inner'
+                            : 'text-outline-variant hover:bg-white/5 hover:text-primary'
+                            } font-heading`}
+                    >
+                        <span className="text-lg"><ListMusic size={20} /></span>
+                        <span className="font-bold">Playlists</span>
+                    </div>
                     <div
                         onClick={() => navigate('/settings')}
                         className={`flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer ${isSettingsActive

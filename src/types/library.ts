@@ -7,7 +7,7 @@ export interface Library {
     default_reading_mode?: ReadingMode | null;
 }
 
-export type LibraryType = 'movies' | 'tv_shows' | 'music_videos' | 'books' | 'other';
+export type LibraryType = 'movies' | 'tv_shows' | 'music' | 'music_videos' | 'books' | 'images' | 'other';
 
 /** Reading layout for Books libraries. Shared verbatim with the server. */
 export type ReadingMode = 'vertical' | 'horizontal_ltr' | 'horizontal_rtl' | 'webtoon';

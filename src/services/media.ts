@@ -1,5 +1,5 @@
 import { api } from '@/shared/api';
-import type { Card, MovieDetail, BookDetail, SeriesDetail, Season, Episode, ContinueItem, MediaInfo } from '@/types';
+import type { Card, MovieDetail, BookDetail, SeriesDetail, Season, Episode, ContinueItem, MediaInfo, AlbumDetail, ArtistDetail, Lyrics, Track } from '@/types';
 
 export interface IdentifyBody {
     provider_id: string;
@@ -15,6 +15,7 @@ export interface IdentifyBody {
 export const mediaService = {
     // Listings (cards)
     libraryItems: (libraryId: number | string) => api.get<Card[]>(`/libraries/${libraryId}/media`),
+    libraryTracks: (libraryId: number | string) => api.get<Track[]>(`/libraries/${libraryId}/tracks`),
     recent: () => api.get<Card[]>('/recent'),
     search: (query: string) => api.get<Card[]>(`/library/search?query=${encodeURIComponent(query)}`),
     continueWatching: () => api.get<ContinueItem[]>('/continue'),
@@ -40,6 +41,13 @@ export const mediaService = {
     identifyMedia: (id: number | string, body: IdentifyBody) => api.post(`/media/${id}/identify`, body),
     refreshSeries: (id: number | string) => api.post(`/series/${id}/refresh`),
     identifySeries: (id: number | string, body: IdentifyBody) => api.post(`/series/${id}/identify`, body),
+
+    // Music
+    album: (id: number | string) => api.get<AlbumDetail>(`/albums/${id}`),
+    artists: (libraryId?: number) =>
+        api.get<Card[]>(libraryId != null ? `/artists?library_id=${libraryId}` : '/artists'),
+    artist: (id: number | string) => api.get<ArtistDetail>(`/artists/${id}`),
+    lyrics: (id: number | string) => api.get<Lyrics>(`/media/${id}/lyrics`),
 
     // Favorites (per-user)
     favorites: () => api.get<Card[]>('/favorites'),

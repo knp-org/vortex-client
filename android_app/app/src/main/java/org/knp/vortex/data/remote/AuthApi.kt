@@ -17,6 +17,9 @@ interface AuthApi {
     @POST("/api/v1/auth/login")
     suspend fun login(@Body request: AuthRequest): AuthResponse
 
-    @POST("/api/v1/auth/register")
-    suspend fun register(@Body request: AuthRequest): retrofit2.Response<Unit>
+    // The server has no open registration. First-run only: /auth/setup creates the
+    // initial admin and logs them in (returns a token), rejecting with 403 once a
+    // user already exists.
+    @POST("/api/v1/auth/setup")
+    suspend fun register(@Body request: AuthRequest): AuthResponse
 }

@@ -134,8 +134,9 @@ class ReaderViewModel @Inject constructor(
                 loadReadingStyle(id, sName)
                 
                 val currentEpisode = details.episode_number
-                if (!sName.isNullOrEmpty() && currentEpisode != null) {
-                    mediaRepository.getSeasonEpisodes(sName, 1).onSuccess { chapters ->
+                val seriesId = details.series_id
+                if (seriesId != null && currentEpisode != null) {
+                    mediaRepository.getSeasonEpisodes(seriesId, 1).onSuccess { chapters ->
                         // Find the chapter with the next highest episode number
                         val nextChapter = chapters
                             .filter { it.episode_number > currentEpisode }

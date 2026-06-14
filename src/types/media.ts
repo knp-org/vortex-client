@@ -99,6 +99,62 @@ export interface BookDetail {
     isbn?: string;
 }
 
+export interface Track {
+    id: number;
+    track_number?: number;
+    disc_number?: number;
+    title?: string;
+    artist?: string;
+    album?: string;
+    cover_url?: string;
+    duration?: number;
+    stream_url: string;
+}
+
+/** One lyric line; `time` (seconds) is present only for synced (LRC) lyrics. */
+export interface LyricLine {
+    time?: number | null;
+    text: string;
+}
+
+export interface Lyrics {
+    synced: boolean;
+    /** lrc | txt | embedded | lrclib | none */
+    source: string;
+    lines: LyricLine[];
+}
+
+export interface AlbumDetail {
+    id: number;
+    title: string;
+    artist_id?: number;
+    artist?: string;
+    year?: number;
+    cover_url?: string;
+    tracks: Track[];
+}
+
+export interface ArtistDetail {
+    id: number;
+    name: string;
+    bio?: string;
+    image_url?: string;
+    albums: Card[];
+}
+
+export interface Playlist {
+    id: number;
+    name: string;
+    track_count: number;
+    created_at?: string;
+}
+
+export interface PlaylistDetail {
+    id: number;
+    name: string;
+    tracks: Track[];
+}
+
 /** Per-user "continue watching" entry. */
 export interface ContinueItem {
     id: number;

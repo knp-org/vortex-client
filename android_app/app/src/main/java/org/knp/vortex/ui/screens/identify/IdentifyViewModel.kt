@@ -54,8 +54,10 @@ class IdentifyViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isIdentifying = true)
             
-            val result = if (localMediaId == 0L && !seriesName.isNullOrEmpty()) {
-                repository.identifySeries(seriesName, providerId, mediaType, providerName)
+            // Series identify is keyed by the numeric series id (passed as localMediaId);
+            // everything else identifies a media_items row.
+            val result = if (mediaType == "series") {
+                repository.identifySeries(localMediaId, providerId, mediaType, providerName)
             } else {
                 repository.identifyMedia(localMediaId, providerId, mediaType, providerName)
             }

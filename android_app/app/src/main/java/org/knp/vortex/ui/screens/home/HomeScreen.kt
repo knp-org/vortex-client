@@ -53,7 +53,7 @@ import coil.request.ImageRequest
 @Composable
 fun HomeScreen(
     onPlayMedia: (Long, String?) -> Unit,
-    onOpenSeries: (String, String) -> Unit,
+    onOpenSeries: (Long, String) -> Unit,  // seriesId, libraryType
     onOpenLibrary: (Long, String, String) -> Unit,  // id, name, type
     onQuickPlay: (Long) -> Unit, // New callback for direct playback
     viewModel: HomeViewModel = hiltViewModel()
@@ -239,10 +239,10 @@ fun HomeScreen(
                                     serverUrl = uiState.serverUrl,
                                     onItemClick = { item ->
                                         when (item) {
-                                            is SeriesDto -> onOpenSeries(item.name, "")
+                                            is SeriesDto -> onOpenSeries(item.id, "")
                                             is MediaItemDto -> {
                                                 if (item.media_type == "series") {
-                                                    onOpenSeries(item.series_name ?: item.title ?: "", item.library_type ?: "")
+                                                    onOpenSeries(item.id, item.library_type ?: "")
                                                 } else {
                                                     onPlayMedia(item.id, item.library_type)
                                                 }
@@ -300,7 +300,7 @@ fun HomeScreen(
                                                     title = item.name,
                                                     posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl),
                                                     year = null,
-                                                    onClick = { onOpenSeries(item.name, library.library_type) },
+                                                    onClick = { onOpenSeries(item.id, library.library_type) },
                                                     modifier = Modifier.width(120.dp)
                                                 )
                                             }
@@ -326,7 +326,7 @@ fun HomeScreen(
                                                     year = item.year,
                                                     onClick = {
                                                         if (item.media_type == "series") {
-                                                            onOpenSeries(item.series_name ?: item.title ?: "", library.library_type)
+                                                            onOpenSeries(item.id, library.library_type)
                                                         } else {
                                                             onPlayMedia(item.id, library.library_type)
                                                         }
@@ -353,7 +353,7 @@ fun HomeScreen(
                                             year = item.year,
                                             onClick = {
                                                 if (item.media_type == "series") {
-                                                    onOpenSeries(item.series_name ?: item.title ?: "", item.library_type ?: "")
+                                                    onOpenSeries(item.id, item.library_type ?: "")
                                                 } else {
                                                     onPlayMedia(item.id, item.library_type)
                                                 }

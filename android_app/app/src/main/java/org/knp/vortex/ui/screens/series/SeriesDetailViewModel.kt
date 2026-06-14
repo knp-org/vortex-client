@@ -12,8 +12,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 
 data class SeriesDetailUiState(
     val seriesDetail: SeriesDetailDto? = null,
@@ -34,12 +32,7 @@ class SeriesDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SeriesDetailUiState(serverUrl = settingsRepository.getServerUrl()))
     val uiState: StateFlow<SeriesDetailUiState> = _uiState.asStateFlow()
 
-    private val rawSeriesName: String = savedStateHandle.get<String>("seriesName") ?: ""
-    val seriesName: String = try {
-        URLDecoder.decode(rawSeriesName, StandardCharsets.UTF_8.toString())
-    } catch (e: Exception) {
-        rawSeriesName
-    }
+    private val seriesId: Long = savedStateHandle.get<Long>("seriesId") ?: 0L
 
     init {
         loadSeriesDetail()
@@ -48,7 +41,7 @@ class SeriesDetailViewModel @Inject constructor(
     fun loadSeriesDetail() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            repository.getSeriesDetail(seriesName)
+            repository.getSeriesDetail(seriesId)
                 .onSuccess { detail ->
                     // Auto-select first season if available
                     val initialSeason = detail.seasons.firstOrNull()?.season_number ?: 1
@@ -77,7 +70,7 @@ class SeriesDetailViewModel @Inject constructor(
     private fun loadEpisodes(seasonNumber: Int) {
          viewModelScope.launch {
             // Keep existing data while loading new episodes, just maybe show a small loader or nothing (smooth transition)
-             repository.getSeasonEpisodes(seriesName, seasonNumber)
+             repository.getSeasonEpisodes(seriesId, seasonNumber)
                 .onSuccess { episodes ->
                     _uiState.value = _uiState.value.copy(episodes = episodes)
                 }
@@ -90,7 +83,7 @@ class SeriesDetailViewModel @Inject constructor(
     fun refreshMetadata() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            repository.refreshSeriesMetadata(seriesName)
+            repository.refreshSeriesMetadata(seriesId)
                 .onSuccess { detail ->
                     _uiState.value = _uiState.value.copy(seriesDetail = detail, isLoading = false)
                 }

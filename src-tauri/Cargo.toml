@@ -1,6 +1,6 @@
 [package]
 name = "vortex-client"
-version = "0.2.6"
+version = "0.2.7"
 description = "The official cross-platform client for Vortex, a high-performance self-hosted media server."
 authors = ["Vortex Contributors"]
 edition = "2021"
