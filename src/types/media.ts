@@ -43,6 +43,7 @@ export interface MovieDetail {
     genres: string[];
     cast: CreditDto[];
     stream_url: string;
+    file_name?: string;
 }
 
 export interface Season {

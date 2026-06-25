@@ -295,6 +295,13 @@ export const MediaDetail: React.FC = () => {
                                             </>
                                         )}
 
+                                        {media?.file_name && (
+                                            <>
+                                                <div className="text-outline-variant font-label">File</div>
+                                                <div className="text-primary break-all">{media.file_name}</div>
+                                            </>
+                                        )}
+
                                         <div className="text-outline-variant font-label">Audio</div>
                                         <div className="text-primary">English - AAC - Stereo</div>
                                     </div>
