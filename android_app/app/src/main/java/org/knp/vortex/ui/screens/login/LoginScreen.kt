@@ -92,7 +92,11 @@ fun LoginScreen(
                             value = serverUrl,
                             onValueChange = { viewModel.setServerUrl(it) },
                             label = "Server URL",
-                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri,
+                                autoCorrect = false
+                            )
                         )
 
                         ExposedDropdownMenu(

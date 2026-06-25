@@ -335,7 +335,7 @@ fun HomeScreen(
                                             items(content) { item ->
                                                 ModernMediaCard(
                                                     title = item.title,
-                                                    posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl) ?: "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail",
+                                                    posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl) ?: if (item.media_type in listOf("artist", "album", "series")) null else "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail",
                                                     year = item.year,
                                                     onClick = {
                                                         when (val kind = item.media_type) {

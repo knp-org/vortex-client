@@ -71,6 +71,21 @@ class MainActivity : FragmentActivity() {
     private val requestNotificationPermission =
         registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { }
 
+    var canEnterPip = false
+    val isInPipMode = kotlinx.coroutines.flow.MutableStateFlow(false)
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (canEnterPip && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            enterPictureInPictureMode(android.app.PictureInPictureParams.Builder().build())
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        isInPipMode.value = isInPictureInPictureMode
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

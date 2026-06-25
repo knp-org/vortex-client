@@ -68,8 +68,9 @@ class SettingsViewModel @Inject constructor(
 
     fun saveSettings() {
         viewModelScope.launch {
-            settingsRepository.setServerUrl(_uiState.value.serverUrl)
-            _uiState.value = _uiState.value.copy(isSaved = true)
+            val normalized = settingsRepository.normalizeUrl(_uiState.value.serverUrl)
+            settingsRepository.setServerUrl(normalized)
+            _uiState.value = _uiState.value.copy(serverUrl = normalized, isSaved = true)
         }
     }
     

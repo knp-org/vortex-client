@@ -45,7 +45,11 @@ fun ServerConfigScreen(
                     value = uiState.serverUrl,
                     onValueChange = { viewModel.updateServerUrl(it) },
                     label = "Server URL",
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri,
+                        autoCorrect = false
+                    )
                 )
 
                 Text(

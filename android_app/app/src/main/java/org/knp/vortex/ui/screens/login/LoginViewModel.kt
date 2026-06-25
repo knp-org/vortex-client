@@ -35,6 +35,10 @@ class LoginViewModel @Inject constructor(
     }
 
     fun loginOrRegister(username: String, password: String, isRegistering: Boolean, onSuccess: () -> Unit) {
+        // Normalize the URL (prepend http:// if needed) only now at connect time
+        val normalized = settingsRepository.normalizeUrl(serverUrl.value)
+        settingsRepository.setServerUrl(normalized)
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, isRegistrationSuccess = false)
             try {

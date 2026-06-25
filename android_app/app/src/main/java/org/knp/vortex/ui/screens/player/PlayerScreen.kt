@@ -14,6 +14,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,6 +43,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaSession
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -255,6 +257,13 @@ fun PlayerScreen(
             .setMediaSourceFactory(
                 androidx.media3.exoplayer.source.DefaultMediaSourceFactory(dataSourceFactory)
             )
+            .setAudioAttributes(
+                androidx.media3.common.AudioAttributes.Builder()
+                    .setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                    .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MOVIE)
+                    .build(),
+                true
+            )
             .setSeekForwardIncrementMs(skipForwardMs)
             .setSeekBackIncrementMs(skipBackwardMs)
             .build()
@@ -311,6 +320,14 @@ fun PlayerScreen(
                 playWhenReady = true
         }
     }
+
+    // Create a video-specific MediaSession so that PiP play/pause controls
+    // target this video player instead of the music PlaybackService.
+    val videoMediaSession = remember(exoPlayer) {
+        MediaSession.Builder(context, exoPlayer)
+            .setId("vortex_video_$mediaId")
+            .build()
+    }
     
     // Auto-save Progress
     LaunchedEffect(exoPlayer) {
@@ -334,28 +351,37 @@ fun PlayerScreen(
         }
     }
 
+    // Handle Auto-rotation & Full Screen Mode
+    val activity = context.findActivity() as? org.knp.vortex.MainActivity
+    val window = activity?.window
+
     // Lifecycle handling
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) {
-                exoPlayer.pause()
+                // Don't pause if we're entering PiP — the user expects
+                // the video to keep playing in the floating window.
+                val inPip = activity?.isInPipMode?.value == true
+                if (!inPip) {
+                    exoPlayer.pause()
+                }
                 viewModel.saveProgress(mediaId, exoPlayer.currentPosition / 1000, exoPlayer.duration / 1000)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+            videoMediaSession.release()
             exoPlayer.release()
         }
     }
     
-    // Handle Auto-rotation & Full Screen Mode
-    val activity = context.findActivity()
-    val window = activity?.window
+    val isInPipMode by activity?.isInPipMode?.collectAsState() ?: mutableStateOf(false)
 
     DisposableEffect(Unit) {
+        activity?.canEnterPip = true
         if (activity != null && window != null) {
             val controller = androidx.core.view.WindowInsetsControllerCompat(window, window.decorView)
             
@@ -372,6 +398,7 @@ fun PlayerScreen(
         }
 
         onDispose {
+            activity?.canEnterPip = false
             // Restore default configuration on exit
              if (activity != null && window != null) {
                  activity.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -535,6 +562,7 @@ fun PlayerScreen(
             update = { playerView ->
                 // Always fill layout bounds
                 playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL
+                playerView.useController = !isInPipMode
                 
                 val contentFrame = playerView.findViewById<android.view.View>(androidx.media3.ui.R.id.exo_content_frame)
                 if (contentFrame != null) {
@@ -550,7 +578,8 @@ fun PlayerScreen(
     }
     
     // UI Overlays
-    Box(Modifier.fillMaxSize()) {
+    if (!isInPipMode) {
+        Box(Modifier.fillMaxSize()) {
         // Next-episode prompt (TV shows only), shown near the end of playback.
         androidx.compose.animation.AnimatedVisibility(
             visible = showNextEpisode,
@@ -704,5 +733,6 @@ fun PlayerScreen(
                 }
             }
         }
+    }
     }
 }

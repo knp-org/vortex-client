@@ -260,7 +260,7 @@ fun MusicLibraryScreen(
                                 ModernMediaCard(
                                     title = card.title,
                                     posterUrl = org.knp.vortex.utils.formatImageUrl(card.poster_url, uiState.serverUrl)
-                                        ?: "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${card.id}/thumbnail",
+                                        ?: if (card.kind == "artist" || card.kind == "album") null else "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${card.id}/thumbnail",
                                     year = card.year,
                                     onClick = { onOpenCard(card) },
                                     modifier = Modifier.fillMaxWidth()

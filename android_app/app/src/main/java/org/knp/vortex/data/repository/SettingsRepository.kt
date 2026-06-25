@@ -45,7 +45,10 @@ class SettingsRepository @Inject constructor(
     }
 
     fun addSavedUrl(url: String) {
-        val normalizedUrl = url.trim().removeSuffix("/")
+        var normalizedUrl = url.trim().removeSuffix("/")
+        if (normalizedUrl.isNotEmpty() && !normalizedUrl.startsWith("http://") && !normalizedUrl.startsWith("https://")) {
+            normalizedUrl = "http://$normalizedUrl"
+        }
         val currentSet = prefs.getStringSet(KEY_SAVED_URLS, setOf(DEFAULT_URL)) ?: setOf(DEFAULT_URL)
         val newSet = currentSet.toMutableSet().apply { add(normalizedUrl) }
         prefs.edit().putStringSet(KEY_SAVED_URLS, newSet).apply()
@@ -57,9 +60,22 @@ class SettingsRepository @Inject constructor(
     }
 
     fun setServerUrl(url: String) {
-        val normalizedUrl = url.trim().removeSuffix("/")
-        prefs.edit().putString(KEY_SERVER_URL, normalizedUrl).apply()
-        _serverUrl.value = normalizedUrl
+        prefs.edit().putString(KEY_SERVER_URL, url).apply()
+        _serverUrl.value = url
+    }
+
+    /**
+     * Ensures the URL has an http:// or https:// scheme.
+     * Call this only at save / connect time, NOT on every keystroke.
+     */
+    fun normalizeUrl(url: String): String {
+        val trimmed = url.trim().removeSuffix("/")
+        if (trimmed.isEmpty()) return trimmed
+        return if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+            "http://$trimmed"
+        } else {
+            trimmed
+        }
     }
 
     fun isBiometricEnabled(): Boolean {
