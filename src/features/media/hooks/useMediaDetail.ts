@@ -11,6 +11,9 @@ import type { BookInfo } from '@/services';
  * Routes: `/media/:id` (movie | book | episode — discriminated by `kind`) and
  * `/series/:seriesId` (a TV show).
  */
+/** Session key for remembering the last-open season of a given series. */
+const seasonStorageKey = (seriesId: string) => `vortex:series:${seriesId}:season`;
+
 export function useMediaDetail() {
     const { id, seriesId } = useParams<{ id?: string; seriesId?: string }>();
     const navigate = useNavigate();
@@ -50,7 +53,12 @@ export function useMediaDetail() {
                     const data = await mediaService.series(seriesId);
                     setSeries(data);
                     if (data.seasons.length > 0) {
-                        setSelectedSeason(data.seasons[0].season_number);
+                        // Restore the season the user last had open for this series
+                        // (e.g. after backing out of the player), falling back to
+                        // the first season when there's nothing valid remembered.
+                        const remembered = Number(sessionStorage.getItem(seasonStorageKey(seriesId)));
+                        const hasRemembered = data.seasons.some(s => s.season_number === remembered);
+                        setSelectedSeason(hasRemembered ? remembered : data.seasons[0].season_number);
                     }
                 } else if (id) {
                     // `/media/:id` is polymorphic; `kind` discriminates the shape.
@@ -77,6 +85,13 @@ export function useMediaDetail() {
         };
         fetchData();
     }, [id, seriesId, isSeries]);
+
+    // Remember the open season so returning to this series (e.g. via the
+    // player's back button) restores it instead of snapping back to season 1.
+    useEffect(() => {
+        if (!isSeries || !seriesId || !selectedSeason) return;
+        sessionStorage.setItem(seasonStorageKey(seriesId), String(selectedSeason));
+    }, [isSeries, seriesId, selectedSeason]);
 
     // Fetch episodes when the selected season changes.
     useEffect(() => {

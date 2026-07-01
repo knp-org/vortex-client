@@ -537,7 +537,10 @@ export const Player: React.FC = () => {
             {showEpisodeEnd && nextEpisode && (
                 <EpisodeEndOverlay
                     nextTitle={nextEpisode.title}
-                    onNextEpisode={() => navigate(`/player/${nextEpisode.id}`)}
+                    // Replace (not push) so watching episodes back-to-back keeps a
+                    // single player entry in history — Back returns to the series
+                    // page, not the previous episode.
+                    onNextEpisode={() => navigate(`/player/${nextEpisode.id}`, { replace: true })}
                     onWatchCredits={() => setCreditsDismissed(true)}
                 />
             )}

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@knp-org/liquid-glass-ui/dist/styles/glass-components.css";
 
 @theme {
     /* Liquid Glass Colors */
