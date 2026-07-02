@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { PlayerControls } from './PlayerControls';
+import { OverlayWindowControls } from './OverlayWindowControls';
 import { useMpvPlayerBackend } from '../backends/useMpvPlayerBackend';
 
 /**
@@ -37,6 +38,13 @@ export const MpvOverlay: React.FC<{ id?: string }> = ({ id }) => {
                 overlayMode
                 seekOnRelease
             />
+
+            {/* Window controls (min/max/close). The overlay hides the main
+                window's Titlebar, so surface them here and drive the main
+                window. Kept above the auto-hiding player controls. */}
+            <div className="absolute top-2 right-2 z-30">
+                <OverlayWindowControls onClose={backend.onBack} />
+            </div>
         </div>
     );
 };

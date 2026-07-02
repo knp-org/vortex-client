@@ -27,8 +27,12 @@ export function useMediaDetail() {
     const [isFavorite, setIsFavorite] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Series-specific state
-    const [selectedSeason, setSelectedSeason] = useState<number>(1);
+    // Series-specific state. Seed from the last-open season for this series so a
+    // remount (e.g. Back from the player) doesn't reset to season 1 — and so the
+    // persistence effect below doesn't clobber the stored value on first render.
+    const [selectedSeason, setSelectedSeason] = useState<number>(
+        () => Number(seriesId && sessionStorage.getItem(seasonStorageKey(seriesId))) || 1,
+    );
     const [episodes, setEpisodes] = useState<Episode[]>([]);
     const [isEpisodesLoading, setIsEpisodesLoading] = useState(false);
     const [isSeasonOpen, setIsSeasonOpen] = useState(false);

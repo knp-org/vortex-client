@@ -1,5 +1,12 @@
+/* Establish cascade order so the vendor stylesheet (which ships its own full
+   Tailwind utility dump, unlayered) can't override our layered utilities.
+   Unlayered CSS beats layered CSS, so glass-components.css's plain .flex-col
+   was winning over our .md:flex-row. Putting it in the `vendor` layer, ordered
+   below `components`/`utilities`, lets our responsive utilities win again. */
+@layer theme, base, vendor, components, utilities;
+
 @import "tailwindcss";
-@import "@knp-org/liquid-glass-ui/dist/styles/glass-components.css";
+@import "@knp-org/liquid-glass-ui/dist/styles/glass-components.css" layer(vendor);
 
 @theme {
     /* Liquid Glass Colors */

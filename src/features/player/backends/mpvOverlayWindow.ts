@@ -47,6 +47,20 @@ export const openMpvOverlayWindow = async (
     const unResized = await main.onResized(({ payload }) => {
         overlay.setSize(new PhysicalSize(payload.width, payload.height)).catch(() => {});
     });
+    // When the player is minimized the overlay is hidden and main is minimized
+    // (see OverlayWindowControls). Restoring main from the taskbar focuses it —
+    // re-show the overlay so the controls come back with the video.
+    const unFocus = await main.onFocusChanged(({ payload: focused }) => {
+        if (!focused) return;
+        overlay.isVisible()
+            .then((visible) => {
+                if (!visible) {
+                    overlay.show().catch(() => {});
+                    overlay.setAlwaysOnTop(true).catch(() => {});
+                }
+            })
+            .catch(() => {});
+    });
     const unClosed = await listen('mpv-closed', () => {
         onClosed();
     });
@@ -54,6 +68,7 @@ export const openMpvOverlayWindow = async (
     return () => {
         unMoved();
         unResized();
+        unFocus();
         unClosed();
     };
 };
