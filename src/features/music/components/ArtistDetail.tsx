@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/app/layout/MainLayout';
-import { ArrowLeft, Disc3, User } from 'lucide-react';
+import {
+    GlassButton, GlassHeading, GlassSpinner,
+    IconArrowLeft, IconAlbums, IconUser,
+} from '@knp-org/liquid-glass-ui';
 import { resolveImageUrl, mediaService } from '@/services';
 import type { ArtistDetail as ArtistDetailT } from '@/types';
 
@@ -18,7 +21,7 @@ export const ArtistDetail: React.FC = () => {
         return (
             <MainLayout>
                 <div className="min-h-[50vh] flex items-center justify-center">
-                    <div className="w-10 h-10 border-2 border-primary rounded-full animate-spin border-t-transparent" />
+                    <GlassSpinner size={40} />
                 </div>
             </MainLayout>
         );
@@ -27,27 +30,27 @@ export const ArtistDetail: React.FC = () => {
     return (
         <MainLayout>
             <div className="p-6 md:p-8 space-y-8 animate-fade-in">
-                <button onClick={() => navigate(-1)} className="bg-surface/50 hover:bg-white/10 text-primary border border-outline rounded-full p-2.5 transition-all backdrop-blur-surface">
-                    <ArrowLeft size={20} />
-                </button>
+                <GlassButton shape="circle" onClick={() => navigate(-1)} aria-label="Back">
+                    <IconArrowLeft size={20} glow={false} />
+                </GlassButton>
 
                 <div className="flex items-center gap-6">
                     <div className="w-32 h-32 rounded-full overflow-hidden bg-white/5 border border-outline shrink-0 flex items-center justify-center">
                         {artist.image_url ? (
                             <img src={resolveImageUrl(artist.image_url)} alt={artist.name} className="w-full h-full object-cover" />
                         ) : (
-                            <User size={48} className="text-outline-variant" />
+                            <IconUser size={48} glow={false} className="text-outline-variant" />
                         )}
                     </div>
                     <div>
                         <p className="text-xs uppercase tracking-wider text-outline-variant font-label">Artist</p>
-                        <h1 className="text-3xl md:text-5xl font-bold text-primary font-heading">{artist.name}</h1>
+                        <GlassHeading as="h1" size="large" className="text-3xl md:text-5xl">{artist.name}</GlassHeading>
                         <p className="text-outline-variant font-body mt-1">{artist.albums.length} albums</p>
                     </div>
                 </div>
 
                 <div>
-                    <h2 className="text-xl font-bold text-primary font-heading mb-4">Albums</h2>
+                    <GlassHeading as="h2" size="small" className="mb-4">Albums</GlassHeading>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         {artist.albums.map(al => (
                             <button
@@ -59,7 +62,7 @@ export const ArtistDetail: React.FC = () => {
                                     {al.poster_url ? (
                                         <img src={resolveImageUrl(al.poster_url)} alt={al.title || ''} className="w-full h-full object-cover" />
                                     ) : (
-                                        <Disc3 size={40} className="text-outline-variant" />
+                                        <IconAlbums size={40} glow={false} className="text-outline-variant" />
                                     )}
                                 </div>
                                 <div className="px-1">

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
+import { GlassCard, GlassButton, GlassInput, GlassHeading, GlassText, GlassBadge } from '@knp-org/liquid-glass-ui';
 import { useAuth } from '@/features/auth';
 import { Lock, Shield, Calendar, LogOut } from 'lucide-react';
-import { Button } from '@/shared/ui/Button';
-import { Input } from '@/shared/ui/Input';
 import { api } from '@/services';
 
 export const AccountTab: React.FC = () => {
@@ -51,55 +50,49 @@ export const AccountTab: React.FC = () => {
     return (
         <div className="space-y-8 animate-fade-in">
             <div>
-                <h3 className="text-2xl font-bold text-primary font-heading">Account Settings</h3>
-                <p className="text-outline-variant text-sm mt-1 font-body">Manage your profile and security settings.</p>
+                <GlassHeading size="medium" className="font-heading">Account Settings</GlassHeading>
+                <GlassText variant="muted" className="text-sm mt-1 font-body">Manage your profile and security settings.</GlassText>
             </div>
 
             {/* Profile Overview */}
-            <div className="bg-surface/50 backdrop-blur-surface border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] rounded-3xl p-6">
+            <GlassCard className="p-6">
                 <div className="flex items-center gap-6">
                     <div className="w-20 h-20 rounded-full bg-white/10 border border-outline flex items-center justify-center text-primary shadow-lg">
                         <span className="text-3xl font-bold font-heading">{user?.username?.charAt(0).toUpperCase()}</span>
                     </div>
 
                     <div className="flex-1">
-                        <h2 className="text-xl font-bold text-primary mb-2 font-heading">{user?.username}</h2>
-                        <div className="flex flex-wrap gap-3 text-sm text-outline-variant font-label">
-                            <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                                <Shield size={14} className="text-primary" />
+                        <GlassHeading size="small" className="mb-2 font-heading">{user?.username}</GlassHeading>
+                        <div className="flex flex-wrap gap-3 text-sm">
+                            <GlassBadge>
+                                <Shield size={14} className="text-primary mr-1.5" />
                                 <span className="capitalize">{user?.role || 'User'}</span>
-                            </div>
+                            </GlassBadge>
                             {user?.created_at && (
-                                <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                                    <Calendar size={14} className="text-primary" />
+                                <GlassBadge>
+                                    <Calendar size={14} className="text-primary mr-1.5" />
                                     <span>Joined: {new Date(user.created_at).toLocaleDateString()}</span>
-                                </div>
+                                </GlassBadge>
                             )}
                         </div>
                     </div>
 
-                    <div>
-                        <Button
-                            variant="secondary"
-                            icon={LogOut}
-                            onClick={logout}
-                            className="bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 border-red-500/20"
-                        >
-                            Sign Out
-                        </Button>
-                    </div>
+                    <GlassButton variant="danger" onClick={logout}>
+                        <LogOut size={16} className="mr-2" />
+                        Sign Out
+                    </GlassButton>
                 </div>
-            </div>
+            </GlassCard>
 
             {/* Security */}
-            <div className="bg-surface/50 backdrop-blur-surface border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] rounded-3xl p-6">
-                <h4 className="text-lg font-bold text-primary mb-6 flex items-center gap-2 font-heading">
+            <GlassCard className="p-6">
+                <GlassHeading size="small" className="mb-6 flex items-center gap-2 font-heading">
                     <Lock className="text-primary" size={20} />
                     Change Password
-                </h4>
-                
+                </GlassHeading>
+
                 <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
-                    <Input
+                    <GlassInput
                         label="Current Password"
                         type="password"
                         value={currentPassword}
@@ -107,8 +100,8 @@ export const AccountTab: React.FC = () => {
                         placeholder="Enter current password"
                         required
                     />
-                    
-                    <Input
+
+                    <GlassInput
                         label="New Password"
                         type="password"
                         value={newPassword}
@@ -116,8 +109,8 @@ export const AccountTab: React.FC = () => {
                         placeholder="Enter new password"
                         required
                     />
-                    
-                    <Input
+
+                    <GlassInput
                         label="Confirm New Password"
                         type="password"
                         value={confirmPassword}
@@ -135,20 +128,21 @@ export const AccountTab: React.FC = () => {
                     )}
 
                     <div className="pt-4">
-                        <Button 
-                            type="submit" 
+                        <GlassButton
+                            variant="primary"
+                            type="submit"
                             disabled={!currentPassword || !newPassword || !confirmPassword || isChangingPassword}
                         >
                             {isChangingPassword ? 'Updating...' : 'Update Password'}
-                        </Button>
+                        </GlassButton>
                     </div>
                 </form>
-            </div>
+            </GlassCard>
 
             {/* Account Stats & Preferences */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-surface/30 border border-outline rounded-3xl p-6 shadow-[0_0_20px_rgba(255,255,255,0.02)]">
-                    <h3 className="text-lg font-semibold text-primary mb-4 font-heading">Account Stats</h3>
+                <GlassCard className="p-6">
+                    <GlassHeading size="small" className="mb-4 font-heading">Account Stats</GlassHeading>
                     <div className="space-y-3 font-body">
                         <div className="flex justify-between text-sm text-outline-variant">
                             <span>Watch Time</span>
@@ -163,12 +157,12 @@ export const AccountTab: React.FC = () => {
                             <span className="text-primary font-medium">0</span>
                         </div>
                     </div>
-                </div>
+                </GlassCard>
 
-                <div className="bg-surface/30 border border-outline rounded-3xl p-6 shadow-[0_0_20px_rgba(255,255,255,0.02)]">
-                    <h3 className="text-lg font-semibold text-primary mb-4 font-heading">Preferences</h3>
-                    <p className="text-outline-variant text-sm font-body">No preferences available yet.</p>
-                </div>
+                <GlassCard className="p-6">
+                    <GlassHeading size="small" className="mb-4 font-heading">Preferences</GlassHeading>
+                    <GlassText variant="muted" className="text-sm font-body">No preferences available yet.</GlassText>
+                </GlassCard>
             </div>
         </div>
     );

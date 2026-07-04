@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/app/layout/MainLayout';
 import { Film, Tv, Music, BookOpen, Image, FileQuestion } from 'lucide-react';
+import { GlassButton, GlassHeading, GlassText, IconPlus, IconTrash } from '@knp-org/liquid-glass-ui';
 import { MediaCard } from '@/features/media';
 import { TrackList, useMusicPlayer } from '@/features/music';
 import { AddToPlaylistModal } from '@/features/music';
+import { CreateGalleryModal, GalleryCard } from '@/features/images';
 import { Library as ILibrary, Card, Track } from '@/types';
 import { libraryService, mediaService } from '@/services';
 
@@ -27,6 +29,8 @@ export const Library: React.FC = () => {
 
     const isMusic = library?.library_type === 'music';
     const isMusicVideos = library?.library_type === 'music_videos';
+    const isImages = library?.library_type === 'images';
+    const [creatingAlbum, setCreatingAlbum] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -77,6 +81,7 @@ export const Library: React.FC = () => {
         if (card.kind === 'series') navigate(`/series/${card.id}`);
         else if (card.kind === 'album') navigate(`/albums/${card.id}`);
         else if (card.kind === 'artist') navigate(`/artists/${card.id}`);
+        else if (card.kind === 'gallery') navigate(`/galleries/${card.id}`);
         else navigate(`/media/${card.id}`);
     };
 
@@ -88,14 +93,18 @@ export const Library: React.FC = () => {
         <div className={`grid ${gridCols} gap-4 md:gap-6`}>
             {cards.map((card) => (
                 <div key={`${card.kind}-${card.id}`} className="group cursor-pointer space-y-2">
-                    <MediaCard
-                        id={card.id}
-                        title={card.title || ''}
-                        posterUrl={card.poster_url}
-                        type={card.kind === 'series' ? 'folder' : card.kind === 'album' ? 'album' : card.kind === 'artist' ? 'album' : 'movie'}
-                        aspectRatio={isMusicVideos ? 'video' : 'poster'}
-                        onClick={() => handleItemClick(card)}
-                    />
+                    {card.kind === 'gallery' ? (
+                        <GalleryCard card={card} onClick={() => handleItemClick(card)} />
+                    ) : (
+                        <MediaCard
+                            id={card.id}
+                            title={card.title || ''}
+                            posterUrl={card.poster_url}
+                            type={card.kind === 'series' ? 'folder' : card.kind === 'album' ? 'album' : card.kind === 'artist' ? 'album' : 'movie'}
+                            aspectRatio={isMusicVideos ? 'video' : isImages ? 'square' : 'poster'}
+                            onClick={() => handleItemClick(card)}
+                        />
+                    )}
                 </div>
             ))}
         </div>
@@ -124,12 +133,12 @@ export const Library: React.FC = () => {
     const renderMusic = () => {
         if (view === 'artists') {
             return artists.length === 0
-                ? <p className="text-center py-20 text-xl text-outline-variant font-heading">No artists found.</p>
+                ? <GlassText className="block text-center py-20 text-xl">No artists found.</GlassText>
                 : grid(artists);
         }
         if (view === 'tracks') {
             return tracks.length === 0
-                ? <p className="text-center py-20 text-xl text-outline-variant font-heading">No tracks found.</p>
+                ? <GlassText className="block text-center py-20 text-xl">No tracks found.</GlassText>
                 : (
                     <div className="bg-surface/40 backdrop-blur-surface border border-outline rounded-2xl p-3 md:p-4">
                         <TrackList
@@ -145,7 +154,7 @@ export const Library: React.FC = () => {
         }
         // albums
         return items.length === 0
-            ? <p className="text-center py-20 text-xl text-outline-variant font-heading">No albums found.</p>
+            ? <GlassText className="block text-center py-20 text-xl">No albums found.</GlassText>
             : grid(items);
     };
 
@@ -158,9 +167,19 @@ export const Library: React.FC = () => {
                         {getIcon(library?.library_type)}
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-primary font-heading">{library?.name || 'Library'}</h1>
-                        <p className="text-outline-variant text-sm font-label">{headerCount}</p>
+                        <GlassHeading as="h1" size="medium">{library?.name || 'Library'}</GlassHeading>
+                        <GlassText variant="muted" className="text-sm">{headerCount}</GlassText>
                     </div>
+                    {isImages && (
+                        <div className="ml-auto flex items-center gap-2">
+                            <GlassButton shape="pill" onClick={() => navigate(`/libraries/${id}/trash`)}>
+                                <span className="inline-flex items-center gap-2"><IconTrash size={16} glow={false} /> Recycle Bin</span>
+                            </GlassButton>
+                            <GlassButton shape="pill" onClick={() => setCreatingAlbum(true)}>
+                                <span className="inline-flex items-center gap-2"><IconPlus size={16} glow={false} /> New Album</span>
+                            </GlassButton>
+                        </div>
+                    )}
                 </div>
 
                 {/* Music browse tabs */}
@@ -186,18 +205,26 @@ export const Library: React.FC = () => {
                 {isLoading ? skeleton
                     : error ? (
                         <div className="text-center py-20">
-                            <p className="text-xl text-error mb-2 font-heading">Connection Error</p>
-                            <p className="text-outline-variant font-body">{error}</p>
+                            <GlassHeading as="h2" size="small" className="text-error mb-2">Connection Error</GlassHeading>
+                            <GlassText variant="muted">{error}</GlassText>
                         </div>
                     ) : isMusic ? renderMusic()
                     : items.length === 0 ? (
                         <div className="text-center py-20">
-                            <p className="text-xl text-outline-variant font-heading">No media found.</p>
+                            <GlassText className="block text-xl">No media found.</GlassText>
                         </div>
                     ) : grid(items)}
             </div>
 
             {addItems && <AddToPlaylistModal itemIds={addItems} onClose={() => setAddItems(null)} />}
+
+            {creatingAlbum && id && (
+                <CreateGalleryModal
+                    libraryId={parseInt(id)}
+                    onClose={() => setCreatingAlbum(false)}
+                    onCreated={(galleryId) => navigate(`/galleries/${galleryId}`)}
+                />
+            )}
         </MainLayout>
     );
 };

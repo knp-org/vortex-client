@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/app/layout/MainLayout';
+import { GlassText } from '@knp-org/liquid-glass-ui';
 import { HeroCarousel } from './HeroCarousel';
 import { ContentRow, MediaItem } from './ContentRow';
 import { Library } from '@/types';
@@ -102,16 +103,18 @@ export const Dashboard: React.FC = () => {
                         />
                     )}
 
-                    {/* Dynamic Library Rows */}
-                    {libraries.map(lib => (
-                        <LibraryRow key={lib.id} library={lib} />
-                    ))}
+                    {/* Dynamic Library Rows (photo galleries are excluded from the home screen) */}
+                    {libraries
+                        .filter(lib => lib.library_type !== 'images')
+                        .map(lib => (
+                            <LibraryRow key={lib.id} library={lib} />
+                        ))}
 
                     {/* Fallback/Welcome if no libraries */}
                     {libraries.length === 0 && (
-                        <div className="text-center py-20 text-gray-500">
+                        <GlassText variant="muted" className="block text-center py-20">
                             Welcome to Vortex! Go to Settings to add your first library.
-                        </div>
+                        </GlassText>
                     )}
                 </div>
             </div>

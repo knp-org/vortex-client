@@ -1,4 +1,5 @@
 import React from 'react';
+import { GlassHeading, GlassText, GlassBadge } from '@knp-org/liquid-glass-ui';
 import { CreditDto } from '@/types';
 import { resolveImageUrl } from '@/services';
 
@@ -8,12 +9,10 @@ export const CastRow: React.FC<{ cast: CreditDto[] }> = ({ cast }) => {
 
     return (
         <div className="mt-12 mb-8 animate-fade-in-up delay-200">
-            <h3 className="text-xl font-bold text-primary font-heading mb-6 flex items-center gap-2">
+            <GlassHeading as="h3" size="small" className="mb-6 flex items-center gap-2">
                 <span>Cast</span>
-                <span className="text-sm font-normal text-outline-variant bg-surface/50 border border-outline backdrop-blur-surface px-2 py-0.5 rounded-full font-label">
-                    {cast.length}
-                </span>
-            </h3>
+                <GlassBadge className="!text-sm">{cast.length}</GlassBadge>
+            </GlassHeading>
             <div className="flex overflow-x-auto gap-4 pb-6 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20">
                 {cast.map((actor, idx) => (
                     <div key={idx} className="flex-none w-28 snap-start flex flex-col items-center text-center group">
@@ -32,12 +31,12 @@ export const CastRow: React.FC<{ cast: CreditDto[] }> = ({ cast }) => {
                             )}
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-white/10 transition-colors" />
                         </div>
-                        <h4 className="text-xs font-bold text-primary line-clamp-1 group-hover:text-primary transition-colors mb-0.5 w-full font-heading">
+                        <GlassHeading as="h4" size="none" className="!text-xs font-bold line-clamp-1 mb-0.5 w-full">
                             {actor.name}
-                        </h4>
-                        <p className="text-[10px] text-outline-variant line-clamp-2 leading-tight w-full px-1 font-body">
+                        </GlassHeading>
+                        <GlassText variant="muted" className="!text-[10px] line-clamp-2 leading-tight w-full px-1">
                             {actor.character}
-                        </p>
+                        </GlassText>
                     </div>
                 ))}
             </div>

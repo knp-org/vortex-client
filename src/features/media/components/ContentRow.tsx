@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { GlassButton, GlassHeading, IconArrowLeft, IconArrowRight } from '@knp-org/liquid-glass-ui';
 import { MediaCard } from './MediaCard';
 
 export interface MediaItem {
@@ -34,29 +35,26 @@ export const ContentRow: React.FC<ContentRowProps> = ({ title, items, isContinue
         <div className="space-y-4 mb-8">
             <div className="flex items-center justify-between px-1">
                 <div className="flex items-center space-x-4">
-                    <h2 className="text-xl font-bold text-primary font-heading">{title}</h2>
+                    <GlassHeading as="h2" size="small">{title}</GlassHeading>
                     {onViewAll && (
-                        <button
+                        <GlassButton
+                            variant="ghost"
+                            size="sm"
+                            shape="pill"
                             onClick={onViewAll}
-                            className="text-xs font-medium text-outline-variant hover:text-primary uppercase tracking-wider transition-colors font-label"
+                            className="!text-xs uppercase tracking-wider"
                         >
                             See All
-                        </button>
+                        </GlassButton>
                     )}
                 </div>
                 <div className="flex space-x-2">
-                    <button
-                        onClick={() => handleScroll('left')}
-                        className="p-1 rounded-full hover:bg-surface/50 text-outline-variant hover:text-primary transition-colors backdrop-blur-surface"
-                    >
-                        ←
-                    </button>
-                    <button
-                        onClick={() => handleScroll('right')}
-                        className="p-1 rounded-full hover:bg-surface/50 text-outline-variant hover:text-primary transition-colors backdrop-blur-surface"
-                    >
-                        →
-                    </button>
+                    <GlassButton variant="ghost" shape="circle" size="sm" onClick={() => handleScroll('left')}>
+                        <IconArrowLeft size={16} glow={false} />
+                    </GlassButton>
+                    <GlassButton variant="ghost" shape="circle" size="sm" onClick={() => handleScroll('right')}>
+                        <IconArrowRight size={16} glow={false} />
+                    </GlassButton>
                 </div>
             </div>
 

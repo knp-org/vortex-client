@@ -1,10 +1,14 @@
 import React from 'react';
 import { MainLayout } from '@/app/layout/MainLayout';
-import { Button } from '@/shared/ui/Button';
+import {
+    GlassButton, GlassHeading, GlassText, GlassSpinner, GlassBadge,
+    IconArrowLeft, IconPlay, IconPlaySolid, IconSearch, IconFavorites,
+    IconMoreVertical, IconSync,
+} from '@knp-org/liquid-glass-ui';
 import { IdentifyModal } from './IdentifyModal';
 import { CastRow } from './CastRow';
 import { EpisodesSection } from './EpisodesSection';
-import { ArrowLeft, Play, BookOpen, Search, Heart, MoreVertical, RefreshCw } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { resolveImageUrl } from '@/services';
 import { useMediaDetail } from '../hooks/useMediaDetail';
 
@@ -23,7 +27,7 @@ export const MediaDetail: React.FC = () => {
         return (
             <MainLayout>
                 <div className="min-h-screen flex items-center justify-center">
-                    <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    <GlassSpinner size={48} />
                 </div>
             </MainLayout>
         );
@@ -33,8 +37,8 @@ export const MediaDetail: React.FC = () => {
         return (
             <MainLayout>
                 <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
-                    <p className="text-red-500 text-xl">{error}</p>
-                    <Button onClick={() => navigate(-1)}>Go Back</Button>
+                    <GlassText className="text-error text-xl">{error}</GlassText>
+                    <GlassButton onClick={() => navigate(-1)}>Go Back</GlassButton>
                 </div>
             </MainLayout>
         );
@@ -92,42 +96,36 @@ export const MediaDetail: React.FC = () => {
                 <div className="relative h-[50vh] w-full overflow-hidden rounded-t-[3rem] shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
                     {/* Back Button */}
                     <div className="absolute top-0 left-0 p-6 z-30 flex gap-4">
-                        <button
-                            className="bg-surface/50 hover:bg-white/10 text-primary border border-outline rounded-full p-2.5 transition-all hover:scale-105 backdrop-blur-surface"
-                            onClick={() => navigate(-1)}
-                        >
-                            <ArrowLeft size={20} />
-                        </button>
+                        <GlassButton shape="circle" onClick={() => navigate(-1)} aria-label="Back">
+                            <IconArrowLeft size={20} glow={false} />
+                        </GlassButton>
                     </div>
 
                     {/* Top Right Actions */}
                     <div className="absolute top-0 right-0 p-6 z-30">
                         <div className="relative">
-                            <button
-                                className="bg-surface/50 hover:bg-white/10 text-primary border border-outline rounded-full p-2.5 transition-all hover:scale-105 backdrop-blur-surface"
-                                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            >
-                                <MoreVertical size={20} />
-                            </button>
+                            <GlassButton shape="circle" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="More actions">
+                                <IconMoreVertical size={20} glow={false} />
+                            </GlassButton>
 
                             {isMenuOpen && (
-                                <div className="absolute top-full right-0 mt-2 w-48 bg-black/90 backdrop-blur-glass border border-outline rounded-xl overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.1)] animate-fade-in z-50">
+                                <div className="glass-menu animate-fade-in" style={{ right: 0, left: 'auto', minWidth: '12rem' }}>
                                     <button
-                                        className="w-full text-left px-4 py-3 hover:bg-white/5 transition-colors text-sm text-outline-variant hover:text-primary flex items-center gap-2 font-label"
+                                        className="glass-menu-item flex items-center gap-2 font-label"
                                         onClick={handleRefresh}
                                     >
-                                        <RefreshCw size={16} />
+                                        <IconSync size={16} glow={false} />
                                         <span>Refresh Metadata</span>
                                     </button>
                                     {!isBook && (
                                         <button
-                                            className="w-full text-left px-4 py-3 hover:bg-white/5 transition-colors text-sm text-outline-variant hover:text-primary flex items-center gap-2 font-label"
+                                            className="glass-menu-item flex items-center gap-2 font-label"
                                             onClick={() => {
                                                 setIsIdentifyOpen(true);
                                                 setIsMenuOpen(false);
                                             }}
                                         >
-                                            <Search size={16} />
+                                            <IconSearch size={16} glow={false} />
                                             <span>Identify</span>
                                         </button>
                                     )}
@@ -166,14 +164,14 @@ export const MediaDetail: React.FC = () => {
                         {/* Info Column */}
                         <div className="flex-1 pt-4 md:pt-12 text-primary">
                             {/* Title */}
-                            <h1 className="text-4xl md:text-5xl font-bold text-primary mb-2 leading-tight font-heading">
+                            <GlassHeading as="h1" size="large" className="text-4xl md:text-5xl mb-2 leading-tight">
                                 {title}
-                            </h1>
+                            </GlassHeading>
 
                             {/* Metadata Row */}
                             <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-gray-400 mb-6">
                                 {ageRating && (
-                                    <span className="border border-white/20 px-1 rounded text-xs uppercase text-white/80">{ageRating}</span>
+                                    <GlassBadge className="uppercase !text-xs">{ageRating}</GlassBadge>
                                 )}
                                 {year && <span>{year}</span>}
                                 {!isBook && media?.runtime && (
@@ -182,12 +180,12 @@ export const MediaDetail: React.FC = () => {
                                 {isBook ? (
                                     <>
                                         {bookFormat && (
-                                            <span className="border border-white/20 px-1 rounded text-xs uppercase">{bookFormat}</span>
+                                            <GlassBadge className="uppercase !text-xs">{bookFormat}</GlassBadge>
                                         )}
                                         {pageCount ? <span>{pageCount} pages</span> : null}
                                     </>
                                 ) : (
-                                    <span className="border border-white/20 px-1 rounded text-xs uppercase">HD</span>
+                                    <GlassBadge className="uppercase !text-xs">HD</GlassBadge>
                                 )}
                                 {originCountry && (
                                     <span>{originCountry}</span>
@@ -196,46 +194,45 @@ export const MediaDetail: React.FC = () => {
 
                             {/* Actions Row */}
                             <div className="flex flex-wrap items-center gap-3 mb-8">
-                                <button
-                                    className={`${isBook ? 'h-10 px-5 gap-2' : 'h-10 w-10'} rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform font-medium`}
+                                <GlassButton
+                                    shape={isBook ? 'pill' : 'circle'}
                                     onClick={() => handlePlay()}
                                     title={isBook ? 'Read' : 'Play'}
                                 >
                                     {isBook ? (
-                                        <>
-                                            <BookOpen size={18} />
-                                            <span>Read</span>
-                                        </>
+                                        <span className="inline-flex items-center gap-2">
+                                            <BookOpen size={18} /> Read
+                                        </span>
                                     ) : (
-                                        <Play size={18} className="fill-current ml-0.5" />
+                                        <IconPlaySolid size={18} glow={false} className="ml-0.5" />
                                     )}
-                                </button>
+                                </GlassButton>
 
                                 {trailerUrl && (
-                                    <button
-                                        className="h-10 px-5 gap-2 rounded-full bg-surface/50 hover:bg-white/10 text-primary border border-outline flex items-center justify-center hover:scale-105 transition-transform backdrop-blur-surface font-medium"
+                                    <GlassButton
+                                        variant="secondary"
+                                        shape="pill"
                                         onClick={() => window.open(trailerUrl, '_blank')}
                                         title="Watch Trailer"
                                     >
-                                        <Play size={18} />
-                                        <span>Trailer</span>
-                                    </button>
+                                        <span className="inline-flex items-center gap-2">
+                                            <IconPlay size={18} glow={false} /> Trailer
+                                        </span>
+                                    </GlassButton>
                                 )}
 
                                 {/* Extra Actions */}
                                 {!isSeries && (
                                     <div className="flex items-center gap-2 ml-auto md:ml-0">
-                                        <button
+                                        <GlassButton
+                                            variant="ghost"
+                                            shape="circle"
                                             onClick={toggleFavorite}
                                             title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                                            className={`p-2 rounded-full hover:bg-surface/50 backdrop-blur-surface border transition-colors ${
-                                                isFavorite
-                                                    ? 'text-red-400 border-red-400/30'
-                                                    : 'text-outline-variant hover:text-primary border-transparent hover:border-outline'
-                                            }`}
+                                            className={isFavorite ? 'text-red-400' : ''}
                                         >
-                                            <Heart size={20} className={isFavorite ? 'fill-current' : ''} />
-                                        </button>
+                                            <IconFavorites size={20} glow={false} fill={isFavorite ? 'currentColor' : 'none'} />
+                                        </GlassButton>
                                     </div>
                                 )}
                             </div>
@@ -244,7 +241,7 @@ export const MediaDetail: React.FC = () => {
                             {isBook ? (
                                 <div className="space-y-6">
                                     <div className="bg-surface/30 backdrop-blur-surface border border-outline rounded-2xl p-6">
-                                        <h3 className="text-lg font-bold text-primary font-heading mb-4">File Information</h3>
+                                        <GlassHeading as="h3" size="small" className="mb-4">File Information</GlassHeading>
                                         <div className="grid grid-cols-1 md:grid-cols-[120px_1fr] gap-y-3 text-sm font-body">
                                             <div className="text-outline-variant font-label">Format</div>
                                             <div className="text-primary">{bookFormat || 'Unknown'}</div>
@@ -260,10 +257,10 @@ export const MediaDetail: React.FC = () => {
                                     </div>
                                     
                                     <div>
-                                        <h3 className="text-lg font-bold text-primary font-heading mb-3">Description</h3>
-                                        <p className="text-outline-variant leading-relaxed max-w-3xl text-sm md:text-base font-body">
+                                        <GlassHeading as="h3" size="small" className="mb-3">Description</GlassHeading>
+                                        <GlassText variant="muted" className="leading-relaxed max-w-3xl text-sm md:text-base">
                                             {plot || 'No plot available.'}
-                                        </p>
+                                        </GlassText>
                                     </div>
                                 </div>
                             ) : (
@@ -307,9 +304,9 @@ export const MediaDetail: React.FC = () => {
                                     </div>
 
                                     {/* Plot */}
-                                    <p className="text-outline-variant leading-relaxed max-w-3xl text-sm md:text-base font-body">
+                                    <GlassText variant="muted" className="leading-relaxed max-w-3xl text-sm md:text-base">
                                         {plot || 'No plot available.'}
-                                    </p>
+                                    </GlassText>
                                 </>
                             )}
                         </div>

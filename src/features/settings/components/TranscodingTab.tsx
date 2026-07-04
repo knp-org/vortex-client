@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input } from '@/shared/ui/Input';
-import { Select } from '@/shared/ui/Select';
-import { Toggle } from '@/shared/ui/Toggle';
+import { GlassButton, GlassInput, GlassSelect, GlassToggle, GlassHeading, GlassText, GlassTooltip } from '@knp-org/liquid-glass-ui';
 import { Server, Monitor, Cpu, Activity } from 'lucide-react';
 import { TranscodeSettings } from '@/types';
 import { settingsService } from '@/services';
@@ -61,59 +59,56 @@ export const TranscodingTab: React.FC = () => {
         }
     };
 
+    const encoderIcon = (encoder: string) =>
+        encoder.includes("NVIDIA") ? <Monitor size={16} /> :
+            encoder.includes("Intel") ? <Cpu size={16} /> :
+                encoder.includes("VAAPI") ? <Server size={16} /> :
+                    encoder.includes("Software") ? <Activity size={16} /> : null;
+
+    const encoderDescription = (encoder: string) =>
+        encoder.includes("Auto") ? "Automatically select the best available hardware encoder." :
+            encoder.includes("NVIDIA") ? "High performance GPU encoding." :
+                encoder.includes("Intel") ? "Efficient CPU/iGPU encoding." :
+                    encoder.includes("VAAPI") ? "Universal hardware acceleration." :
+                        encoder.includes("Software") ? "High CPU usage. Use only if hardware fails." : encoder;
+
     return (
         <div className="space-y-6 animate-fade-in">
-            <h3 className="text-2xl font-bold text-primary font-heading">Transcoding</h3>
-            <p className="text-outline-variant text-sm font-body">Configure hardware acceleration for video playback.</p>
+            <GlassHeading size="medium" className="font-heading">Transcoding</GlassHeading>
+            <GlassText variant="muted" className="text-sm font-body">Configure hardware acceleration for video playback.</GlassText>
 
             {transcodeSettings ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                <div className="flex flex-wrap gap-3">
                     {transcodeSettings.available_encoders.map(encoder => (
-                        <button
-                            key={encoder}
-                            onClick={() => handleSaveTranscode(encoder)}
-                            disabled={isSavingTranscode}
-                            className={`
-                                relative group p-4 rounded-xl border text-left transition-all backdrop-blur-surface shadow-[0_0_20px_rgba(255,255,255,0.05)]
-                                ${transcodeSettings.current_encoder === encoder
-                                    ? 'bg-white/10 border-white/30 text-primary shadow-inner'
-                                    : 'bg-surface/50 border-outline text-outline-variant hover:border-white/30 hover:bg-white/5'}
-                            `}
-                        >
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="font-medium flex items-center gap-2">
-                                    {encoder.includes("NVIDIA") && <Monitor size={18} />}
-                                    {encoder.includes("Intel") && <Cpu size={18} />}
-                                    {encoder.includes("VAAPI") && <Server size={18} />}
-                                    {encoder.includes("Software") && <Activity size={18} />}
-                                    {encoder}
-                                </span>
+                        <GlassTooltip key={encoder} text={encoderDescription(encoder)}>
+                            <GlassButton
+                                variant={transcodeSettings.current_encoder === encoder ? 'primary' : 'secondary'}
+                                size="sm"
+                                shape="pill"
+                                onClick={() => handleSaveTranscode(encoder)}
+                                disabled={isSavingTranscode}
+                                className="flex items-center gap-2"
+                            >
+                                {encoderIcon(encoder)}
+                                <span className="font-medium">{encoder}</span>
                                 {transcodeSettings.current_encoder === encoder && (
-                                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
+                                    <span className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
                                 )}
-                            </div>
-                            <div className="text-xs opacity-70">
-                                {encoder.includes("Auto") && "Automatically select the best available hardware encoder."}
-                                {encoder.includes("NVIDIA") && "High performance GPU encoding."}
-                                {encoder.includes("Intel") && "Efficient CPU/iGPU encoding."}
-                                {encoder.includes("VAAPI") && "Universal hardware acceleration."}
-                                {encoder.includes("Software") && "High CPU usage. Use only if hardware fails."}
-                            </div>
-                        </button>
+                            </GlassButton>
+                        </GlassTooltip>
                     ))}
                 </div>
             ) : (
-                <div className="text-outline-variant font-body">Loading transcoding settings...</div>
+                <GlassText variant="muted" className="font-body">Loading transcoding settings...</GlassText>
             )}
 
             {transcodeSettings && (
                 <div className="max-w-2xl space-y-6 pt-6 border-t border-outline">
-                    <h4 className="text-lg font-semibold text-primary font-heading">Advanced Configuration</h4>
+                    <GlassHeading size="small" className="font-heading">Advanced Configuration</GlassHeading>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Thread Count */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-outline-variant font-label">Encoding Threads</label>
-                            <div className="flex gap-2 text-sm text-outline-variant opacity-70 mb-2 font-body">
+                            <div className="flex gap-2 text-sm text-outline-variant opacity-70 font-body">
                                 0 = Auto
                                 {transcodeSettings.system_threads > 0 && (
                                     <span className="text-primary ml-2">
@@ -121,65 +116,62 @@ export const TranscodingTab: React.FC = () => {
                                     </span>
                                 )}
                             </div>
-                            <Input
+                            <GlassInput
+                                label="Encoding Threads"
                                 value={transcodeSettings.thread_count?.toString() || '0'}
-                                onChange={e => {
-                                    const val = parseInt(e.target.value) || 0;
-                                    handleSaveAdvanced({ thread_count: val });
-                                }}
+                                onChange={e => handleSaveAdvanced({ thread_count: parseInt(e.target.value) || 0 })}
                                 placeholder="0"
                                 type="number"
                                 min="0"
-                                className="bg-surface/50 border-outline text-primary placeholder-outline-variant focus:border-white/40 focus:ring-white/20"
                             />
                         </div>
 
                         {/* Bitrate Limit */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-outline-variant font-label">Bitrate Limit (Mbps)</label>
-                            <div className="flex gap-2 text-sm text-outline-variant opacity-70 mb-2 font-body">0 = Unlimited</div>
-                            <Input
+                            <div className="flex gap-2 text-sm text-outline-variant opacity-70 font-body">0 = Unlimited</div>
+                            <GlassInput
+                                label="Bitrate Limit (Mbps)"
                                 value={transcodeSettings.max_bitrate?.toString() || '0'}
-                                onChange={e => {
-                                    const val = parseInt(e.target.value) || 0;
-                                    handleSaveAdvanced({ max_bitrate: val });
-                                }}
+                                onChange={e => handleSaveAdvanced({ max_bitrate: parseInt(e.target.value) || 0 })}
                                 placeholder="0"
                                 type="number"
                                 min="0"
-                                className="bg-surface/50 border-outline text-primary placeholder-outline-variant focus:border-white/40 focus:ring-white/20"
                             />
                         </div>
 
                         {/* Encoding Preset */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-outline-variant font-label">Encoding Preset</label>
-                            <div className="flex gap-2 text-sm text-outline-variant opacity-70 mb-2 font-body">Balances speed vs quality</div>
-                            <Select
+                            <div className="flex gap-2 text-sm text-outline-variant opacity-70 font-body">Balances speed vs quality</div>
+                            <GlassSelect
+                                label="Encoding Preset"
                                 value={transcodeSettings.preset || ''}
                                 onChange={val => handleSaveAdvanced({ preset: val })}
                                 options={[
-                                    { id: "", label: "Default (Auto)" },
-                                    { id: "ultrafast", label: "Ultrafast (Lowest Quality / Low CPU)" },
-                                    { id: "superfast", label: "Superfast" },
-                                    { id: "veryfast", label: "Veryfast (Good Balance)" },
-                                    { id: "fast", label: "Fast" },
-                                    { id: "medium", label: "Medium" },
-                                    { id: "slow", label: "Slow" },
-                                    { id: "slower", label: "Slower" },
-                                    { id: "veryslow", label: "Veryslow (Best Quality / High CPU)" }
+                                    { value: "", label: "Default (Auto)" },
+                                    { value: "ultrafast", label: "Ultrafast (Lowest Quality / Low CPU)" },
+                                    { value: "superfast", label: "Superfast" },
+                                    { value: "veryfast", label: "Veryfast (Good Balance)" },
+                                    { value: "fast", label: "Fast" },
+                                    { value: "medium", label: "Medium" },
+                                    { value: "slow", label: "Slow" },
+                                    { value: "slower", label: "Slower" },
+                                    { value: "veryslow", label: "Veryslow (Best Quality / High CPU)" }
                                 ]}
                             />
                         </div>
 
                         {/* Throttling */}
                         <div className="space-y-2 mt-4 pt-4 border-t border-outline/50">
-                            <Toggle
-                                label="Enable Transcode Throttling"
-                                description="Save CPU when buffer is full"
-                                checked={transcodeSettings.throttle_transcodes}
-                                onChange={checked => handleSaveAdvanced({ throttle_transcodes: checked })}
-                            />
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-label text-primary">Enable Transcode Throttling</span>
+                                    <span className="text-xs text-outline-variant font-body">Save CPU when buffer is full</span>
+                                </div>
+                                <GlassToggle
+                                    checked={transcodeSettings.throttle_transcodes}
+                                    onChange={e => handleSaveAdvanced({ throttle_transcodes: e.target.checked })}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

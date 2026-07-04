@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { GlassCard, GlassButton, GlassToggle, GlassBadge } from '@knp-org/liquid-glass-ui';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { providerService } from '@/services';
 import type { ProviderInfo } from '@/types/providers';
 import { ConfigFieldInput } from './ConfigFieldInput';
@@ -54,64 +56,57 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({
     };
 
     return (
-        <div className={`rounded-2xl border transition-all ${
-            provider.enabled
-                ? 'bg-surface/50 backdrop-blur-surface border-outline hover:border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.05)]'
-                : 'bg-surface/30 backdrop-blur-surface border-outline opacity-60'
-        }`}>
+        <GlassCard className={`p-0 transition-all ${provider.enabled ? '' : 'opacity-60'}`}>
             {/* Header row */}
             <div className="flex items-center gap-4 px-5 py-4">
                 {/* Priority arrows */}
                 <div className="flex flex-col gap-0.5">
-                    <button
+                    <GlassButton
+                        variant="ghost"
                         onClick={() => onMoveUp(provider.id)}
                         disabled={index === 0}
-                        className="text-outline-variant hover:text-primary disabled:opacity-20 transition-colors text-xs leading-none p-0.5"
+                        className="text-outline-variant hover:text-primary disabled:opacity-20 p-0.5"
                         title="Move up (higher priority)"
-                    >▲</button>
-                    <button
+                    ><ChevronUp size={16} /></GlassButton>
+                    <GlassButton
+                        variant="ghost"
                         onClick={() => onMoveDown(provider.id)}
                         disabled={index === total - 1}
-                        className="text-outline-variant hover:text-primary disabled:opacity-20 transition-colors text-xs leading-none p-0.5"
+                        className="text-outline-variant hover:text-primary disabled:opacity-20 p-0.5"
                         title="Move down (lower priority)"
-                    >▼</button>
+                    ><ChevronDown size={16} /></GlassButton>
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                         <h4 className="text-primary font-semibold font-heading">{provider.name}</h4>
-                        <span className="text-[10px] font-label px-1.5 py-0.5 rounded bg-surface border border-outline text-outline-variant">{provider.id}</span>
+                        <GlassBadge className="text-[10px]">{provider.id}</GlassBadge>
                     </div>
                     <p className="text-sm text-outline-variant mt-0.5 truncate font-body">{provider.description}</p>
                     <div className="flex gap-1.5 mt-1.5">
                         {provider.media_types.map(mt => (
-                            <span key={mt} className="text-[10px] px-2 py-0.5 rounded-full bg-surface/50 text-outline-variant border border-outline font-label">
-                                {mt}
-                            </span>
+                            <GlassBadge key={mt} className="text-[10px]">{mt}</GlassBadge>
                         ))}
                     </div>
                 </div>
 
                 {/* Toggle */}
-                <button
-                    onClick={() => onToggle(provider.id, !provider.enabled)}
-                    className="flex-shrink-0"
+                <GlassToggle
+                    checked={provider.enabled}
+                    onChange={(e) => onToggle(provider.id, e.target.checked)}
                     title={provider.enabled ? 'Disable' : 'Enable'}
-                >
-                    <div className={`w-11 h-6 rounded-full relative transition-colors ${provider.enabled ? 'bg-white/20 border-white/30' : 'bg-surface/50 border-outline'} border shadow-inner`}>
-                        <div className={`absolute top-1 w-4 h-4 rounded-full shadow-md transition-all ${provider.enabled ? 'right-1 bg-primary' : 'left-1 bg-outline-variant'}`} />
-                    </div>
-                </button>
+                />
 
                 {/* Expand */}
-                <button
+                <GlassButton
+                    variant="ghost"
                     onClick={() => setExpanded(!expanded)}
-                    className="text-outline-variant hover:text-primary transition-colors text-sm px-2 font-label"
+                    className="text-outline-variant hover:text-primary text-sm px-2 font-label"
                     title="Configure"
                 >
                     {expanded ? '▾ Settings' : '▸ Settings'}
-                </button>
+                </GlassButton>
             </div>
 
             {/* Expanded config form */}
@@ -132,20 +127,12 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({
                     ))}
 
                     <div className="flex items-center gap-3 pt-2">
-                        <button
-                            onClick={handleSave}
-                            disabled={isSaving}
-                            className="px-5 py-2 rounded-xl bg-surface/80 text-primary border border-outline hover:bg-white/10 transition-colors text-sm font-label disabled:opacity-50"
-                        >
+                        <GlassButton variant="primary" onClick={handleSave} disabled={isSaving}>
                             {isSaving ? 'Saving...' : 'Save Configuration'}
-                        </button>
-                        <button
-                            onClick={() => onTest(provider.id)}
-                            disabled={isTesting}
-                            className="px-5 py-2 rounded-xl bg-surface text-outline-variant border border-outline hover:bg-white/5 transition-colors text-sm font-label disabled:opacity-50"
-                        >
+                        </GlassButton>
+                        <GlassButton onClick={() => onTest(provider.id)} disabled={isTesting}>
                             {isTesting ? 'Testing...' : 'Test Connection'}
-                        </button>
+                        </GlassButton>
                         {testResult && (
                             <span className={`text-sm font-label ${testResult.success ? 'text-primary' : 'text-error'}`}>
                                 {testResult.success ? '✓ ' : '✗ '}{testResult.message}
@@ -154,6 +141,6 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({
                     </div>
                 </div>
             )}
-        </div>
+        </GlassCard>
     );
 };

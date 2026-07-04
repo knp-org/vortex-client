@@ -72,3 +72,16 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
 }
+/* Extra-frosted library modals (Add/Edit Library + folder picker).
+   Unlayered, so it beats the vendor `.glass-modal` blur. `:has()` reaches the
+   backdrop so the page behind blurs harder too. */
+.library-modal-blur {
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+}
+
+.glass-modal-backdrop:has(.library-modal-blur) {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(0, 0, 0, 0.55);
+}

@@ -13,6 +13,8 @@ export interface Card {
     poster_url?: string;
     year?: number;
     stream_url?: string;
+    /** Up to 4 thumbnail URLs for mosaic/collage cards (gallery cards only). */
+    thumbs?: string[];
 }
 
 export interface CreditDto {
@@ -141,6 +143,52 @@ export interface ArtistDetail {
     bio?: string;
     image_url?: string;
     albums: Card[];
+}
+
+/** A single photo in a gallery grid / lightbox. `url` is full-res, `thumb_url` is scaled. */
+export interface Photo {
+    id: number;
+    gallery_id?: number;
+    title?: string;
+    taken_at?: string;
+    width?: number;
+    height?: number;
+    url: string;
+    thumb_url: string;
+}
+
+/** A photo album (Images library), with its photos, for the gallery detail view. */
+export interface GalleryDetail {
+    id: number;
+    library_id: number;
+    name: string;
+    description?: string;
+    cover_url?: string;
+    taken_at?: string;
+    image_count: number;
+    images: Photo[];
+}
+
+/** Full EXIF/camera metadata for a single photo. */
+export interface ImageDetail {
+    id: number;
+    gallery_id?: number;
+    title?: string;
+    taken_at?: string;
+    width?: number;
+    height?: number;
+    camera_make?: string;
+    camera_model?: string;
+    lens?: string;
+    iso?: number;
+    focal_length?: number;
+    aperture?: number;
+    gps_lat?: number;
+    gps_lon?: number;
+    orientation?: number;
+    url: string;
+    thumb_url: string;
+    file_name?: string;
 }
 
 export interface Playlist {

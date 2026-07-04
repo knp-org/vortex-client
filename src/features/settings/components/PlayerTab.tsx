@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { GlassCard, GlassButton, GlassInput, GlassSelect, GlassToggle, GlassAlert, GlassHeading, GlassText } from '@knp-org/liquid-glass-ui';
 import { Settings2, Subtitles, MonitorPlay, Save } from 'lucide-react';
-import { Select } from '@/shared/ui/Select';
-import { Toggle } from '@/shared/ui/Toggle';
-import { Button } from '@/shared/ui/Button';
 import { api } from '@/services';
 import type { Setting } from '@/types/settings';
+
+const Row: React.FC<{ label: string; description?: string; children: React.ReactNode }> = ({ label, description, children }) => (
+    <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col">
+            <span className="text-sm font-label text-primary">{label}</span>
+            {description && <span className="text-xs text-outline-variant font-body">{description}</span>}
+        </div>
+        {children}
+    </div>
+);
 
 export const PlayerTab: React.FC = () => {
     const [settings, setSettings] = useState({
@@ -58,114 +66,94 @@ export const PlayerTab: React.FC = () => {
     return (
         <div className="space-y-8 animate-fade-in">
             <div>
-                <h3 className="text-2xl font-bold text-primary font-heading">Player Settings</h3>
-                <p className="text-outline-variant text-sm mt-1 font-body">
+                <GlassHeading size="medium" className="font-heading">Player Settings</GlassHeading>
+                <GlassText variant="muted" className="text-sm mt-1 font-body">
                     Configure your viewing experience and playback preferences.
-                </p>
+                </GlassText>
             </div>
 
             {message && (
-                <div className={`p-4 rounded-xl border ${message.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'} animate-fade-in`}>
+                <GlassAlert variant={message.type === 'success' ? 'success' : 'error'}>
                     {message.text}
-                </div>
+                </GlassAlert>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Playback Configuration */}
-                <div className="bg-surface/50 backdrop-blur-surface border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] rounded-3xl p-6 space-y-6">
-                    <h4 className="text-lg font-bold text-primary flex items-center gap-2 font-heading">
+                <GlassCard className="p-6 space-y-6">
+                    <GlassHeading size="small" className="flex items-center gap-2 font-heading">
                         <Settings2 size={18} />
                         Playback
-                    </h4>
+                    </GlassHeading>
 
                     <div className="space-y-4">
-                        <div className="flex flex-col space-y-2">
-                            <label className="text-sm font-label text-outline-variant">Default Quality</label>
-                            <Select
-                                value={settings.defaultQuality}
-                                onChange={(val) => handleChange('defaultQuality', val)}
-                                options={[
-                                    { id: 'original', label: 'Original (Direct Play)' },
-                                    { id: '1080p', label: '1080p (High)' },
-                                    { id: '720p', label: '720p (Medium)' },
-                                    { id: '480p', label: '480p (Low)' }
-                                ]}
-                            />
-                        </div>
+                        <GlassSelect
+                            label="Default Quality"
+                            value={settings.defaultQuality}
+                            onChange={(val) => handleChange('defaultQuality', val)}
+                            options={[
+                                { value: 'original', label: 'Original (Direct Play)' },
+                                { value: '1080p', label: '1080p (High)' },
+                                { value: '720p', label: '720p (Medium)' },
+                                { value: '480p', label: '480p (Low)' }
+                            ]}
+                        />
 
-                        <Toggle
-                            label="Auto-Play Next Episode"
-                            description="Automatically play the next episode in a series"
-                            checked={settings.autoPlayNext}
-                            onChange={(checked) => handleChange('autoPlayNext', checked)}
-                        />
-                        
-                        <Toggle
-                            label="Auto-Skip Intro"
-                            description="Automatically skip TV show intros when available"
-                            checked={settings.skipIntro}
-                            onChange={(checked) => handleChange('skipIntro', checked)}
-                        />
-                        
+                        <Row label="Auto-Play Next Episode" description="Automatically play the next episode in a series">
+                            <GlassToggle checked={settings.autoPlayNext} onChange={(e) => handleChange('autoPlayNext', e.target.checked)} />
+                        </Row>
+
+                        <Row label="Auto-Skip Intro" description="Automatically skip TV show intros when available">
+                            <GlassToggle checked={settings.skipIntro} onChange={(e) => handleChange('skipIntro', e.target.checked)} />
+                        </Row>
+
                         <div className="grid grid-cols-2 gap-4 mt-4 border-t border-outline/50 pt-4">
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-sm font-label text-outline-variant">Skip Forward (s)</label>
-                                <input
-                                    type="number"
-                                    min="5"
-                                    max="60"
-                                    step="5"
-                                    value={settings.skipForwardTime}
-                                    onChange={(e) => handleChange('skipForwardTime', parseInt(e.target.value) || 10)}
-                                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-primary focus:outline-none focus:border-primary/50 transition-colors font-body"
-                                />
-                            </div>
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-sm font-label text-outline-variant">Skip Backward (s)</label>
-                                <input
-                                    type="number"
-                                    min="5"
-                                    max="60"
-                                    step="5"
-                                    value={settings.skipBackwardTime}
-                                    onChange={(e) => handleChange('skipBackwardTime', parseInt(e.target.value) || 10)}
-                                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-primary focus:outline-none focus:border-primary/50 transition-colors font-body"
-                                />
-                            </div>
+                            <GlassInput
+                                label="Skip Forward (s)"
+                                type="number"
+                                min="5"
+                                max="60"
+                                step="5"
+                                value={settings.skipForwardTime}
+                                onChange={(e) => handleChange('skipForwardTime', parseInt(e.target.value) || 10)}
+                            />
+                            <GlassInput
+                                label="Skip Backward (s)"
+                                type="number"
+                                min="5"
+                                max="60"
+                                step="5"
+                                value={settings.skipBackwardTime}
+                                onChange={(e) => handleChange('skipBackwardTime', parseInt(e.target.value) || 10)}
+                            />
                         </div>
                     </div>
-                </div>
+                </GlassCard>
 
                 {/* Subtitles & Display */}
-                <div className="bg-surface/50 backdrop-blur-surface border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] rounded-3xl p-6 space-y-6">
-                    <h4 className="text-lg font-bold text-primary flex items-center gap-2 font-heading">
+                <GlassCard className="p-6 space-y-6">
+                    <GlassHeading size="small" className="flex items-center gap-2 font-heading">
                         <Subtitles size={18} />
                         Subtitles & Display
-                    </h4>
+                    </GlassHeading>
 
                     <div className="space-y-4">
-                        <div className="flex flex-col space-y-2">
-                            <label className="text-sm font-label text-outline-variant">Subtitle Size</label>
-                            <Select
-                                value={settings.subtitleSize}
-                                onChange={(val) => handleChange('subtitleSize', val)}
-                                options={[
-                                    { id: 'small', label: 'Small' },
-                                    { id: 'medium', label: 'Medium' },
-                                    { id: 'large', label: 'Large' },
-                                    { id: 'xlarge', label: 'Extra Large' }
-                                ]}
-                            />
-                        </div>
-
-                        <Toggle
-                            label="Hardware Acceleration"
-                            description="Use GPU for video decoding if supported"
-                            checked={settings.hardwareDecoding}
-                            onChange={(checked) => handleChange('hardwareDecoding', checked)}
-                            className="mt-4"
+                        <GlassSelect
+                            label="Subtitle Size"
+                            value={settings.subtitleSize}
+                            onChange={(val) => handleChange('subtitleSize', val)}
+                            options={[
+                                { value: 'small', label: 'Small' },
+                                { value: 'medium', label: 'Medium' },
+                                { value: 'large', label: 'Large' },
+                                { value: 'xlarge', label: 'Extra Large' }
+                            ]}
                         />
-                        
+
+                        <Row label="Hardware Acceleration" description="Use GPU for video decoding if supported">
+                            <GlassToggle checked={settings.hardwareDecoding} onChange={(e) => handleChange('hardwareDecoding', e.target.checked)} />
+                        </Row>
+
                         <div className="p-4 bg-black/30 rounded-xl border border-white/5 flex items-center gap-3">
                             <MonitorPlay className="text-outline-variant" size={20} />
                             <p className="text-xs text-outline-variant font-body leading-relaxed">
@@ -173,18 +161,18 @@ export const PlayerTab: React.FC = () => {
                             </p>
                         </div>
                     </div>
-                </div>
+                </GlassCard>
             </div>
 
             <div className="flex justify-end pt-4">
-                <Button
+                <GlassButton
+                    variant="primary"
                     onClick={handleSave}
                     disabled={isSaving}
-                    variant="primary"
-                    icon={Save}
                 >
+                    <Save size={16} className="mr-2" />
                     {isSaving ? 'Saving...' : 'Save Player Settings'}
-                </Button>
+                </GlassButton>
             </div>
         </div>
     );

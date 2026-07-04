@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { GlassCard, GlassButton, GlassHeading } from '@knp-org/liquid-glass-ui';
 import { MainLayout } from '@/app/layout/MainLayout';
 import { SettingsTab } from '@/types/settings';
 import { useAuth } from '@/features/auth';
@@ -25,15 +26,16 @@ export const Settings: React.FC = () => {
     }, [location.state]);
 
     const renderTabButton = (tab: SettingsTab, label: string) => (
-        <button
+        <GlassButton
+            variant={activeTab === tab ? 'primary' : 'ghost'}
             onClick={() => setActiveTab(tab)}
-            className={`text-left px-4 py-3 rounded-xl transition-all font-heading ${activeTab === tab
-                ? 'bg-white/10 text-primary border border-white/20 shadow-inner'
+            className={`w-full text-left px-4 py-3 rounded-xl font-heading ${activeTab === tab
+                ? ''
                 : 'text-outline-variant hover:bg-white/5 hover:text-primary'
                 }`}
         >
             {label}
-        </button>
+        </GlassButton>
     );
 
     return (
@@ -41,8 +43,8 @@ export const Settings: React.FC = () => {
             <div className="flex flex-col md:flex-row h-full gap-4">
                 {/* Settings Sidebar */}
                 <div className="w-full md:w-64 flex-shrink-0">
-                    <div className="glass-panel h-full p-4 flex flex-col space-y-2">
-                        <h2 className="text-xl font-bold text-primary mb-4 px-2 font-heading">Settings</h2>
+                    <GlassCard className="h-full p-4 flex flex-col space-y-2">
+                        <GlassHeading size="small" className="mb-4 px-2 font-heading">Settings</GlassHeading>
                         {renderTabButton('libraries', 'Library Management')}
                         {renderTabButton('account', 'Account Settings')}
                         {isAdmin && renderTabButton('users', 'User Management')}
@@ -50,12 +52,12 @@ export const Settings: React.FC = () => {
                         {renderTabButton('transcoding', 'Transcoding')}
                         {renderTabButton('player', 'Player')}
                         {renderTabButton('system', 'System')}
-                    </div>
+                    </GlassCard>
                 </div>
 
                 {/* Tab Content */}
                 <div className="flex-1 min-w-0">
-                    <div className="glass-panel min-h-full py-6 px-8">
+                    <GlassCard className="min-h-full py-6 px-8">
                         {activeTab === 'libraries' && <LibrariesTab />}
                         {activeTab === 'account' && <AccountTab />}
                         {activeTab === 'users' && isAdmin && <UsersTab />}
@@ -63,7 +65,7 @@ export const Settings: React.FC = () => {
                         {activeTab === 'transcoding' && <TranscodingTab />}
                         {activeTab === 'player' && <PlayerTab />}
                         {activeTab === 'system' && <SystemTab />}
-                    </div>
+                    </GlassCard>
                 </div>
             </div>
         </MainLayout>

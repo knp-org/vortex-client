@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/shared/ui/Button';
+import { GlassButton, GlassBadge, GlassHeading, GlassText, IconArrowRight } from '@knp-org/liquid-glass-ui';
 import { useNavigate } from 'react-router-dom';
 import { resolveImageUrl, mediaService, libraryService } from '@/services';
 import type { Card } from '@/types';
@@ -64,7 +64,7 @@ export const HeroCarousel: React.FC = () => {
     if (items.length === 0) {
         return (
             <div className="relative w-full h-[60vh] rounded-3xl overflow-hidden mb-8 bg-white/5 flex items-center justify-center">
-                <div className="text-gray-500">No content available. Scan a library to see content here.</div>
+                <GlassText variant="muted">No content available. Scan a library to see content here.</GlassText>
             </div>
         );
     }
@@ -107,42 +107,33 @@ export const HeroCarousel: React.FC = () => {
                     {/* Meta Info */}
                     <div className="flex items-center flex-wrap gap-2 text-xs sm:text-sm md:text-base text-outline-variant font-label">
                         {item.kind && (
-                            <span className="bg-surface backdrop-blur-surface px-2 py-0.5 sm:py-1 rounded border border-outline uppercase text-[10px] sm:text-xs tracking-wider">
+                            <GlassBadge className="uppercase !text-[10px] sm:!text-xs tracking-wider">
                                 {item.kind}
-                            </span>
+                            </GlassBadge>
                         )}
                         {item.year && <span>{item.year}</span>}
                     </div>
 
                     {/* Title */}
-                    <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold font-heading text-primary tracking-tight drop-shadow-2xl line-clamp-2">
+                    <GlassHeading as="h1" size="large" className="text-2xl sm:text-4xl md:text-6xl tracking-tight drop-shadow-2xl line-clamp-2">
                         {item.title}
-                    </h1>
+                    </GlassHeading>
 
                     {/* Description */}
                     {item.plot && (
-                        <p className="text-outline-variant text-sm sm:text-base md:text-lg line-clamp-2 sm:line-clamp-3 drop-shadow-md max-w-xl font-body">
+                        <GlassText variant="muted" className="text-sm sm:text-base md:text-lg line-clamp-2 sm:line-clamp-3 drop-shadow-md max-w-xl">
                             {item.plot}
-                        </p>
+                        </GlassText>
                     )}
 
                     {/* Actions */}
                     <div className="flex items-center space-x-3 sm:space-x-4 pt-2 sm:pt-4">
-                        <Button
-                            size="lg"
-                            className="px-6 sm:px-8 bg-primary text-on-primary shadow-[0_0_20px_rgba(255,255,255,0.2)] font-heading rounded-xl"
-                            onClick={() => open(item)}
-                        >
+                        <GlassButton size="lg" shape="pill" onClick={() => open(item)}>
                             Play Now
-                        </Button>
-                        <Button
-                            size="lg"
-                            variant="secondary"
-                            className="bg-surface backdrop-blur-surface border border-outline text-primary hover:bg-white/10 shadow-inner font-heading rounded-xl"
-                            onClick={() => open(item)}
-                        >
+                        </GlassButton>
+                        <GlassButton size="lg" variant="secondary" shape="pill" onClick={() => open(item)}>
                             More Info
-                        </Button>
+                        </GlassButton>
                     </div>
                 </div>
             </div>
@@ -166,12 +157,13 @@ export const HeroCarousel: React.FC = () => {
             {/* Arrows (Visible on hover) */}
             {items.length > 1 && (
                 <div className="absolute inset-y-0 right-4 z-20 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
+                    <GlassButton
+                        variant="ghost"
+                        shape="circle"
                         onClick={() => setCurrentIndex(prev => (prev + 1) % items.length)}
-                        className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-md border border-white/10"
                     >
-                        →
-                    </button>
+                        <IconArrowRight size={20} glow={false} />
+                    </GlassButton>
                 </div>
             )}
         </div>

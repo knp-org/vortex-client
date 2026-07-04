@@ -1,7 +1,5 @@
 import React from 'react';
-import { createPortal } from 'react-dom';
-import { Card } from './Card';
-import { Button } from './Button';
+import { GlassModal, GlassButton, GlassText } from '@knp-org/liquid-glass-ui';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -15,6 +13,7 @@ interface ConfirmModalProps {
     variant?: 'danger' | 'primary';
 }
 
+/** A confirm dialog composed from the liquid-glass-ui primitives. */
 export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     isOpen,
     title,
@@ -26,34 +25,24 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     onClose,
     variant = 'danger'
 }) => {
-    if (!isOpen) return null;
-
-    return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div className="w-full max-w-md p-4">
-                <Card className="bg-surface/80 border-outline backdrop-blur-surface shadow-[0_0_20px_rgba(255,255,255,0.05)]">
-                    <h2 className="text-xl font-bold text-primary font-heading mb-2">{title}</h2>
-                    <p className="text-outline-variant font-body mb-6">{message}</p>
-
-                    <div className="flex justify-end space-x-3">
-                        <Button
-                            variant="secondary"
-                            onClick={onClose}
-                            disabled={isLoading}
-                        >
-                            {cancelText}
-                        </Button>
-                        <Button
-                            variant={variant}
-                            onClick={onConfirm}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? 'Processing...' : confirmText}
-                        </Button>
-                    </div>
-                </Card>
-            </div>
-        </div>,
-        document.body
+    return (
+        <GlassModal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={title}
+            className="max-w-md"
+            footer={
+                <div className="flex justify-end gap-3">
+                    <GlassButton onClick={onClose} disabled={isLoading}>
+                        {cancelText}
+                    </GlassButton>
+                    <GlassButton variant={variant} onClick={onConfirm} disabled={isLoading}>
+                        {isLoading ? 'Processing...' : confirmText}
+                    </GlassButton>
+                </div>
+            }
+        >
+            <GlassText variant="muted">{message}</GlassText>
+        </GlassModal>
     );
 };

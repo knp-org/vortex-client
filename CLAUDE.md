@@ -6,6 +6,8 @@ Guidance for AI agents working in this repo.
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** — folder layout, the rules, and the
   "where does new code go?" table. Follow it for every change.
 - **[DESIGN.md](./DESIGN.md)** — the "Liquid Glass" UI/UX rules. All UI must comply.
+  These rules are implemented by the **`@knp-org/liquid-glass-ui`** package — use its
+  components instead of hand-rolling the aesthetic (see the UI rule below).
 - **[src/features/README.md](./src/features/README.md)** — per-feature responsibilities
   and public barrels.
 
@@ -26,6 +28,37 @@ Guidance for AI agents working in this repo.
 6. **Do not split `features/player` or `features/reader`.** They're ref/timing/DOM
    media controllers (HLS, embedded mpv, pdf.js/epub.js); splitting risks
    playback/render regressions that `tsc`/lint can't catch.
+
+## UI: build everything from `@knp-org/liquid-glass-ui`
+All web/desktop UI is composed from the **`@knp-org/liquid-glass-ui`** component
+library (the canonical implementation of DESIGN.md). Treat it as the only way to
+render UI:
+
+- **Use a library component for everything it covers.** Buttons, inputs, cards,
+  modals, tables, tabs, tooltips, dropdowns, toggles, sliders, badges, alerts,
+  spinners, skeletons, navbars, breadcrumbs, pagination, empty states, avatars,
+  dividers, lists — and the `GlassHeading`/`GlassText` typography and `Icon*` set.
+  Import from the barrel: `import { GlassButton, GlassCard } from '@knp-org/liquid-glass-ui'`.
+- **Never hand-roll a glass surface.** Do not reimplement backdrop-blur panels,
+  translucent white overlays, hairline borders, custom buttons/inputs, or inline
+  SVG icons when a `Glass*`/`Icon*` component already exists. Reach for raw HTML
+  elements (`<button>`, `<input>`, `<div className="glass...">`) only for plain
+  layout containers with no glass styling.
+- **Style via props and tokens, not overrides.** Use the component's own props
+  (`variant`, `shape`, `size`, …) and the library's CSS custom properties. Passing
+  `className` is fine (it merges with the glass classes), but don't fork the
+  aesthetic with local one-off styles.
+- **Any new component goes in the library, not this repo.** If a needed
+  component/pattern isn't in `@knp-org/liquid-glass-ui`, **add it to that package
+  (`../liquid-glass-ui`) and import it here** — never author a new UI component
+  inside vortex-client. This is non-negotiable: no bespoke variants, no
+  local one-off glass components. Only `features/player` and `features/reader`
+  may use bespoke media-controller DOM (see rule #6).
+  - Workflow: edit `../liquid-glass-ui/src/`, export it from `src/index.ts`, then
+    `cd ../liquid-glass-ui && export PATH=/usr/local/bin:$PATH && npm run build && npm pack`.
+    The tarball is consumed via `file:` — a full `npm install` of it is slow, so
+    refresh the extracted copy directly (`cp -r package/dist/* node_modules/@knp-org/liquid-glass-ui/dist/`),
+    then reconcile the lockfile with a real install when convenient.
 
 ## Build
 Web builds need Node 22. Run `export PATH=/usr/local/bin:$PATH` first if the system

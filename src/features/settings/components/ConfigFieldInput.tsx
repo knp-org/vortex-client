@@ -1,7 +1,6 @@
 import React from 'react';
+import { GlassInput, GlassSelect, GlassToggle } from '@knp-org/liquid-glass-ui';
 import type { ConfigField } from '@/types/providers';
-import { Select } from '@/shared/ui/Select';
-import { Toggle } from '@/shared/ui/Toggle';
 
 interface ConfigFieldInputProps {
     field: ConfigField;
@@ -11,14 +10,11 @@ interface ConfigFieldInputProps {
 
 /** Renders the right input control for a provider config field by its type. */
 export const ConfigFieldInput: React.FC<ConfigFieldInputProps> = ({ field, value, onChange }) => {
-    const baseClass = "w-full bg-surface/50 border border-outline rounded-xl px-4 py-2.5 text-primary placeholder-outline-variant focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-colors shadow-inner font-body";
-
     switch (field.field_type) {
         case 'secret':
             return (
-                <input
+                <GlassInput
                     type="password"
-                    className={baseClass}
                     placeholder={field.label}
                     value={(value as string) || ''}
                     onChange={(e) => onChange(field.key, e.target.value)}
@@ -26,17 +22,17 @@ export const ConfigFieldInput: React.FC<ConfigFieldInputProps> = ({ field, value
             );
         case 'bool':
             return (
-                <Toggle
+                <GlassToggle
                     label={value ? 'Enabled' : 'Disabled'}
                     checked={!!value}
-                    onChange={(checked) => onChange(field.key, checked)}
+                    onChange={(e) => onChange(field.key, e.target.checked)}
                 />
             );
         case 'select': {
-            const selectOptions = field.options?.map(([val, label]) => ({ id: val, label })) || [];
+            const options = field.options?.map(([val, label]) => ({ value: val, label })) || [];
             return (
-                <Select
-                    options={selectOptions}
+                <GlassSelect
+                    options={options}
                     value={(value as string) || (field.default as string) || ''}
                     onChange={(val) => onChange(field.key, val)}
                 />
@@ -44,9 +40,8 @@ export const ConfigFieldInput: React.FC<ConfigFieldInputProps> = ({ field, value
         }
         case 'number':
             return (
-                <input
+                <GlassInput
                     type="number"
-                    className={baseClass}
                     placeholder={field.label}
                     value={(value as number) ?? ''}
                     onChange={(e) => onChange(field.key, e.target.value ? Number(e.target.value) : null)}
@@ -54,9 +49,8 @@ export const ConfigFieldInput: React.FC<ConfigFieldInputProps> = ({ field, value
             );
         default: // 'text'
             return (
-                <input
+                <GlassInput
                     type="text"
-                    className={baseClass}
                     placeholder={field.label}
                     value={(value as string) || ''}
                     onChange={(e) => onChange(field.key, e.target.value)}

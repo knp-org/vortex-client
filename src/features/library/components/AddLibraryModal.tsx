@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Card } from '@/shared/ui/Card';
-import { Button } from '@/shared/ui/Button';
-import { Input } from '@/shared/ui/Input';
-import { Select } from '@/shared/ui/Select';
+import { GlassModal, GlassButton, GlassInput, GlassSelect, GlassAlert } from '@knp-org/liquid-glass-ui';
 import { MultiDirectoryPicker } from '@/shared/ui/MultiDirectoryPicker';
 import { libraryService } from '@/services';
-import { Film, Tv, Music, Video, FileQuestion, BookOpen } from 'lucide-react';
 import { READING_MODE_OPTIONS } from '@/constants/reading';
 
 interface AddLibraryModalProps {
@@ -16,16 +11,16 @@ interface AddLibraryModalProps {
 }
 
 const LIBRARY_TYPES = [
-    { id: 'movies', label: 'Movies', icon: Film },
-    { id: 'tv_shows', label: 'TV Shows', icon: Tv },
-    { id: 'music', label: 'Music', icon: Music },
-    { id: 'music_videos', label: 'Music Videos', icon: Video },
-    { id: 'books', label: 'Books', icon: BookOpen },
-    { id: 'other', label: 'Other', icon: FileQuestion },
+    { value: 'movies', label: 'Movies' },
+    { value: 'tv_shows', label: 'TV Shows' },
+    { value: 'music', label: 'Music' },
+    { value: 'music_videos', label: 'Music Videos' },
+    { value: 'books', label: 'Books' },
+    { value: 'images', label: 'Images' },
+    { value: 'other', label: 'Other' },
 ];
 
 export const AddLibraryModal: React.FC<AddLibraryModalProps> = ({ isOpen, onClose, onSuccess }) => {
-    // Platform check removed as it's currently unused here
     const [name, setName] = useState('');
     const [paths, setPaths] = useState<string[]>([]);
     const [type, setType] = useState('movies');
@@ -66,60 +61,51 @@ export const AddLibraryModal: React.FC<AddLibraryModalProps> = ({ isOpen, onClos
         }
     };
 
-    return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div className="w-full max-w-md p-4">
-                <Card className="bg-surface/80 border-outline backdrop-blur-surface shadow-[0_0_20px_rgba(255,255,255,0.05)]">
-                    <h2 className="text-xl font-bold text-primary font-heading mb-6">Add New Library</h2>
+    return (
+        <GlassModal isOpen={isOpen} onClose={onClose} title="Add New Library" className="max-w-md library-modal-blur" footer={null}>
+            {error && (
+                <GlassAlert variant="error" className="mb-4">{error}</GlassAlert>
+            )}
 
-                    {error && (
-                        <div className="mb-4 p-3 rounded-xl bg-error/10 border border-error/30 text-error font-body text-sm">
-                            {error}
-                        </div>
-                    )}
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <GlassInput
+                    label="Name"
+                    placeholder="e.g., My Movies"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                />
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <Input
-                            label="Name"
-                            placeholder="e.g., My Movies"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
+                <GlassSelect
+                    label="Library Type"
+                    value={type}
+                    onChange={setType}
+                    options={LIBRARY_TYPES}
+                />
 
-                        <Select
-                            label="Library Type"
-                            value={type}
-                            onChange={setType}
-                            options={LIBRARY_TYPES}
-                        />
+                {type === 'books' && (
+                    <GlassSelect
+                        label="Default Reading Mode"
+                        value={readingMode}
+                        onChange={setReadingMode}
+                        options={READING_MODE_OPTIONS.map(o => ({ value: o.id, label: o.label }))}
+                    />
+                )}
 
-                        {type === 'books' && (
-                            <Select
-                                label="Default Reading Mode"
-                                value={readingMode}
-                                onChange={setReadingMode}
-                                options={READING_MODE_OPTIONS.map(o => ({ id: o.id, label: o.label }))}
-                            />
-                        )}
+                <MultiDirectoryPicker
+                    values={paths}
+                    onChange={setPaths}
+                />
 
-                        <MultiDirectoryPicker
-                            values={paths}
-                            onChange={setPaths}
-                        />
-
-                        <div className="flex justify-end space-x-3 pt-4">
-                            <Button type="button" variant="secondary" onClick={onClose}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading ? 'Creating...' : 'Add Library'}
-                            </Button>
-                        </div>
-                    </form>
-                </Card>
-            </div>
-        </div>,
-        document.body
+                <div className="flex justify-end space-x-3 pt-4">
+                    <GlassButton type="button" onClick={onClose}>
+                        Cancel
+                    </GlassButton>
+                    <GlassButton variant="primary" type="submit" disabled={isLoading}>
+                        {isLoading ? 'Creating...' : 'Add Library'}
+                    </GlassButton>
+                </div>
+            </form>
+        </GlassModal>
     );
 };

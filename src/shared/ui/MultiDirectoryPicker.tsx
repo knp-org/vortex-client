@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from './Button';
-import { Card } from './Card';
+import { GlassModal, GlassButton, GlassCard } from '@knp-org/liquid-glass-ui';
 import { api } from '@/services';
-import { Folder, Plus, X } from 'lucide-react';
+import { Folder, Plus, X, ArrowUp } from 'lucide-react';
 
 interface DirectoryEntry {
     name: string;
@@ -70,10 +69,7 @@ export const MultiDirectoryPicker: React.FC<MultiDirectoryPickerProps> = ({ valu
             {values.length > 0 && (
                 <div className="space-y-2">
                     {values.map((path) => (
-                        <div
-                            key={path}
-                            className="flex items-center justify-between px-3 py-2 bg-surface/50 border border-outline rounded-xl shadow-inner"
-                        >
+                        <GlassCard key={path} className="flex items-center justify-between px-3 py-2">
                             <div className="flex items-center space-x-2 min-w-0">
                                 <Folder size={16} className="text-primary shrink-0" />
                                 <span className="text-sm text-outline-variant font-mono truncate">{path}</span>
@@ -86,69 +82,60 @@ export const MultiDirectoryPicker: React.FC<MultiDirectoryPickerProps> = ({ valu
                             >
                                 <X size={16} />
                             </button>
-                        </div>
+                        </GlassCard>
                     ))}
                 </div>
             )}
 
-            <Button type="button" variant="secondary" onClick={() => setIsOpen(true)} className="w-full">
+            <GlassButton type="button" onClick={() => setIsOpen(true)} className="w-full">
                 <span className="flex items-center justify-center space-x-2">
                     <Plus size={16} />
                     <span>Add Folder</span>
                 </span>
-            </Button>
+            </GlassButton>
 
-            {isOpen && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-                    <Card className="w-full max-w-2xl max-h-[80vh] flex flex-col bg-surface/80 border-outline shadow-[0_0_40px_rgba(255,255,255,0.05)] backdrop-blur-surface overflow-hidden rounded-3xl !p-0">
-                        <div className="p-4 border-b border-outline flex items-center justify-between bg-white/5">
-                            <h3 className="font-bold text-primary font-heading">Select Folder</h3>
-                            <button onClick={() => setIsOpen(false)} className="text-outline-variant hover:text-primary transition-colors">
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <div className="p-3 bg-surface/30 flex items-center space-x-2 border-b border-outline/50">
-                            <Button size="sm" variant="secondary" onClick={handleUpClick} disabled={isLoading}>
-                                ⬆ Up
-                            </Button>
-                            <div className="text-xs font-mono text-primary truncate flex-1 bg-surface/50 border border-outline/50 p-2 rounded-xl shadow-inner">
-                                {currentPath}
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-[300px] custom-scrollbar">
-                            {isLoading ? (
-                                <div className="flex items-center justify-center h-full text-outline-variant font-body">
-                                    Loading...
-                                </div>
-                            ) : (
-                                entries.map((entry) => (
-                                    <div
-                                        key={entry.path}
-                                        onClick={() => handleEntryClick(entry)}
-                                        className="flex items-center p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group"
-                                    >
-                                        <Folder size={20} className="mr-3 text-primary group-hover:scale-110 transition-transform shrink-0" />
-                                        <span className="text-primary text-sm font-body font-medium select-none truncate">
-                                            {entry.name}
-                                        </span>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-
-                        <div className="p-4 border-t border-outline flex justify-end space-x-3 bg-white/5">
-                            <Button variant="secondary" onClick={() => setIsOpen(false)} className="rounded-2xl">
-                                Cancel
-                            </Button>
-                            <Button onClick={() => addPath(currentPath)} className="rounded-2xl">
-                                Add This Folder
-                            </Button>
-                        </div>
-                    </Card>
+            <GlassModal
+                isOpen={isOpen}
+                onClose={() => setIsOpen(false)}
+                title="Select Folder"
+                className="max-w-2xl library-modal-blur"
+                footer={
+                    <div className="flex justify-end space-x-3">
+                        <GlassButton onClick={() => setIsOpen(false)}>Cancel</GlassButton>
+                        <GlassButton variant="primary" onClick={() => addPath(currentPath)}>Add This Folder</GlassButton>
+                    </div>
+                }
+            >
+                <div className="flex items-center space-x-2 mb-3">
+                    <GlassButton size="sm" onClick={handleUpClick} disabled={isLoading}>
+                        <ArrowUp size={14} className="mr-1" /> Up
+                    </GlassButton>
+                    <div className="text-xs font-mono text-primary truncate flex-1 bg-surface/50 border border-outline/50 p-2 rounded-xl shadow-inner">
+                        {currentPath}
+                    </div>
                 </div>
-            )}
+
+                <div className="max-h-[50vh] overflow-y-auto space-y-1 min-h-[300px] custom-scrollbar">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-full text-outline-variant font-body py-12">
+                            Loading...
+                        </div>
+                    ) : (
+                        entries.map((entry) => (
+                            <div
+                                key={entry.path}
+                                onClick={() => handleEntryClick(entry)}
+                                className="flex items-center p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group"
+                            >
+                                <Folder size={20} className="mr-3 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                                <span className="text-primary text-sm font-body font-medium select-none truncate">
+                                    {entry.name}
+                                </span>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </GlassModal>
         </div>
     );
 };

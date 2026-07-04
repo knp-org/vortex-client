@@ -1,5 +1,5 @@
 import { api } from '@/shared/api';
-import type { Card, MovieDetail, BookDetail, SeriesDetail, Season, Episode, ContinueItem, MediaInfo, AlbumDetail, ArtistDetail, Lyrics, Track } from '@/types';
+import type { Card, MovieDetail, BookDetail, SeriesDetail, Season, Episode, ContinueItem, MediaInfo, AlbumDetail, ArtistDetail, Lyrics, Track, GalleryDetail, ImageDetail, Photo } from '@/types';
 
 export interface IdentifyBody {
     provider_id: string;
@@ -48,6 +48,30 @@ export const mediaService = {
         api.get<Card[]>(libraryId != null ? `/artists?library_id=${libraryId}` : '/artists'),
     artist: (id: number | string) => api.get<ArtistDetail>(`/artists/${id}`),
     lyrics: (id: number | string, force?: boolean) => api.get<Lyrics>(`/media/${id}/lyrics${force ? '?force=true' : ''}`),
+
+    // Images (photo galleries / albums)
+    galleries: (libraryId?: number) =>
+        api.get<Card[]>(libraryId != null ? `/galleries?library_id=${libraryId}` : '/galleries'),
+    gallery: (id: number | string) => api.get<GalleryDetail>(`/galleries/${id}`),
+    /** Every photo in an Images library (across all albums) — for the "Add Photos" picker. */
+    libraryImages: (libraryId: number | string) => api.get<Photo[]>(`/libraries/${libraryId}/images`),
+    image: (id: number | string) => api.get<ImageDetail>(`/media/${id}`),
+    createGallery: (body: { library_id: number; name: string; description?: string }) =>
+        api.post<{ id: number }>('/galleries', body),
+    updateGallery: (id: number | string, body: { name?: string; description?: string; cover_url?: string }) =>
+        api.put(`/galleries/${id}`, body),
+    deleteGallery: (id: number | string) => api.del(`/galleries/${id}`),
+    addImagesToGallery: (id: number | string, item_ids: number[]) =>
+        api.post<{ moved: number }>(`/galleries/${id}/images`, { item_ids }),
+    removeImageFromGallery: (id: number | string, itemId: number | string) =>
+        api.del(`/galleries/${id}/images/${itemId}`),
+
+    // Recycle bin (Images libraries). Removing a photo from an album trashes it
+    // here; each photo's `gallery_id` is the album it will be restored to.
+    trashedImages: (libraryId: number | string) => api.get<Photo[]>(`/libraries/${libraryId}/trash`),
+    restoreImage: (itemId: number | string) => api.post(`/images/item/${itemId}/restore`),
+    purgeImage: (itemId: number | string) => api.del(`/images/item/${itemId}/trash`),
+    emptyTrash: (libraryId: number | string) => api.del<{ purged: number }>(`/libraries/${libraryId}/trash`),
 
     // Favorites (per-user)
     favorites: () => api.get<Card[]>('/favorites'),

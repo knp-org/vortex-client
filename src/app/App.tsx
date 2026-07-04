@@ -7,6 +7,7 @@ import { Library } from '@/features/library';
 import { Settings } from '@/features/settings';
 import { Player, MpvOverlay } from '@/features/player';
 import { MusicPlayerProvider, MusicPlayerBar, FullScreenPlayer, AlbumDetail, ArtistDetail, Playlists } from '@/features/music';
+import { GalleryDetail, RecycleBin } from '@/features/images';
 
 // The reader pulls in heavy renderers (pdf.js / epub.js); load it on demand
 // so they stay out of the main bundle.
@@ -57,8 +58,10 @@ function App() {
               {/* Protected Routes */}
               <Route path="/" element={<RouteGuard><Dashboard /></RouteGuard>} />
               <Route path="/libraries/:id" element={<RouteGuard><Library /></RouteGuard>} />
+              <Route path="/libraries/:id/trash" element={<RouteGuard><RecycleBin /></RouteGuard>} />
               <Route path="/media/:id" element={<RouteGuard><MediaDetail /></RouteGuard>} />
               <Route path="/series/:seriesId" element={<RouteGuard><MediaDetail /></RouteGuard>} />
+              <Route path="/galleries/:id" element={<RouteGuard><GalleryDetail /></RouteGuard>} />
               <Route path="/albums/:id" element={<RouteGuard><AlbumDetail /></RouteGuard>} />
               <Route path="/artists/:id" element={<RouteGuard><ArtistDetail /></RouteGuard>} />
               <Route path="/playlists" element={<RouteGuard><Playlists /></RouteGuard>} />

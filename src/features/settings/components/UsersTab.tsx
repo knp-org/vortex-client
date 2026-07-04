@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { GlassCard, GlassButton, GlassInput, GlassModal, GlassCheckbox, GlassSpinner, GlassBadge, GlassHeading, GlassText } from '@knp-org/liquid-glass-ui';
 import { useAuth } from '@/features/auth';
-import { Shield, UserPlus, Trash2, User as UserIcon, X } from 'lucide-react';
-import { Button } from '@/shared/ui/Button';
-import { Input } from '@/shared/ui/Input';
+import { Shield, UserPlus, Trash2, User as UserIcon } from 'lucide-react';
+import { ConfirmModal } from '@/shared/ui/ConfirmModal';
 import { authService, type AuthUser } from '@/services';
 
 /** Admin-only user management: list, create (modal), and delete users. */
@@ -15,6 +14,8 @@ export const UsersTab: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showCreate, setShowCreate] = useState(false);
+    const [pendingDelete, setPendingDelete] = useState<AuthUser | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     const load = async () => {
         setLoading(true);
@@ -33,14 +34,17 @@ export const UsersTab: React.FC = () => {
         else setLoading(false);
     }, [isAdmin]);
 
-    const handleDelete = async (target: AuthUser) => {
-        if (target.id === user?.id) return;
-        if (!window.confirm(`Delete user "${target.username}"? This cannot be undone.`)) return;
+    const confirmDelete = async () => {
+        if (!pendingDelete || pendingDelete.id === user?.id) return;
+        setDeleting(true);
         try {
-            await authService.deleteUser(target.id);
+            await authService.deleteUser(pendingDelete.id);
+            setPendingDelete(null);
             await load();
         } catch (err: any) {
             setError(err?.message || 'Failed to delete user.');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -56,19 +60,20 @@ export const UsersTab: React.FC = () => {
         <div className="space-y-8 animate-fade-in">
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h3 className="text-2xl font-bold text-primary font-heading">User Management</h3>
-                    <p className="text-outline-variant text-sm mt-1 font-body">Create and manage user accounts.</p>
+                    <GlassHeading size="medium" className="font-heading">User Management</GlassHeading>
+                    <GlassText variant="muted" className="text-sm mt-1 font-body">Create and manage user accounts.</GlassText>
                 </div>
-                <Button size="sm" icon={UserPlus} onClick={() => setShowCreate(true)} className="shrink-0">
+                <GlassButton variant="primary" size="sm" onClick={() => setShowCreate(true)} className="shrink-0">
+                    <UserPlus size={16} className="mr-2" />
                     Add User
-                </Button>
+                </GlassButton>
             </div>
 
             {/* User list */}
-            <div className="bg-surface/50 backdrop-blur-surface border border-outline shadow-[0_0_20px_rgba(255,255,255,0.05)] rounded-3xl p-6">
+            <GlassCard className="p-6">
                 {loading ? (
                     <div className="py-8 flex justify-center">
-                        <div className="w-6 h-6 border-2 border-primary rounded-full animate-spin border-t-transparent" />
+                        <GlassSpinner />
                     </div>
                 ) : error ? (
                     <p className="text-error text-sm font-body">{error}</p>
@@ -87,22 +92,19 @@ export const UsersTab: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
-                                <span className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border font-label ${
-                                    u.role === 'admin'
-                                        ? 'bg-primary/10 text-primary border-primary/20'
-                                        : 'bg-white/5 text-outline-variant border-white/10'
-                                }`}>
-                                    <Shield size={12} />
+                                <GlassBadge active={u.role === 'admin'}>
+                                    <Shield size={12} className="mr-1.5" />
                                     <span className="capitalize">{u.role}</span>
-                                </span>
-                                <button
-                                    onClick={() => handleDelete(u)}
+                                </GlassBadge>
+                                <GlassButton
+                                    variant="ghost"
+                                    onClick={() => setPendingDelete(u)}
                                     disabled={u.id === user?.id}
                                     title={u.id === user?.id ? "You can't delete your own account" : 'Delete user'}
-                                    className="p-2 rounded-full text-outline-variant hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="p-2 rounded-full text-outline-variant hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                     <Trash2 size={16} />
-                                </button>
+                                </GlassButton>
                             </div>
                         ))}
                         {users.length === 0 && (
@@ -110,7 +112,7 @@ export const UsersTab: React.FC = () => {
                         )}
                     </div>
                 )}
-            </div>
+            </GlassCard>
 
             {showCreate && (
                 <CreateUserModal
@@ -118,6 +120,17 @@ export const UsersTab: React.FC = () => {
                     onCreated={() => { setShowCreate(false); load(); }}
                 />
             )}
+
+            <ConfirmModal
+                isOpen={pendingDelete !== null}
+                onClose={() => setPendingDelete(null)}
+                onConfirm={confirmDelete}
+                title="Delete User"
+                message={pendingDelete ? `Delete user "${pendingDelete.username}"? This cannot be undone.` : ''}
+                confirmText="Delete"
+                variant="danger"
+                isLoading={deleting}
+            />
         </div>
     );
 };
@@ -129,8 +142,7 @@ const CreateUserModal: React.FC<{ onClose: () => void; onCreated: () => void }> 
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState('');
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
         setError('');
         setCreating(true);
         try {
@@ -143,52 +155,45 @@ const CreateUserModal: React.FC<{ onClose: () => void; onCreated: () => void }> 
         }
     };
 
-    return createPortal(
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div className="bg-surface/90 backdrop-blur-glass border border-outline rounded-2xl w-full max-w-md shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
-                <div className="p-5 border-b border-outline flex items-center justify-between bg-white/5">
-                    <h2 className="text-lg font-bold text-primary font-heading flex items-center gap-2">
-                        <UserPlus size={18} className="text-primary" />
-                        Create User
-                    </h2>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                        <X size={18} className="text-outline-variant hover:text-primary" />
-                    </button>
+    return (
+        <GlassModal
+            isOpen
+            onClose={onClose}
+            title="Create User"
+            className="max-w-md"
+            footer={
+                <div className="flex justify-end gap-3">
+                    <GlassButton onClick={onClose} disabled={creating}>Cancel</GlassButton>
+                    <GlassButton variant="primary" onClick={handleSubmit} disabled={!username || !password || creating}>
+                        {creating ? 'Creating...' : 'Create User'}
+                    </GlassButton>
                 </div>
-
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <Input
-                        label="Username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Enter username"
-                        autoFocus
-                        required
-                    />
-                    <Input
-                        label="Password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter password"
-                        required
-                    />
-                    <label className="flex items-center gap-2 text-sm text-outline-variant font-label">
-                        <input type="checkbox" checked={isAdmin} onChange={(e) => setIsAdmin(e.target.checked)} />
-                        Administrator
-                    </label>
-
-                    {error && <p className="text-error text-sm font-body">{error}</p>}
-
-                    <div className="flex justify-end gap-3 pt-2">
-                        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                        <Button type="submit" disabled={!username || !password || creating}>
-                            {creating ? 'Creating...' : 'Create User'}
-                        </Button>
-                    </div>
-                </form>
+            }
+        >
+            <div className="space-y-4">
+                <GlassInput
+                    label="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter username"
+                    autoFocus
+                    required
+                />
+                <GlassInput
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    required
+                />
+                <GlassCheckbox
+                    label="Administrator"
+                    checked={isAdmin}
+                    onChange={(e) => setIsAdmin(e.target.checked)}
+                />
+                {error && <p className="text-error text-sm font-body">{error}</p>}
             </div>
-        </div>,
-        document.body
+        </GlassModal>
     );
 };

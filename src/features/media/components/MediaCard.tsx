@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { Play, Tv, Film, MoreVertical, RefreshCw, FileSearch, Info, Edit, ListPlus } from 'lucide-react';
+import { Tv, Film, Image as ImageIcon, FileSearch, ListPlus } from 'lucide-react';
+import {
+    GlassCard,
+    GlassHeading,
+    GlassText,
+    GlassButton,
+    IconPlaySolid,
+    IconMoreVertical,
+    IconSync,
+    IconEdit,
+    IconInfo,
+} from '@knp-org/liquid-glass-ui';
 import { mediaService, resolveImageUrl } from '@/services';
 import { IdentifyModal } from './IdentifyModal';
 import { MediaInfoModal } from './MediaInfoModal';
@@ -12,8 +23,8 @@ interface MediaCardProps {
     onClick?: () => void;
     subtitle?: string;
     progress?: number;
-    type?: 'movie' | 'series' | 'episode' | 'folder' | 'album';
-    aspectRatio?: 'poster' | 'video'; // poster = 2/3, video = 16/9
+    type?: 'movie' | 'series' | 'episode' | 'folder' | 'album' | 'gallery';
+    aspectRatio?: 'poster' | 'video' | 'square'; // poster = 2/3, video = 16/9, square = 1/1
     className?: string;
 }
 
@@ -28,7 +39,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({
     aspectRatio = 'poster',
     className = ''
 }) => {
-    const aspectClass = aspectRatio === 'video' ? 'aspect-video' : 'aspect-[2/3]';
+    const aspectClass = aspectRatio === 'video' ? 'aspect-video' : aspectRatio === 'square' ? 'aspect-square' : 'aspect-[2/3]';
+    // Galleries (photo albums) are just navigational — no metadata context menu.
+    const isGallery = type === 'gallery';
     const [showMenu, setShowMenu] = useState(false);
     const [showIdentify, setShowIdentify] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
@@ -93,8 +106,8 @@ export const MediaCard: React.FC<MediaCardProps> = ({
 
     return (
         <>
-            <div
-                className={`group relative rounded-xl bg-surface/50 backdrop-blur-surface border border-t-[rgba(255,255,255,0.3)] border-l-[rgba(255,255,255,0.3)] border-b-[rgba(255,255,255,0.05)] border-r-[rgba(255,255,255,0.05)] shadow-[0_0_20px_rgba(255,255,255,0.05)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] cursor-pointer ${className}`}
+            <GlassCard
+                className={`group relative !p-0 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] cursor-pointer ${className}`}
                 onClick={onClick}
                 onMouseLeave={() => setShowMenu(false)}
             >
@@ -108,27 +121,30 @@ export const MediaCard: React.FC<MediaCardProps> = ({
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-white/5 text-white/20">
-                            {type === 'series' || type === 'folder' ? <Tv size={40} /> : <Film size={40} />}
+                            {isGallery ? <ImageIcon size={40} /> : isSeries ? <Tv size={40} /> : <Film size={40} />}
                         </div>
                     )}
 
                     {/* Overlay */}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 text-center">
-                        {/* Play Icon */}
-                        <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 text-white transform scale-0 group-hover:scale-100 transition-transform duration-300 delay-75 shadow-lg border border-white/20 pointer-events-none">
-                            <Play size={24} className="ml-1 fill-white" />
-                        </div>
+                        {/* Play Icon — hidden for cards that open a detail view rather
+                            than starting playback (albums, series/folders). */}
+                        {!isAlbum && !isSeries && (
+                            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 text-white transform scale-0 group-hover:scale-100 transition-transform duration-300 delay-75 shadow-lg border border-white/20 pointer-events-none">
+                                <IconPlaySolid size={24} glow={false} className="ml-1" />
+                            </div>
+                        )}
 
                         {/* Title */}
                         {!showMenu && (
                             <>
-                                <h3 className="text-sm font-bold text-primary leading-tight mt-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 absolute bottom-4 px-4 w-full select-none font-heading">
+                                <GlassHeading as="h3" size="small" className="!text-sm leading-tight mt-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 absolute bottom-4 px-4 w-full select-none">
                                     {title}
-                                </h3>
+                                </GlassHeading>
                                 {subtitle && (
-                                    <p className="text-xs text-outline-variant transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75 absolute bottom-12 w-full px-4 truncate font-body">
+                                    <GlassText as="p" variant="muted" className="!text-xs transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75 absolute bottom-12 w-full px-4 truncate">
                                         {subtitle}
-                                    </p>
+                                    </GlassText>
                                 )}
                             </>
                         )}
@@ -147,14 +163,17 @@ export const MediaCard: React.FC<MediaCardProps> = ({
                 </div>
 
                 {/* 3-Dots Menu Button (Moved outside overflow-hidden inner container) */}
-                {(id || title) && (
+                {(id || title) && !isGallery && (
                     <div className="absolute top-2 right-2 flex flex-col items-end z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <button
-                            className="p-1 rounded-full bg-black/60 text-primary hover:bg-primary hover:text-on-primary transition-colors"
+                        <GlassButton
+                            variant="ghost"
+                            shape="circle"
+                            size="sm"
+                            className="!p-1 bg-black/60"
                             onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
                         >
-                            <MoreVertical size={14} />
-                        </button>
+                            <IconMoreVertical size={14} glow={false} />
+                        </GlassButton>
 
                         {showMenu && (
                             <div className="mt-1 w-36 bg-[#15151c]/95 backdrop-blur-glass border border-outline rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.6)] overflow-hidden animate-fade-in text-left">
@@ -165,17 +184,17 @@ export const MediaCard: React.FC<MediaCardProps> = ({
                                 ) : (
                                     <>
                                         <button onClick={(e) => handleAction(e, 'refresh')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
-                                            <RefreshCw size={12} /> Refresh Metadata
+                                            <IconSync size={12} glow={false} /> Refresh Metadata
                                         </button>
                                         <button onClick={(e) => handleAction(e, 'edit')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
-                                            <Edit size={12} /> Edit Metadata
+                                            <IconEdit size={12} glow={false} /> Edit Metadata
                                         </button>
                                         <button onClick={(e) => handleAction(e, 'identify')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 font-label">
                                             <FileSearch size={12} /> Identity
                                         </button>
-                                        {(type !== 'folder' && type !== 'series') && (
+                                        {!isSeries && (
                                             <button onClick={(e) => handleAction(e, 'info')} className="w-full px-2.5 py-1.5 text-[11px] text-outline-variant hover:bg-white/10 hover:text-primary flex items-center gap-2 border-t border-white/5 font-label">
-                                                <Info size={12} /> Media Info
+                                                <IconInfo size={12} glow={false} /> Media Info
                                             </button>
                                         )}
                                     </>
@@ -184,7 +203,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
                         )}
                     </div>
                 )}
-            </div>
+            </GlassCard>
 
             {/* Modals */}
             <IdentifyModal

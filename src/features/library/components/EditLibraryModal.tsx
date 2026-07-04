@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { Card } from '@/shared/ui/Card';
-import { Button } from '@/shared/ui/Button';
-import { Toggle } from '@/shared/ui/Toggle';
-import { Input } from '@/shared/ui/Input';
-import { Select } from '@/shared/ui/Select';
+import { GlassModal, GlassButton, GlassInput, GlassSelect, GlassToggle, GlassAlert, GlassCard } from '@knp-org/liquid-glass-ui';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { MultiDirectoryPicker } from '@/shared/ui/MultiDirectoryPicker';
 import { libraryService, providerService } from '@/services';
 import type { ProviderInfo, LibraryProviderInput } from '@/types/providers';
@@ -107,89 +103,70 @@ export const EditLibraryModal: React.FC<EditLibraryModalProps> = ({ isOpen, onCl
         }
     };
 
-    return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div className="w-full max-w-md p-4">
-                <Card className="bg-surface/80 border-outline backdrop-blur-surface shadow-[0_0_20px_rgba(255,255,255,0.05)]">
-                    <h2 className="text-xl font-bold text-primary font-heading mb-6">Edit Library</h2>
+    return (
+        <GlassModal isOpen={isOpen} onClose={onClose} title="Edit Library" className="max-w-md library-modal-blur" footer={null}>
+            {error && (
+                <GlassAlert variant="error" className="mb-4">{error}</GlassAlert>
+            )}
 
-                    {error && (
-                        <div className="mb-4 p-3 rounded-xl bg-error/10 border border-error/30 text-error font-body text-sm">
-                            {error}
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <GlassInput
+                    label="Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                />
+
+                {isBooks && (
+                    <GlassSelect
+                        label="Default Reading Mode"
+                        value={readingMode}
+                        onChange={setReadingMode}
+                        options={READING_MODE_OPTIONS.map(o => ({ value: o.id, label: o.label }))}
+                    />
+                )}
+
+                <MultiDirectoryPicker
+                    values={paths}
+                    onChange={setPaths}
+                />
+
+                <div className="border-t border-outline pt-4 mt-4">
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                        <span className="text-sm font-label text-primary">Override Metadata Providers</span>
+                        <GlassToggle checked={overrideProviders} onChange={(e) => setOverrideProviders(e.target.checked)} />
+                    </div>
+
+                    {overrideProviders && (
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                            {providers.map((p, idx) => {
+                                const info = allProviders.find(a => a.id === p.provider_id);
+                                return (
+                                    <GlassCard key={p.provider_id} className="flex items-center justify-between p-3">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="flex flex-col gap-0.5">
+                                                <button type="button" onClick={() => moveProvider(idx, -1)} disabled={idx === 0} className="text-outline-variant hover:text-primary disabled:opacity-20 p-0.5"><ChevronUp size={14} /></button>
+                                                <button type="button" onClick={() => moveProvider(idx, 1)} disabled={idx === providers.length - 1} className="text-outline-variant hover:text-primary disabled:opacity-20 p-0.5"><ChevronDown size={14} /></button>
+                                            </div>
+                                            <span className="text-sm text-primary font-body">{info?.name || p.provider_id}</span>
+                                        </div>
+                                        <GlassToggle checked={p.enabled} onChange={() => toggleProvider(p.provider_id)} />
+                                    </GlassCard>
+                                );
+                            })}
                         </div>
                     )}
+                </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <Input
-                            label="Name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
-
-                        {isBooks && (
-                            <Select
-                                label="Default Reading Mode"
-                                value={readingMode}
-                                onChange={setReadingMode}
-                                options={READING_MODE_OPTIONS.map(o => ({ id: o.id, label: o.label }))}
-                            />
-                        )}
-
-                        <MultiDirectoryPicker
-                            values={paths}
-                            onChange={setPaths}
-                        />
-
-                        <div className="border-t border-outline pt-4 mt-4">
-                            <Toggle
-                                label="Override Metadata Providers"
-                                checked={overrideProviders}
-                                onChange={setOverrideProviders}
-                                className="mb-4"
-                            />
-
-                            {overrideProviders && (
-                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                    {providers.map((p, idx) => {
-                                        const info = allProviders.find(a => a.id === p.provider_id);
-                                        return (
-                                            <div key={p.provider_id} className="flex items-center justify-between p-3 rounded-xl bg-surface/30 border border-outline">
-                                                <div className="flex items-center space-x-3">
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <button type="button" onClick={() => moveProvider(idx, -1)} disabled={idx === 0} className="text-outline-variant hover:text-primary disabled:opacity-20 text-[10px] leading-none p-0.5">▲</button>
-                                                        <button type="button" onClick={() => moveProvider(idx, 1)} disabled={idx === providers.length - 1} className="text-outline-variant hover:text-primary disabled:opacity-20 text-[10px] leading-none p-0.5">▼</button>
-                                                    </div>
-                                                    <span className="text-sm text-primary font-body">{info?.name || p.provider_id}</span>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => toggleProvider(p.provider_id)}
-                                                    className="flex-shrink-0"
-                                                >
-                                                    <div className={`w-10 h-5 rounded-full relative transition-colors ${p.enabled ? 'bg-primary/20 border-primary' : 'bg-surface/50 border-outline'} border`}>
-                                                        <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full shadow-md transition-all ${p.enabled ? 'right-0.5 bg-primary' : 'left-0.5 bg-outline'}`} />
-                                                    </div>
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex justify-end space-x-3 pt-4">
-                            <Button type="button" variant="secondary" onClick={onClose}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading ? 'Saving...' : 'Save Changes'}
-                            </Button>
-                        </div>
-                    </form>
-                </Card>
-            </div>
-        </div>,
-        document.body
+                <div className="flex justify-end space-x-3 pt-4">
+                    <GlassButton type="button" onClick={onClose}>
+                        Cancel
+                    </GlassButton>
+                    <GlassButton variant="primary" type="submit" disabled={isLoading}>
+                        {isLoading ? 'Saving...' : 'Save Changes'}
+                    </GlassButton>
+                </div>
+            </form>
+        </GlassModal>
     );
 };
