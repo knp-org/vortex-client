@@ -79,6 +79,7 @@ export const Library: React.FC = () => {
 
     const handleItemClick = (card: Card) => {
         if (card.kind === 'series') navigate(`/series/${card.id}`);
+        else if (card.kind === 'book_series') navigate(`/book-series/${card.id}`);
         else if (card.kind === 'album') navigate(`/albums/${card.id}`);
         else if (card.kind === 'artist') navigate(`/artists/${card.id}`);
         else if (card.kind === 'gallery') navigate(`/galleries/${card.id}`);
@@ -100,7 +101,7 @@ export const Library: React.FC = () => {
                             id={card.id}
                             title={card.title || ''}
                             posterUrl={card.poster_url}
-                            type={card.kind === 'series' ? 'folder' : card.kind === 'album' ? 'album' : card.kind === 'artist' ? 'album' : 'movie'}
+                            type={card.kind === 'series' || card.kind === 'book_series' ? 'folder' : card.kind === 'album' ? 'album' : card.kind === 'artist' ? 'album' : 'movie'}
                             aspectRatio={isMusicVideos ? 'video' : isImages ? 'square' : 'poster'}
                             onClick={() => handleItemClick(card)}
                         />

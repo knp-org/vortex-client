@@ -35,11 +35,19 @@ class SeriesLibraryViewModel @Inject constructor(
     var uiState by mutableStateOf(SeriesLibraryUiState(serverUrl = settingsRepository.getServerUrl()))
         private set
 
-    fun load(libId: Long) {
+    fun load(libId: Long, libType: String) {
         if (uiState.series.isNotEmpty()) return
         viewModelScope.launch {
             uiState = uiState.copy(isLoading = true, error = null)
-            repository.getSeries(libId)
+            val result = if (libType.lowercase() == "books") {
+                // Book libraries return CardDto which maps to SeriesDto format
+                repository.getLibraryCards(libId).map { cards ->
+                    cards.map { org.knp.vortex.data.remote.SeriesDto(id = it.id, name = it.title ?: "", poster_url = it.poster_url, season_count = 0) }
+                }
+            } else {
+                repository.getSeries(libId)
+            }
+            result
                 .onSuccess { uiState = uiState.copy(isLoading = false, series = sortSeries(it, uiState.sortOrder)) }
                 .onFailure { uiState = uiState.copy(isLoading = false, error = it.message) }
         }
@@ -78,7 +86,7 @@ fun SeriesLibraryContent(
     viewModel: SeriesLibraryViewModel
 ) {
     val uiState = viewModel.uiState
-    LaunchedEffect(libraryId) { viewModel.load(libraryId) }
+    LaunchedEffect(libraryId) { viewModel.load(libraryId, libraryType) }
 
     LibraryScaffold(
         title = libraryDisplayTitle(libraryName, libraryType),

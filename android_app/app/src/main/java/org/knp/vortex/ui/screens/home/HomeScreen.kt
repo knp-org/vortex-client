@@ -256,6 +256,7 @@ fun HomeScreen(
                                             is MediaItemDto -> {
                                                 when (val kind = item.media_type) {
                                                     "series" -> onOpenSeries(item.id, item.library_type ?: "")
+                                                    "book_series" -> onOpenSeries(item.id, "books")
                                                     "artist", "album", "music_video" -> onOpenCard(item.id, kind)
                                                     else -> onPlayMedia(item.id, item.library_type)
                                                 }
@@ -291,7 +292,7 @@ fun HomeScreen(
                         }
 
                         uiState.visibleLibraries.forEach { library ->
-                            val isSeriesLibrary = library.library_type == "tv_shows" || library.library_type == "books"
+                            val isSeriesLibrary = library.library_type == "tv_shows"
                             val sectionTitle = library.name.ifBlank {
                                 library.library_type.replace("_", " ").split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
                             }
@@ -340,6 +341,7 @@ fun HomeScreen(
                                                     onClick = {
                                                         when (val kind = item.media_type) {
                                                             "series" -> onOpenSeries(item.id, library.library_type)
+                                                            "book_series" -> onOpenSeries(item.id, "books")
                                                             "artist", "album", "music_video" -> onOpenCard(item.id, kind)
                                                             else -> onPlayMedia(item.id, library.library_type)
                                                         }
@@ -367,6 +369,7 @@ fun HomeScreen(
                                             onClick = {
                                                 when (val kind = item.media_type) {
                                                     "series" -> onOpenSeries(item.id, item.library_type ?: "")
+                                                    "book_series" -> onOpenSeries(item.id, "books")
                                                     "artist", "album", "music_video" -> onOpenCard(item.id, kind)
                                                     else -> onPlayMedia(item.id, item.library_type)
                                                 }

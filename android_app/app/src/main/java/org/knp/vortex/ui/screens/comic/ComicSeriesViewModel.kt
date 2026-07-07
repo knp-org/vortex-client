@@ -45,10 +45,9 @@ class ComicSeriesViewModel @Inject constructor(
     fun loadSeriesDetail() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            repository.getSeriesDetail(seriesId)
+            repository.getBookSeriesDetail(seriesId)
                 .onSuccess { detail ->
-                    // For comics, chapters are usually returned as episodes under season 1
-                    repository.getSeasonEpisodes(seriesId, 1)
+                    repository.getBookSeriesChapters(seriesId)
                         .onSuccess { eps ->
                             _uiState.value = _uiState.value.copy(
                                 seriesDetail = detail,

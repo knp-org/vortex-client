@@ -19,6 +19,7 @@ fun LibraryScreen(
     onOpenCard: (CardDto) -> Unit,
     onPlaySong: () -> Unit,
     onOpenPlaylist: (Long) -> Unit,
+    onOpenGallery: (Long) -> Unit,
     onBack: () -> Unit
 ) {
     when (libraryType.lowercase()) {
@@ -29,13 +30,7 @@ fun LibraryScreen(
             onOpenSeries = { id -> onOpenSeries(id, libraryType) },
             onBack = onBack
         )
-        "books" -> BookLibraryScreen(
-            libraryId = libraryId,
-            libraryName = libraryName,
-            libraryType = libraryType,
-            onOpenSeries = { id -> onOpenSeries(id, libraryType) },
-            onBack = onBack
-        )
+
         "music" -> MusicLibraryScreen(
             libraryId = libraryId,
             libraryName = libraryName,
@@ -50,6 +45,13 @@ fun LibraryScreen(
             libraryName = libraryName,
             libraryType = libraryType,
             onOpenCard = onOpenCard,
+            onBack = onBack
+        )
+        "images" -> ImageLibraryScreen(
+            libraryId = libraryId,
+            libraryName = libraryName,
+            libraryType = libraryType,
+            onOpenGallery = onOpenGallery,
             onBack = onBack
         )
         "other" -> FilesLibraryScreen(

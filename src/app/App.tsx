@@ -2,7 +2,7 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Titlebar } from '@/shared/ui';
 import { Login, AuthProvider, useAuth } from '@/features/auth';
-import { Dashboard, MediaDetail } from '@/features/media';
+import { Dashboard, MediaDetail, BookSeriesDetail } from '@/features/media';
 import { Library } from '@/features/library';
 import { Settings } from '@/features/settings';
 import { Player, MpvOverlay } from '@/features/player';
@@ -61,6 +61,7 @@ function App() {
               <Route path="/libraries/:id/trash" element={<RouteGuard><RecycleBin /></RouteGuard>} />
               <Route path="/media/:id" element={<RouteGuard><MediaDetail /></RouteGuard>} />
               <Route path="/series/:seriesId" element={<RouteGuard><MediaDetail /></RouteGuard>} />
+              <Route path="/book-series/:seriesId" element={<RouteGuard><BookSeriesDetail /></RouteGuard>} />
               <Route path="/galleries/:id" element={<RouteGuard><GalleryDetail /></RouteGuard>} />
               <Route path="/albums/:id" element={<RouteGuard><AlbumDetail /></RouteGuard>} />
               <Route path="/artists/:id" element={<RouteGuard><ArtistDetail /></RouteGuard>} />

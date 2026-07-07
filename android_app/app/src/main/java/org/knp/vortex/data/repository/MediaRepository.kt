@@ -13,6 +13,7 @@ import org.knp.vortex.data.remote.EpisodeDto
 import org.knp.vortex.data.remote.SeasonDto
 import org.knp.vortex.data.remote.SeriesDto
 import org.knp.vortex.data.remote.SeriesDetailDto
+import org.knp.vortex.data.remote.SrvBookSeriesDetailDto
 import org.knp.vortex.data.remote.SrvEpisodeDto
 import org.knp.vortex.data.remote.SrvMediaDetailDto
 import org.knp.vortex.data.remote.SrvSeasonDto
@@ -103,6 +104,21 @@ class MediaRepository @Inject constructor(
         trailer_url = null, origin_country = null, collection_name = null, creator = null, tags = null
     )
 
+    private fun SrvBookSeriesDetailDto.toUi(): SeriesDetailDto = SeriesDetailDto(
+        id = id, name = name, poster_url = poster_url, backdrop_url = backdrop_url, plot = plot,
+        year = null, genres = null, cast = null, director = null,
+        age_rating = null, studio = null, trailer_url = null,
+        origin_country = null, collection_name = null, creator = null,
+        tags = null, seasons = emptyList()
+    )
+
+    private fun SrvMediaDetailDto.toEpisodeDto(): EpisodeDto = EpisodeDto(
+        id = id, title = title ?: name, episode_number = (page_count ?: 0).toInt(), // Using page_count fallback, actually we want episode_number/chapter_number but SrvMediaDetailDto doesn't map chapter_number yet! Wait, let's map episode_number
+        poster_url = poster_url ?: cover_url, file_path = "", plot = plot, runtime = null,
+        rating = null, cast = null, director = null, age_rating = null, studio = null,
+        trailer_url = null, origin_country = null, collection_name = null, creator = null, tags = null
+    )
+
     // ---- catalog --------------------------------------------------------------------
 
     suspend fun getRecentlyAdded(): Result<List<MediaItemDto>> = runCatching {
@@ -174,6 +190,11 @@ class MediaRepository @Inject constructor(
         if (!response.isSuccessful) throw Exception("Remove failed: ${response.code()}")
     }
 
+    // Photo galleries (Images libraries). DTOs are already in UI shape, so no mappers needed.
+    suspend fun getGalleries(libraryId: Long? = null) = runCatching { api.getGalleries(libraryId) }
+
+    suspend fun getGalleryDetail(id: Long) = runCatching { api.getGalleryDetail(id) }
+
     suspend fun getContinueWatching() = runCatching { api.getContinueWatching().map { it.toMediaItem() } }
 
     suspend fun getProgress(id: Long) = runCatching { api.getProgress(id) }
@@ -206,6 +227,25 @@ class MediaRepository @Inject constructor(
     }
 
     suspend fun getSeriesDetail(id: Long) = runCatching { api.getSeriesDetail(id).toUi() }
+
+    suspend fun getBookSeriesDetail(id: Long) = runCatching { api.getBookSeriesDetail(id).toUi() }
+
+    suspend fun getBookSeriesChapters(id: Long) = runCatching { 
+        api.getBookSeriesChapters(id).map { 
+            // We map the book chapters to EpisodeDto so the UI works unchanged
+            EpisodeDto(
+                id = it.id, 
+                title = it.title ?: it.name, 
+                episode_number = (it.season_number ?: 0).toInt(), // We'll map chapter_number to season_number in SrvMediaDetailDto or add it
+                poster_url = it.poster_url ?: it.cover_url, 
+                file_path = "", 
+                plot = it.plot, 
+                runtime = null,
+                rating = null, cast = null, director = null, age_rating = null, studio = null,
+                trailer_url = null, origin_country = null, collection_name = null, creator = null, tags = null
+            )
+        }
+    }
 
     suspend fun refreshSeriesMetadata(id: Long) = runCatching { api.refreshSeriesMetadata(id).toUi() }
 

@@ -1,5 +1,5 @@
 import { api } from '@/shared/api';
-import type { Card, MovieDetail, BookDetail, SeriesDetail, Season, Episode, ContinueItem, MediaInfo, AlbumDetail, ArtistDetail, Lyrics, Track, GalleryDetail, ImageDetail, Photo } from '@/types';
+import type { Card, MovieDetail, BookDetail, SeriesDetail, BookSeriesDetail, Season, Episode, ContinueItem, MediaInfo, AlbumDetail, ArtistDetail, Lyrics, Track, GalleryDetail, ImageDetail, Photo } from '@/types';
 
 export interface IdentifyBody {
     provider_id: string;
@@ -35,6 +35,10 @@ export const mediaService = {
     seasons: (id: number | string) => api.get<Season[]>(`/series/${id}/seasons`),
     seasonEpisodes: (id: number | string, season: number) =>
         api.get<Episode[]>(`/series/${id}/season/${season}`),
+
+    // Book Series
+    bookSeries: (id: number | string) => api.get<BookSeriesDetail>(`/book-series/${id}/detail`),
+    bookSeriesChapters: (id: number | string) => api.get<BookDetail[]>(`/book-series/${id}/books`),
 
     // Metadata actions
     refreshMedia: (id: number | string) => api.post(`/media/${id}/refresh`),

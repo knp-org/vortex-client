@@ -100,6 +100,16 @@ export interface BookDetail {
     publisher?: string;
     published_date?: string;
     isbn?: string;
+    chapter_number?: number;
+}
+
+export interface BookSeriesDetail {
+    id: number;
+    name: string;
+    plot?: string;
+    poster_url?: string;
+    backdrop_url?: string;
+    rating?: number;
 }
 
 export interface Track {

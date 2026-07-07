@@ -73,6 +73,13 @@ interface MediaApi {
     @GET("$API_VERSION/series/{id}/detail")
     suspend fun getSeriesDetail(@Path("id") id: Long): SrvSeriesDetailDto
 
+    // Book Series endpoints
+    @GET("$API_VERSION/book-series/{id}/detail")
+    suspend fun getBookSeriesDetail(@Path("id") id: Long): SrvBookSeriesDetailDto
+
+    @GET("$API_VERSION/book-series/{id}/books")
+    suspend fun getBookSeriesChapters(@Path("id") id: Long): List<SrvMediaDetailDto>
+
     @POST("$API_VERSION/series/{id}/refresh")
     suspend fun refreshSeriesMetadata(@Path("id") id: Long): SrvSeriesDetailDto
 
@@ -163,6 +170,15 @@ interface MediaApi {
 
     @retrofit2.http.DELETE("$API_VERSION/me/playlists/{id}/tracks/{itemId}")
     suspend fun removePlaylistTrack(@Path("id") id: Long, @Path("itemId") itemId: Long): retrofit2.Response<Unit>
+
+    // Photo galleries (Images libraries): galleries group photos into albums,
+    // parallel to series → episodes. Listing returns gallery Cards (kind "gallery",
+    // with up to 4 `thumbs` for a mosaic); detail carries the album's photos.
+    @GET("$API_VERSION/galleries")
+    suspend fun getGalleries(@Query("library_id") libraryId: Long? = null): List<CardDto>
+
+    @GET("$API_VERSION/galleries/{id}")
+    suspend fun getGalleryDetail(@Path("id") id: Long): GalleryDetailDto
 }
 
 // A lightweight card for grid/listing views. `kind` (artist | album | music_video |
@@ -173,7 +189,34 @@ data class CardDto(
     val title: String?,
     val poster_url: String?,
     val year: Long?,
-    val stream_url: String?
+    val stream_url: String?,
+    // Gallery cards only: up to 4 server-relative thumbnail paths for a mosaic card.
+    val thumbs: List<String>? = null
+)
+
+// Server `GalleryDetail`: album fields plus the photos it contains.
+data class GalleryDetailDto(
+    val id: Long,
+    val library_id: Long,
+    val name: String,
+    val description: String?,
+    val cover_url: String?,
+    val taken_at: String?,
+    val image_count: Long,
+    val images: List<ImageDto>
+)
+
+// Server `ImageDto`. `url`/`thumb_url` are server-relative paths; the full-size
+// `url` is behind auth, so append `?token=` when loading it outside Retrofit.
+data class ImageDto(
+    val id: Long, // media_items.id
+    val gallery_id: Long?,
+    val title: String?,
+    val taken_at: String?,
+    val width: Long?,
+    val height: Long?,
+    val url: String,
+    val thumb_url: String
 )
 
 // A person credited on an item or series (server `CreditDto`).
@@ -237,8 +280,17 @@ data class SrvMediaDetailDto(
     // music_video / album (track detail resolves to its album)
     val artist: String?,
     val artist_id: Long?,
-    val cover_url: String?,
-    val tracks: List<TrackDto>?
+    val cover_url: String?
+)
+
+// Server `BookSeriesDetail`
+data class SrvBookSeriesDetailDto(
+    val id: Long,
+    val name: String,
+    val plot: String?,
+    val poster_url: String?,
+    val backdrop_url: String?,
+    val rating: Double?
 )
 
 // Server `SeriesDetail` (id-keyed; genres/tags/cast are arrays).

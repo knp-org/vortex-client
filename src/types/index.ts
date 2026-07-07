@@ -26,6 +26,7 @@ export type {
     AudioStream,
     VideoStream,
     SeriesDetail,
+    BookSeriesDetail,
     Season,
     Episode,
     MediaItem

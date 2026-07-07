@@ -87,8 +87,8 @@ class HomeViewModel @Inject constructor(
             val librarySeries = mutableMapOf<Long, List<SeriesDto>>()
 
             libraries.forEach { lib ->
-                if (lib.library_type == "tv_shows" || lib.library_type == "books") {
-                    // TV Shows and Books/comics are grouped into series, scoped to this library.
+                if (lib.library_type == "tv_shows") {
+                    // TV Shows are grouped into series, scoped to this library.
                     repository.getSeries(lib.id).onSuccess { series ->
                         librarySeries[lib.id] = series.take(10)
                     }

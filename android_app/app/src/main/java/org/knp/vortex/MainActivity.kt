@@ -253,6 +253,7 @@ fun AppNavigation() {
                         "artist" -> navController.navigate("artist/$id")
                         "album" -> navController.navigate("album/$id")
                         "music_video" -> navController.navigate("player/$id")
+                        "gallery" -> navController.navigate("gallery/$id")
                         else -> navController.navigate("movie/$id")
                     }
                 },
@@ -425,11 +426,22 @@ fun AppNavigation() {
                         "artist" -> navController.navigate("artist/${card.id}")
                         "album" -> navController.navigate("album/${card.id}")
                         "music_video" -> navController.navigate("player/${card.id}")
+                        "gallery" -> navController.navigate("gallery/${card.id}")
                         else -> navController.navigate("movie/${card.id}")
                     }
                 },
                 onPlaySong = { navController.navigate("music_player") },
                 onOpenPlaylist = { playlistId -> navController.navigate("playlist/$playlistId") },
+                onOpenGallery = { galleryId -> navController.navigate("gallery/$galleryId") },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = "gallery/{galleryId}",
+            arguments = listOf(navArgument("galleryId") { type = NavType.LongType })
+        ) { _ ->
+            org.knp.vortex.ui.screens.gallery.GalleryDetailScreen(
                 onBack = { navController.popBackStack() }
             )
         }

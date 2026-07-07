@@ -2,5 +2,6 @@
 // Public API: import from '@/features/media'. See ARCHITECTURE.md.
 export { Dashboard } from './components/Dashboard';
 export { MediaDetail } from './components/MediaDetail';
+export { BookSeriesDetail } from './components/BookSeriesDetail';
 export { MediaCard } from './components/MediaCard';
 export { useProgress } from './hooks/useProgress';
