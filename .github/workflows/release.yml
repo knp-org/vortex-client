@@ -50,12 +50,12 @@ jobs:
 
       - name: Build liquid-glass-ui package
         shell: bash
-        working-directory: liquid-glass-ui-src
         run: |
+          rm -rf ../liquid-glass-ui
+          mv liquid-glass-ui-src ../liquid-glass-ui
+          cd ../liquid-glass-ui
           npm install
           npm pack
-          mkdir -p ../../liquid-glass-ui
-          mv knp-org-liquid-glass-ui-*.tgz ../../liquid-glass-ui/
 
       - name: Install frontend dependencies
         shell: bash
