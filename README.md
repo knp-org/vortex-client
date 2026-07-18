@@ -24,6 +24,28 @@ embedded mpv backend for high-performance playback.
 - **Node 22+** (the build will fail on older Node)
 - For desktop builds: the [Tauri prerequisites](https://tauri.app/start/prerequisites/)
   (Rust toolchain + system WebKitGTK on Linux)
+- On Linux, the system packages needed by Tauri/WebKitGTK:
+  ```bash
+  sudo apt-get update
+  sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+    libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev xdg-utils
+  ```
+- **[`liquid-glass-ui`](https://github.com/knp-org/liquid-glass-ui)** checked out
+  as a sibling of this repo. `package.json` resolves `@knp-org/liquid-glass-ui`
+  from a packed tarball at `../liquid-glass-ui/`, so build it once before
+  installing:
+  ```bash
+  git clone https://github.com/knp-org/liquid-glass-ui.git ../liquid-glass-ui
+  cd ../liquid-glass-ui
+  npm install    # runs tsup and builds dist/
+  npm pack       # produces knp-org-liquid-glass-ui-<version>.tgz
+  cd -
+  ```
+  If the packed version differs from the one pinned in `package.json`, point the
+  dependency at the new tarball with
+  `npm install ../liquid-glass-ui/knp-org-liquid-glass-ui-*.tgz`.
+  (CI does all of this automatically — see
+  [.github/workflows/release.yml](./.github/workflows/release.yml).)
 
 ### Getting started
 ```bash

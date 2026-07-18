@@ -42,8 +42,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev xdg-utils
 
+      - name: Checkout liquid-glass-ui
+        uses: actions/checkout@v4
+        with:
+          repository: knp-org/liquid-glass-ui
+          path: liquid-glass-ui-src
+
+      - name: Build liquid-glass-ui package
+        shell: bash
+        working-directory: liquid-glass-ui-src
+        run: |
+          npm install
+          npm pack
+          mkdir -p ../../liquid-glass-ui
+          mv knp-org-liquid-glass-ui-*.tgz ../../liquid-glass-ui/
+
       - name: Install frontend dependencies
-        run: npm install
+        shell: bash
+        run: |
+          npm install ../liquid-glass-ui/knp-org-liquid-glass-ui-*.tgz
+          npm install
 
       - name: Build and Create Release
         uses: tauri-apps/tauri-action@v0
