@@ -334,15 +334,21 @@ fun HomeScreen(
                                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                                         ) {
                                             items(content) { item ->
+                                                // The /media/{id}/thumbnail fallback is only valid for kinds whose
+                                                // id is a media_items id. Grouping kinds (series, book_series,
+                                                // gallery, artist, album) use their own table ids — deriving a
+                                                // thumbnail from those fetches an unrelated item's image.
+                                                val isFileBacked = item.media_type in listOf("movie", "music_video", "book", "episode", "track", "image")
                                                 ModernMediaCard(
                                                     title = item.title,
-                                                    posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl) ?: if (item.media_type in listOf("artist", "album", "series")) null else "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail",
+                                                    posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl) ?: if (isFileBacked) "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail" else null,
                                                     year = item.year,
                                                     onClick = {
                                                         when (val kind = item.media_type) {
                                                             "series" -> onOpenSeries(item.id, library.library_type)
                                                             "book_series" -> onOpenSeries(item.id, "books")
-                                                            "artist", "album", "music_video" -> onOpenCard(item.id, kind)
+                                                            "artist", "album", "music_video", "gallery" -> onOpenCard(item.id, kind)
+                                                            "book" -> onPlayMedia(item.id, "books")
                                                             else -> onPlayMedia(item.id, library.library_type)
                                                         }
                                                     },
@@ -362,15 +368,20 @@ fun HomeScreen(
                                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
                                     items(uiState.recentlyAdded) { item ->
+                                        // Same rule as the library rows: only file-backed kinds may
+                                        // derive a thumbnail from their id (it's a media_items id).
+                                        val isFileBacked = item.media_type in listOf("movie", "music_video", "book", "episode", "track", "image")
                                         ModernMediaCard(
                                             title = item.title,
-                                            posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl),
+                                            posterUrl = org.knp.vortex.utils.formatImageUrl(item.poster_url, uiState.serverUrl) ?: if (isFileBacked) "${uiState.serverUrl.trimEnd('/')}/api/v1/media/${item.id}/thumbnail" else null,
                                             year = item.year,
                                             onClick = {
                                                 when (val kind = item.media_type) {
                                                     "series" -> onOpenSeries(item.id, item.library_type ?: "")
                                                     "book_series" -> onOpenSeries(item.id, "books")
-                                                    "artist", "album", "music_video" -> onOpenCard(item.id, kind)
+                                                    "artist", "album", "music_video", "gallery" -> onOpenCard(item.id, kind)
+                                                    // library_type is null on recently-added cards, so route books by kind
+                                                    "book" -> onPlayMedia(item.id, "books")
                                                     else -> onPlayMedia(item.id, item.library_type)
                                                 }
                                             },

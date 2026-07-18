@@ -31,6 +31,13 @@ fun LibraryScreen(
             onBack = onBack
         )
 
+        "books" -> BookLibraryScreen(
+            libraryId = libraryId,
+            libraryName = libraryName,
+            libraryType = libraryType,
+            onOpenSeries = { id -> onOpenSeries(id, libraryType) },
+            onBack = onBack
+        )
         "music" -> MusicLibraryScreen(
             libraryId = libraryId,
             libraryName = libraryName,

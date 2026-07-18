@@ -53,7 +53,10 @@ class MediaRepository @Inject constructor(
     }
 
     private fun CardDto.toMediaItem(): MediaItemDto = MediaItemDto(
-        id = id, file_path = "", title = title, year = year, poster_url = poster_url,
+        // Galleries may have no cover_url; fall back to their first mosaic thumb so
+        // the card never guesses a thumbnail from the (non-media_items) gallery id.
+        id = id, file_path = "", title = title, year = year,
+        poster_url = poster_url ?: thumbs?.firstOrNull(),
         plot = null, media_type = kind, series_name = null, series_id = null, progress = null, runtime = null,
         genres = null, backdrop_url = null, library_type = null, season_number = null,
         episode_number = null, still_url = null, rating = null, cast = null, director = null,
@@ -74,9 +77,13 @@ class MediaRepository @Inject constructor(
     private fun SrvMediaDetailDto.toMediaItem(): MediaItemDto = MediaItemDto(
         id = id, file_path = "", title = title ?: name, year = year,
         poster_url = poster_url ?: cover_url, plot = plot, media_type = kind,
-        series_name = series_name, series_id = series_id, progress = null, runtime = runtime?.toInt(),
+        // MediaItemDto is the app-internal union type: a detail is either an episode
+        // (series_*) or a book chapter (book_series_*), so the fallback never mixes them.
+        series_name = series_name ?: book_series_name, series_id = series_id ?: book_series_id,
+        progress = null, runtime = runtime?.toInt(),
         genres = joinOrNull(genres), backdrop_url = backdrop_url, library_type = null,
-        season_number = season_number?.toInt(), episode_number = episode_number?.toInt(),
+        // Book chapters reuse episode_number so the reader's next-chapter logic works.
+        season_number = season_number?.toInt(), episode_number = episode_number?.toInt() ?: chapter_number?.toInt(),
         still_url = still_url, rating = rating?.toFloat(), cast = creditsToJson(cast),
         director = null, age_rating = age_rating, studio = studio, trailer_url = trailer_url,
         origin_country = origin_country, collection_name = collection_name, creator = creator,
@@ -110,13 +117,6 @@ class MediaRepository @Inject constructor(
         age_rating = null, studio = null, trailer_url = null,
         origin_country = null, collection_name = null, creator = null,
         tags = null, seasons = emptyList()
-    )
-
-    private fun SrvMediaDetailDto.toEpisodeDto(): EpisodeDto = EpisodeDto(
-        id = id, title = title ?: name, episode_number = (page_count ?: 0).toInt(), // Using page_count fallback, actually we want episode_number/chapter_number but SrvMediaDetailDto doesn't map chapter_number yet! Wait, let's map episode_number
-        poster_url = poster_url ?: cover_url, file_path = "", plot = plot, runtime = null,
-        rating = null, cast = null, director = null, age_rating = null, studio = null,
-        trailer_url = null, origin_country = null, collection_name = null, creator = null, tags = null
     )
 
     // ---- catalog --------------------------------------------------------------------
@@ -234,10 +234,10 @@ class MediaRepository @Inject constructor(
         api.getBookSeriesChapters(id).map { 
             // We map the book chapters to EpisodeDto so the UI works unchanged
             EpisodeDto(
-                id = it.id, 
-                title = it.title ?: it.name, 
-                episode_number = (it.season_number ?: 0).toInt(), // We'll map chapter_number to season_number in SrvMediaDetailDto or add it
-                poster_url = it.poster_url ?: it.cover_url, 
+                id = it.id,
+                title = it.title ?: it.name,
+                episode_number = (it.chapter_number ?: 0.0).toInt(),
+                poster_url = it.poster_url ?: it.cover_url,
                 file_path = "", 
                 plot = it.plot, 
                 runtime = null,

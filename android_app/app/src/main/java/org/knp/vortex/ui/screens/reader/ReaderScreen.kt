@@ -74,7 +74,21 @@ class ReaderViewModel @Inject constructor(
 
     fun loadReadingStyle(mediaId: Long, seriesIdentifier: String?) {
         viewModelScope.launch {
-            // 1. Try fetching from server first
+            // Reading style is a per-series (book-level) choice: a locally saved
+            // series-wide style wins over any per-chapter style the server may
+            // have recorded before this behavior existed.
+            if (seriesIdentifier != null) {
+                val local = settingsRepository.getReadingStyleOrNull(seriesIdentifier)
+                if (local != null) {
+                    _readingStyle.value = try {
+                        ReadingStyle.valueOf(local)
+                    } catch (e: Exception) {
+                        ReadingStyle.HORIZONTAL_LTR
+                    }
+                    return@launch
+                }
+            }
+            // Fall back to the server-recorded style for this item
             mediaRepository.getProgress(mediaId)
                 .onSuccess { progressDto ->
                     val serverStyle = progressDto.reading_style
@@ -135,13 +149,20 @@ class ReaderViewModel @Inject constructor(
                 
                 val currentEpisode = details.episode_number
                 val seriesId = details.series_id
-                if (seriesId != null && currentEpisode != null) {
+                if (details.media_type == "book" && seriesId != null) {
+                    // Book chapters: the server returns them in reading order, so the
+                    // next chapter is simply the one after this item in the list.
+                    mediaRepository.getBookSeriesChapters(seriesId).onSuccess { chapters ->
+                        val idx = chapters.indexOfFirst { it.id == id }
+                        _nextChapterId.value = if (idx >= 0) chapters.getOrNull(idx + 1)?.id else null
+                    }
+                } else if (seriesId != null && currentEpisode != null) {
                     mediaRepository.getSeasonEpisodes(seriesId, 1).onSuccess { chapters ->
                         // Find the chapter with the next highest episode number
                         val nextChapter = chapters
                             .filter { it.episode_number > currentEpisode }
                             .minByOrNull { it.episode_number }
-                        
+
                         _nextChapterId.value = nextChapter?.id
                     }
                 }

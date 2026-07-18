@@ -109,6 +109,10 @@ class SettingsRepository @Inject constructor(
         return prefs.getString("reading_style_$seriesIdentifier", "HORIZONTAL_LTR") ?: "HORIZONTAL_LTR"
     }
 
+    fun getReadingStyleOrNull(seriesIdentifier: String): String? {
+        return prefs.getString("reading_style_$seriesIdentifier", null)
+    }
+
     fun setReadingStyle(seriesIdentifier: String, style: String) {
         prefs.edit().putString("reading_style_$seriesIdentifier", style).apply()
     }

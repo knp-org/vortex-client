@@ -11,8 +11,9 @@ fun formatImageUrl(url: String?, serverUrl: String): String? {
         return url
     }
     val baseUrl = serverUrl.trimEnd('/')
-    // Ensure we don't duplicate the /api/v1/images/ part if it's already there
-    if (url.startsWith("/api/v1/images/")) {
+    // Server-relative API paths (e.g. /api/v1/media/{id}/thumbnail from gallery
+    // covers, /api/v1/images/...) just need the server prefix.
+    if (url.startsWith("/api/")) {
         return "$baseUrl$url"
     }
     // Remove leading slash if any before appending

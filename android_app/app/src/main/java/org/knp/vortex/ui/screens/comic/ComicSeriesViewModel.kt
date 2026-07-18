@@ -51,7 +51,7 @@ class ComicSeriesViewModel @Inject constructor(
                         .onSuccess { eps ->
                             _uiState.value = _uiState.value.copy(
                                 seriesDetail = detail,
-                                chapters = eps,
+                                chapters = sortChapters(eps, _uiState.value.sortOrder),
                                 isLoading = false
                             )
                         }
@@ -84,11 +84,39 @@ class ComicSeriesViewModel @Inject constructor(
     }
 
     private fun sortChapters(chapters: List<EpisodeDto>, order: ComicSortOrder): List<EpisodeDto> {
+        val byTitle = Comparator<EpisodeDto> { a, b -> naturalCompare(a.title ?: "", b.title ?: "") }
+        val byNumber = compareBy<EpisodeDto> { it.episode_number }.then(byTitle)
         return when (order) {
-            ComicSortOrder.NUMBER_ASC -> chapters.sortedBy { it.episode_number }
-            ComicSortOrder.NUMBER_DESC -> chapters.sortedByDescending { it.episode_number }
-            ComicSortOrder.NAME_ASC -> chapters.sortedBy { it.title?.lowercase() ?: "" }
-            ComicSortOrder.NAME_DESC -> chapters.sortedByDescending { it.title?.lowercase() ?: "" }
+            ComicSortOrder.NUMBER_ASC -> chapters.sortedWith(byNumber)
+            ComicSortOrder.NUMBER_DESC -> chapters.sortedWith(byNumber.reversed())
+            ComicSortOrder.NAME_ASC -> chapters.sortedWith(byTitle)
+            ComicSortOrder.NAME_DESC -> chapters.sortedWith(byTitle.reversed())
         }
+    }
+
+    /** Compares strings so embedded numbers sort numerically ("Chapter 2" < "Chapter 10"). */
+    private fun naturalCompare(a: String, b: String): Int {
+        var i = 0
+        var j = 0
+        while (i < a.length && j < b.length) {
+            if (a[i].isDigit() && b[j].isDigit()) {
+                var i2 = i
+                while (i2 < a.length && a[i2].isDigit()) i2++
+                var j2 = j
+                while (j2 < b.length && b[j2].isDigit()) j2++
+                val na = a.substring(i, i2).trimStart('0')
+                val nb = b.substring(j, j2).trimStart('0')
+                val cmp = if (na.length != nb.length) na.length - nb.length else na.compareTo(nb)
+                if (cmp != 0) return cmp
+                i = i2
+                j = j2
+            } else {
+                val cmp = a[i].lowercaseChar().compareTo(b[j].lowercaseChar())
+                if (cmp != 0) return cmp
+                i++
+                j++
+            }
+        }
+        return (a.length - i) - (b.length - j)
     }
 }

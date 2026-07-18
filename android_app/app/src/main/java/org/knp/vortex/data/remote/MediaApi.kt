@@ -277,6 +277,10 @@ data class SrvMediaDetailDto(
     val publisher: String?,
     val published_date: String?,
     val isbn: String?,
+    val chapter_number: Double?,
+    // book-series grouping (distinct from TV series_id/series_name)
+    val book_series_id: Long?,
+    val book_series_name: String?,
     // music_video / album (track detail resolves to its album)
     val artist: String?,
     val artist_id: Long?,
